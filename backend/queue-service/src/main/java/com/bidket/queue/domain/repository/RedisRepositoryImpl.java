@@ -1,11 +1,14 @@
 package com.bidket.queue.domain.repository;
 
+import com.bidket.queue.domain.model.QueueConfigModel;
 import com.bidket.queue.infrastructure.redis.RedisRepository;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
+import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.ReactiveRedisOperations;
 import org.springframework.stereotype.Repository;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.ZoneOffset;
@@ -36,31 +39,20 @@ public class RedisRepositoryImpl implements RedisRepository {
                 .delete(key);
     }
 
-    public <T> Mono<T> getCacheValueGeneric(String key, Class<T> tClass) {
-        try {
-            return redisOps.opsForValue()
-                    .get(key)
-                    .switchIfEmpty(Mono.error(new RuntimeException("No data for key: " + key)))
-                    .flatMap(value -> Mono.just(objectMapper.convertValue(value, tClass)));
-        } catch (Exception e) {
-            e.getStackTrace();
-            return Mono.error(new RuntimeException("error occurred\n" + e.getMessage()));
-        }
-    }
     @Override
-    public Mono<Boolean> createQueueConfig(QueueCreateRequest request) {
-
+    public Mono<QueueCreateResponse> createQueueConfig(QueueCreateRequest request) {
+        QueueConfigModel queueConfig = request.toModel();
         String key = "auction:config:" + request.auctionId() + ":config";
-
-        Map<String, Object> configMap = request.toMap();
+        Map<String, Object> configMap = queueConfig.toMap();
 
         return redisOps.opsForHash()
                 .putAll(key, configMap)
                 .flatMap(isSuccess -> {
-                    if(isSuccess)
-                        return redisOps.expireAt(key, request.closeAt().plusHours(1).toInstant(ZoneOffset.UTC));
-
+                    if(isSuccess){
+                        return redisOps.expireAt(key, request.closeAt().plusDays(1L).toInstant(ZoneOffset.UTC));
+                    }
                     return Mono.just(false);
-                });
+                })
+                .map(flag -> queueConfig.toCreateResponse());
     }
 }

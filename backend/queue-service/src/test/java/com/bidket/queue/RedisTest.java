@@ -1,14 +1,20 @@
 package com.bidket.queue;
 
-import com.bidket.queue.infrastructure.redis.RedisRepository;
+import com.bidket.queue.application.service.QueueService;
 import com.bidket.queue.infrastructure.redis.RedisUtils;
+import com.bidket.queue.presentation.api.QueueController;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
+import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.ResponseEntity;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -19,10 +25,12 @@ public class RedisTest {
 
     private static final Logger log = LoggerFactory.getLogger(RedisTest.class);
     @Autowired
-    private RedisRepository redisRepository;
+    private QueueController queueController;
+    @Autowired
+    private ObjectMapper mapper;
 
     @Test
-    void queueConfig() {
+    void queueConfig() throws JsonProcessingException {
         QueueCreateRequest request = QueueCreateRequest.builder()
                 .auctionId(UUID.randomUUID())
                 .maxActive(100L)
@@ -31,10 +39,10 @@ public class RedisTest {
                 .closeAt(LocalDateTime.now().plusHours(5L))
                 .build();
 
-        redisRepository.createQueueConfig(request).block();
+        ResponseEntity<QueueCreateResponse> response = queueController.createQueueConfig(request).block();
 
         String key = "auction:config:" + request.auctionId() + ":config";
 
-        log.info("value: " + redisRepository.getValue(key));
+        log.info("response: \n" + mapper.writeValueAsString(response));
     }
 }
