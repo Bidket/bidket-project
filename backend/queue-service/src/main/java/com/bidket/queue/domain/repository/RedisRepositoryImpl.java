@@ -1,6 +1,8 @@
 package com.bidket.queue.domain.repository;
 
+import com.bidket.queue.domain.exception.QueueException;
 import com.bidket.queue.domain.model.QueueConfigModel;
+import com.bidket.queue.domain.model.QueueErrorCode;
 import com.bidket.queue.infrastructure.redis.RedisRepository;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
@@ -8,7 +10,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.ReactiveRedisOperations;
 import org.springframework.stereotype.Repository;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.ZoneOffset;
@@ -48,11 +49,19 @@ public class RedisRepositoryImpl implements RedisRepository {
         return redisOps.opsForHash()
                 .putAll(key, configMap)
                 .flatMap(isSuccess -> {
-                    if(isSuccess){
+                    if (isSuccess) {
                         return redisOps.expireAt(key, request.closeAt().plusDays(1L).toInstant(ZoneOffset.UTC));
                     }
                     return Mono.just(false);
                 })
-                .map(flag -> queueConfig.toCreateResponse());
+                .filter(isExpireSuccess -> isExpireSuccess)
+                .switchIfEmpty(Mono.error(new QueueException(QueueErrorCode.REDIS_EXPIRE_SET_FAILED)))
+                .map(flag -> queueConfig.toCreateResponse())
+                .onErrorMap(e -> {
+                    if (e instanceof QueueException)
+                        return e;
+
+                    return new QueueException(QueueErrorCode.REDIS_CONNECTION_ERROR);
+                });
     }
 }

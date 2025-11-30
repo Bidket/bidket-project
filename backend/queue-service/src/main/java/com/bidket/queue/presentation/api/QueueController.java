@@ -1,5 +1,6 @@
 package com.bidket.queue.presentation.api;
 
+import com.bidket.common.presentation.response.ApiResponse;
 import com.bidket.queue.application.service.QueueService;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
@@ -20,10 +21,10 @@ public class QueueController {
     private final QueueService queueService;
 
     @PostMapping("/internal/queues")
-    public Mono<ResponseEntity<QueueCreateResponse>> createQueueConfig(@RequestBody QueueCreateRequest request) {
+    public Mono<ResponseEntity<ApiResponse<QueueCreateResponse>>> createQueueConfig(@RequestBody QueueCreateRequest request) {
         return queueService.createQueue(request)
                 .map(response -> ResponseEntity
                         .created(URI.create("/v1/internal/queues/" + response.auctionId()))
-                        .body(response));
+                        .body(ApiResponse.success("queue config 생성", response)));
     }
 }
