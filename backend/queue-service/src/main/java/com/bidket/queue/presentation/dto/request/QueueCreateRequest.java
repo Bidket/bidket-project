@@ -4,7 +4,6 @@ import com.bidket.queue.domain.model.QueueConfigModel;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 import java.util.UUID;
 
 @Builder

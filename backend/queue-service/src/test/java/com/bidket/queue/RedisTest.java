@@ -1,7 +1,6 @@
 package com.bidket.queue;
 
-import com.bidket.queue.application.service.QueueService;
-import com.bidket.queue.infrastructure.redis.RedisUtils;
+import com.bidket.common.presentation.response.ApiResponse;
 import com.bidket.queue.presentation.api.QueueController;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
@@ -12,14 +11,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.ResponseEntity;
-import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Import(RedisUtils.class)
 @SpringBootTest
 public class RedisTest {
 
@@ -39,7 +35,7 @@ public class RedisTest {
                 .closeAt(LocalDateTime.now().plusHours(5L))
                 .build();
 
-        ResponseEntity<QueueCreateResponse> response = queueController.createQueueConfig(request).block();
+        ResponseEntity<ApiResponse<QueueCreateResponse>> response = queueController.createQueueConfig(request).block();
 
         String key = "auction:config:" + request.auctionId() + ":config";
 
