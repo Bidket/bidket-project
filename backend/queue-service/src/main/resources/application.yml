@@ -11,7 +11,6 @@ spring:
     url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${QUEUE_DB}
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
-    driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
@@ -20,7 +19,6 @@ spring:
       hibernate:
         format_sql: true
         show_sql: true
-
   data:
     redis:
       host: localhost
