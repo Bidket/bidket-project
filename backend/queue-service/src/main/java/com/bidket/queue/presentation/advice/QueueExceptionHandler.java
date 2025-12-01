@@ -1,6 +1,7 @@
 package com.bidket.queue.presentation.advice;
 
 import com.bidket.common.presentation.error.BaseErrorCode;
+import com.bidket.common.presentation.handler.GlobalExceptionHandler;
 import com.bidket.common.presentation.response.ApiResponse;
 import com.bidket.queue.domain.exception.QueueException;
 import lombok.extern.slf4j.Slf4j;
@@ -12,7 +13,7 @@ import reactor.core.publisher.Mono;
 
 @Slf4j
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class QueueExceptionHandler extends GlobalExceptionHandler {
 
     @ExceptionHandler(QueueException.class)
     public Mono<ResponseEntity<ApiResponse<?>>> handleQueueException(QueueException e, ServerRequest request){
