@@ -17,3 +17,8 @@ out/
 Thumbs.db
 
 .env
+
+*.md
+
+
+bin/
