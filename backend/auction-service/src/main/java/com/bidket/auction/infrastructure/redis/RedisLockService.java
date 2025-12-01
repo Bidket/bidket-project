@@ -36,7 +36,6 @@ public class RedisLockService {
     public boolean releaseLock(String key, String lockValue) {
         String lockKey = LOCK_PREFIX + key;
         
-        // Lua 스크립트로 원자적 삭제 (자신이 획득한 락만 해제)
         String script = 
             "if redis.call('get', KEYS[1]) == ARGV[1] then " +
             "  return redis.call('del', KEYS[1]) " +
