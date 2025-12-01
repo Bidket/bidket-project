@@ -16,8 +16,8 @@ import reactor.core.publisher.Mono;
 import java.net.URI;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/v1")
+@RequiredArgsConstructor
 public class QueueController {
     private final QueueService queueService;
 
