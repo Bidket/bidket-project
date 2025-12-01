@@ -15,7 +15,7 @@ import reactor.core.publisher.Mono;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(QueueException.class)
-    public Mono<ResponseEntity<ApiResponse>> handleQueueException(QueueException e, ServerRequest request){
+    public Mono<ResponseEntity<ApiResponse<?>>> handleQueueException(QueueException e, ServerRequest request){
         BaseErrorCode errorCode = e.getErrorCode();
         log.error("대기열 서비스 에러 발생: {}", e.getMessage());
         return Mono.just(ResponseEntity.status(errorCode.getStatus())

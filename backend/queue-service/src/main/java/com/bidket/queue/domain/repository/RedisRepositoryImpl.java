@@ -49,10 +49,10 @@ public class RedisRepositoryImpl implements RedisRepository {
         return redisOps.opsForHash()
                 .putAll(key, configMap)
                 .flatMap(isSuccess -> {
-                    if (isSuccess) {
-                        return redisOps.expireAt(key, request.closeAt().plusDays(1L).toInstant(ZoneOffset.UTC));
+                    if (!isSuccess) {
+                        return Mono.error(new QueueException(QueueErrorCode.REDIS_SAVE_FAILED));
                     }
-                    return Mono.just(false);
+                    return redisOps.expireAt(key, request.closeAt().plusDays(1L).toInstant(ZoneOffset.UTC));
                 })
                 .filter(isExpireSuccess -> isExpireSuccess)
                 .switchIfEmpty(Mono.error(new QueueException(QueueErrorCode.REDIS_EXPIRE_SET_FAILED)))

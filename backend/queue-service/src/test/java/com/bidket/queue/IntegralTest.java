@@ -17,9 +17,9 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @SpringBootTest
-public class RedisTest {
+public class IntegralTest {
 
-    private static final Logger log = LoggerFactory.getLogger(RedisTest.class);
+    private static final Logger log = LoggerFactory.getLogger(IntegralTest.class);
     @Autowired
     private QueueController queueController;
     @Autowired
