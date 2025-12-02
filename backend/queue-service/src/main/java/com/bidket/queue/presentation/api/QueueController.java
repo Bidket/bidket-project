@@ -23,7 +23,7 @@ public class QueueController {
 
     @PostMapping("/internal/queues")
     public Mono<ResponseEntity<ApiResponse<QueueCreateResponse>>> createQueueConfig(@RequestBody @Valid QueueCreateRequest request) {
-        return queueService.createQueue(request)
+        return queueService.createConfigQueue(request)
                 .map(response -> ResponseEntity
                         .created(URI.create("/v1/internal/queues/" + response.auctionId()))
                         .body(ApiResponse.success("queue config 생성", response)));
