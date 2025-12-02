@@ -17,12 +17,13 @@ public class QueueConfigModel {
     private Long maxActive;
     private Integer permitsPerSec;
     private Instant openAt;
+    @Getter
     private Instant closeAt;
 
-    public Map<String, Object> toMap() {
-        return Map.of("auctionId", auctionId,
-                "max_active", maxActive,
-                "permits_per_sec", permitsPerSec,
+    public Map<String, String> toMap() {
+        return Map.of("auctionId", auctionId.toString(),
+                "max_active", maxActive.toString(),
+                "permits_per_sec", permitsPerSec.toString(),
                 "open_at", openAt.toString(),
                 "close_at", closeAt.toString());
     }

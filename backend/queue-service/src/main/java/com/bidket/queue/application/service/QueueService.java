@@ -1,14 +1,19 @@
 package com.bidket.queue.application.service;
 
+import com.bidket.queue.domain.exception.QueueException;
 import com.bidket.queue.domain.jwt.TokenProvider;
+import com.bidket.queue.domain.model.QueueConfigModel;
+import com.bidket.queue.domain.model.QueueErrorCode;
 import com.bidket.queue.domain.repository.RedisRepository;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
 import com.bidket.queue.presentation.dto.response.QueueEnterResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.server.ServerRequest;
 import reactor.core.publisher.Mono;
 
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Service
@@ -18,11 +23,36 @@ public class QueueService {
     private final TokenProvider tokenProvider;
 
     public Mono<QueueCreateResponse> createConfigQueue(QueueCreateRequest request) {
-        return redisRepository.createQueueConfig(request);
+        String key = "queue:auction:" + request.auctionId() + ":config";
+        QueueConfigModel queueConfig = request.toModel();
+        return redisRepository.saveConfig(key, queueConfig)
+                .flatMap(isSuccess -> {
+                    if (isSuccess)
+                        return redisRepository.setConfigExpiration(key, request.closeAt().plus(1, ChronoUnit.DAYS));
+                    return Mono.error(new QueueException(QueueErrorCode.REDIS_SAVE_FAILED));
+                })
+                .filter(isSuccess -> isSuccess)
+                .switchIfEmpty(Mono.error(new QueueException(QueueErrorCode.REDIS_EXPIRE_SET_FAILED)))
+                .map(aa -> queueConfig.toCreateResponse())
+                .onErrorMap(e -> {
+                    if (e instanceof QueueException)
+                        return e;
+
+                    return new QueueException(QueueErrorCode.REDIS_CONNECTION_ERROR);
+                });
     }
 
-    public Mono<QueueEnterResponse> queueEntrance(UUID userId, UUID auctionId) {
-        tokenProvider.generateToken(userId, auctionId);
-        return null;
+    public Mono<QueueEnterResponse> queueEntrance(UUID userId, UUID auctionId, ServerRequest request) {
+        String token = request.headers().firstHeader("ACTIVE_TOKEN");
+        if (tokenProvider.validateToken(token, userId, auctionId))
+            return Mono.just(QueueEnterResponse.builder()
+                    .auctionId(auctionId)
+                    .userId(userId)
+                    .rank(0L)
+                    .retryAfter(0)
+                    .message("입장 성공")
+                    .build());
+
+        return redisRepository.enterQueue(userId, auctionId);
     }
 }

@@ -17,6 +17,8 @@ import reactor.core.scheduler.Schedulers;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAmount;
 import java.util.Map;
 import java.util.UUID;
 
@@ -46,28 +48,16 @@ public class RedisRepositoryImpl implements RedisRepository {
     }
 
     @Override
-    public Mono<QueueCreateResponse> createQueueConfig(QueueCreateRequest request) {
-        QueueConfigModel queueConfig = request.toModel();
-        String key = "queue:auction:" + request.auctionId() + ":config";
-        Map<String, Object> configMap = queueConfig.toMap();
+    public Mono<Boolean> saveConfig(String configKey, QueueConfigModel model) {
+        Map<String, String> configMap = model.toMap();
 
         return redisOps.opsForHash()
-                .putAll(key, configMap)
-                .flatMap(isSuccess -> {
-                    if (!isSuccess) {
-                        return Mono.error(new QueueException(QueueErrorCode.REDIS_SAVE_FAILED));
-                    }
-                    return redisOps.expireAt(key, request.closeAt().plusDays(1L).toInstant(ZoneOffset.UTC));
-                })
-                .filter(isExpireSuccess -> isExpireSuccess)
-                .switchIfEmpty(Mono.error(new QueueException(QueueErrorCode.REDIS_EXPIRE_SET_FAILED)))
-                .map(flag -> queueConfig.toCreateResponse())
-                .onErrorMap(e -> {
-                    if (e instanceof QueueException)
-                        return e;
+                .putAll(configKey, configMap);
+    }
 
-                    return new QueueException(QueueErrorCode.REDIS_CONNECTION_ERROR);
-                });
+    @Override
+    public Mono<Boolean> setConfigExpiration(String key, Instant expireAt) {
+        return redisOps.expireAt(key, expireAt);
     }
 
     @Override

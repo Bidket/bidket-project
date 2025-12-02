@@ -1,10 +1,12 @@
 package com.bidket.queue.domain.repository;
 
+import com.bidket.queue.domain.model.QueueConfigModel;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
 import com.bidket.queue.presentation.dto.response.QueueEnterResponse;
 import reactor.core.publisher.Mono;
 
+import java.time.Instant;
 import java.util.UUID;
 
 public interface RedisRepository {
@@ -14,7 +16,8 @@ public interface RedisRepository {
 
     Mono<Boolean> deleteValue(String key);
 
-    Mono<QueueCreateResponse> createQueueConfig(QueueCreateRequest request);
+    Mono<Boolean> saveConfig(String configKey, QueueConfigModel model);
+    Mono<Boolean> setConfigExpiration(String configKey, Instant expireAt);
 
     Mono<QueueEnterResponse> enterQueue(UUID userId, UUID auctionId);
 }

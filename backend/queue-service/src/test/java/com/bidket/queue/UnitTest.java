@@ -1,5 +1,6 @@
 package com.bidket.queue;
 
+import com.bidket.queue.application.service.QueueService;
 import com.bidket.queue.domain.exception.QueueException;
 import com.bidket.queue.domain.model.QueueErrorCode;
 import com.bidket.queue.infrastructure.redis.RedisRepositoryImpl;
@@ -18,6 +19,7 @@ import reactor.test.StepVerifier;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -28,6 +30,8 @@ import static org.mockito.Mockito.when;
 public class UnitTest {
     @InjectMocks
     private RedisRepositoryImpl redisRepository;
+    @InjectMocks
+    private QueueService queueService;
 
     @Mock
     private ReactiveRedisOperations<String, Object> redisOps;
@@ -43,8 +47,8 @@ public class UnitTest {
                 .auctionId(UUID.randomUUID())
                 .maxActive(100L)
                 .permitsPerSec(1)
-                .openAt(LocalDateTime.now())
-                .closeAt(LocalDateTime.now().plusHours(5L))
+                .openAt(Instant.now())
+                .closeAt(Instant.now().plus(1, ChronoUnit.DAYS))
                 .build();
 
         doReturn(hashOps).when(redisOps).opsForHash();
@@ -55,7 +59,7 @@ public class UnitTest {
                 .thenReturn(Mono.just(true));
 
         // when
-        Mono<QueueCreateResponse> response = redisRepository.createQueueConfig(request);
+        Mono<QueueCreateResponse> response = queueService.createConfigQueue(request);
 
         StepVerifier.create(response)
                 .expectNextMatches(result ->
@@ -73,8 +77,8 @@ public class UnitTest {
                 .auctionId(UUID.randomUUID())
                 .maxActive(100L)
                 .permitsPerSec(1)
-                .openAt(LocalDateTime.now())
-                .closeAt(LocalDateTime.now().plusHours(5L))
+                .openAt(Instant.now())
+                .closeAt(Instant.now().plus(1, ChronoUnit.DAYS))
                 .build();
 
         doReturn(hashOps).when(redisOps).opsForHash();
@@ -82,7 +86,7 @@ public class UnitTest {
         when(hashOps.putAll(any(String.class), any()))
                 .thenReturn(Mono.just(false));
 
-        Mono<QueueCreateResponse> response = redisRepository.createQueueConfig(request);
+        Mono<QueueCreateResponse> response = queueService.createConfigQueue(request);
 
         StepVerifier.create(response)
                 .expectErrorMatches(throwable ->
@@ -100,8 +104,8 @@ public class UnitTest {
                 .auctionId(UUID.randomUUID())
                 .maxActive(100L)
                 .permitsPerSec(1)
-                .openAt(LocalDateTime.now())
-                .closeAt(LocalDateTime.now().plusHours(5L))
+                .openAt(Instant.now())
+                .closeAt(Instant.now().plus(1, ChronoUnit.DAYS))
                 .build();
 
         doReturn(hashOps).when(redisOps).opsForHash();
@@ -111,7 +115,7 @@ public class UnitTest {
         when(redisOps.expireAt(any(String.class), any()))
                 .thenReturn(Mono.just(false));
 
-        Mono<QueueCreateResponse> response = redisRepository.createQueueConfig(request);
+        Mono<QueueCreateResponse> response = queueService.createConfigQueue(request);
 
         StepVerifier.create(response)
                 .expectErrorMatches(throwable ->
@@ -119,5 +123,11 @@ public class UnitTest {
                                 ((QueueException) throwable).getErrorCode() == QueueErrorCode.REDIS_EXPIRE_SET_FAILED
                 )
                 .verify();
+    }
+
+    @Test
+    @DisplayName("성공: 대기열 입장 성공")
+    void enterQueue_Enter_Success() {
+
     }
 }
