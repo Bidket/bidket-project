@@ -12,11 +12,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @SpringBootTest
+@ActiveProfiles("test")
 public class IntegralTest {
 
     private static final Logger log = LoggerFactory.getLogger(IntegralTest.class);

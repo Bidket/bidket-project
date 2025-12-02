@@ -2,7 +2,7 @@ package com.bidket.queue;
 
 import com.bidket.queue.domain.exception.QueueException;
 import com.bidket.queue.domain.model.QueueErrorCode;
-import com.bidket.queue.domain.repository.RedisRepositoryImpl;
+import com.bidket.queue.infrastructure.redis.RedisRepositoryImpl;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
 import org.junit.jupiter.api.DisplayName;

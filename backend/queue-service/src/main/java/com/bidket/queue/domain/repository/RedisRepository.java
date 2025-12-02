@@ -1,4 +1,4 @@
-package com.bidket.queue.infrastructure.redis;
+package com.bidket.queue.domain.repository;
 
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;

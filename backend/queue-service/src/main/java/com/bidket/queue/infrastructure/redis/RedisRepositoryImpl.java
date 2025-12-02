@@ -1,9 +1,9 @@
-package com.bidket.queue.domain.repository;
+package com.bidket.queue.infrastructure.redis;
 
 import com.bidket.queue.domain.exception.QueueException;
 import com.bidket.queue.domain.model.QueueConfigModel;
 import com.bidket.queue.domain.model.QueueErrorCode;
-import com.bidket.queue.infrastructure.redis.RedisRepository;
+import com.bidket.queue.domain.repository.RedisRepository;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;

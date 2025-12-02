@@ -1,6 +1,6 @@
 package com.bidket.queue.application.service;
 
-import com.bidket.queue.infrastructure.redis.RedisRepository;
+import com.bidket.queue.domain.repository.RedisRepository;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
 import lombok.RequiredArgsConstructor;
