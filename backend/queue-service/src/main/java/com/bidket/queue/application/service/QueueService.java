@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import reactor.core.publisher.Mono;
 
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
@@ -48,17 +49,36 @@ public class QueueService {
                 });
     }
 
-    public Mono<QueueEnterResponse> queueEntrance(UUID userId, UUID auctionId, ServerRequest request) {
-        String token = request.headers().firstHeader("ACTIVE_TOKEN");
-        if (tokenProvider.validateToken(token, userId, auctionId))
-            return Mono.just(QueueEnterResponse.builder()
-                    .auctionId(auctionId)
-                    .userId(userId)
-                    .rank(0L)
-                    .retryAfter(0)
-                    .message("입장 성공")
-                    .build());
+    public Mono<QueueEnterResponse> enterQueue(UUID userId, UUID auctionId, ServerRequest request) {
+        String configKey = "queue:auction:" + auctionId + ":config";
+        String activeKey = "queue:auction:" + auctionId + ":active";
+        String waitingKey = "queue:auction:" + auctionId + ":waiting";
 
-        return redisRepository.enterQueue(userId, auctionId);
+        return redisRepository.getConfig(configKey)
+                .switchIfEmpty(Mono.error(new QueueException(QueueErrorCode.CONFIG_NOT_FOUND)))
+                .flatMap(config -> {
+                    config.checkOpenStatus(Instant.now());
+                    return redisRepository.addActiveUser(activeKey, config.getMaxActive(), userId)
+                            .flatMap(isActive -> {
+                                if(!isActive)
+                                    return redisRepository.addWaitingUser(waitingKey, userId)
+                                            .flatMap(isWaiting -> redisRepository.getRank(waitingKey, userId))
+                                            .map(rank -> QueueEnterResponse.builder()
+                                                    .auctionId(auctionId)
+                                                    .userId(userId)
+                                                    .rank(rank)
+                                                    .retryAfter(3)
+                                                    .message("대기 중")
+                                                    .build());
+
+                                return Mono.just(QueueEnterResponse.builder()
+                                        .auctionId(auctionId)
+                                        .userId(userId)
+                                        .rank(0L)
+                                        .retryAfter(0)
+                                        .message("입장 성공")
+                                        .build());
+                            });
+                });
     }
 }

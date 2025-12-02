@@ -10,9 +10,17 @@ import java.util.UUID;
 public interface RedisRepository {
     Mono<Boolean> saveConfig(String configKey, QueueConfigModel model);
 
+    Mono<QueueConfigModel> getConfig(String configKey);
+
     Mono<Boolean> setConfigExpiration(String configKey, Instant expireAt);
 
     Mono<Boolean> deleteConfig(String configKey);
 
     Mono<QueueEnterResponse> enterQueue(UUID userId, UUID auctionId);
+
+    Mono<Boolean> addActiveUser(String activeKey, Long maxUser, UUID userId);
+
+    Mono<Boolean> addWaitingUser(String waitingKey, UUID userId);
+
+    Mono<Long> getRank(String waitingKey, UUID userId);
 }

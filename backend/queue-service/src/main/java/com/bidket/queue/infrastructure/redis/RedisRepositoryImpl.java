@@ -37,6 +37,15 @@ public class RedisRepositoryImpl implements RedisRepository {
     }
 
     @Override
+    public Mono<QueueConfigModel> getConfig(String configKey) {
+        return redisOps.opsForHash()
+                .entries(configKey)
+                .collectMap(Map.Entry::getKey, Map.Entry::getValue)
+                .filter(map -> !map.isEmpty())
+                .map(map -> objectMapper.convertValue(map, QueueConfigModel.class));
+    }
+
+    @Override
     public Mono<Boolean> setConfigExpiration(String key, Instant expireAt) {
         return redisOps.expireAt(key, expireAt);
     }
@@ -94,5 +103,28 @@ public class RedisRepositoryImpl implements RedisRepository {
                                 }
                             });
                 });
+    }
+
+    @Override
+    public Mono<Boolean> addActiveUser(String activeKey, Long maxActive, UUID userId) {
+        long now = System.currentTimeMillis();
+        return redisOps.opsForZSet().size(activeKey)
+                .flatMap(currentSize -> {
+                    if(currentSize < maxActive)
+                        return redisOps.opsForZSet().add(activeKey, userId, now);
+
+                    return Mono.just(false);
+                });
+    }
+
+    @Override
+    public Mono<Boolean> addWaitingUser(String waitingKey, UUID userId) {
+        long now = System.currentTimeMillis();
+        return redisOps.opsForZSet().add(waitingKey, userId, now);
+    }
+
+    @Override
+    public Mono<Long> getRank(String waitingKey, UUID userId) {
+        return redisOps.opsForZSet().rank(waitingKey, userId);
     }
 }
