@@ -11,6 +11,7 @@ import com.bidket.queue.presentation.dto.response.QueueEnterResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.server.ServerRequest;
+import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
@@ -49,18 +50,19 @@ public class QueueService {
                 });
     }
 
-    public Mono<QueueEnterResponse> enterQueue(UUID userId, UUID auctionId, ServerRequest request) {
+    public Mono<QueueEnterResponse> enterQueue(UUID userId, UUID auctionId) {
         String configKey = "queue:auction:" + auctionId + ":config";
-        String activeKey = "queue:auction:" + auctionId + ":active";
-        String waitingKey = "queue:auction:" + auctionId + ":waiting";
+        String token = tokenProvider.generateToken(userId, auctionId);
 
         return redisRepository.getConfig(configKey)
                 .switchIfEmpty(Mono.error(new QueueException(QueueErrorCode.CONFIG_NOT_FOUND)))
                 .flatMap(config -> {
                     config.checkOpenStatus(Instant.now());
+                    String activeKey = "queue:auction:" + auctionId + ":active";
                     return redisRepository.addActiveUser(activeKey, config.getMaxActive(), userId)
                             .flatMap(isActive -> {
-                                if(!isActive)
+                                if(!isActive) {
+                                    String waitingKey = "queue:auction:" + auctionId + ":waiting";
                                     return redisRepository.addWaitingUser(waitingKey, userId)
                                             .flatMap(isWaiting -> redisRepository.getRank(waitingKey, userId))
                                             .map(rank -> QueueEnterResponse.builder()
@@ -70,6 +72,7 @@ public class QueueService {
                                                     .retryAfter(3)
                                                     .message("대기 중")
                                                     .build());
+                                }
 
                                 return Mono.just(QueueEnterResponse.builder()
                                         .auctionId(auctionId)

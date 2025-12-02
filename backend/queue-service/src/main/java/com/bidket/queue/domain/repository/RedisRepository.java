@@ -16,8 +16,6 @@ public interface RedisRepository {
 
     Mono<Boolean> deleteConfig(String configKey);
 
-    Mono<QueueEnterResponse> enterQueue(UUID userId, UUID auctionId);
-
     Mono<Boolean> addActiveUser(String activeKey, Long maxUser, UUID userId);
 
     Mono<Boolean> addWaitingUser(String waitingKey, UUID userId);

@@ -57,55 +57,6 @@ public class RedisRepositoryImpl implements RedisRepository {
     }
 
     @Override
-    public Mono<QueueEnterResponse> enterQueue(UUID userId, UUID auctionId) {
-        String configKey = "queue:auction:" + auctionId + ":config";
-        String activeKey = "queue:auction:" + auctionId + ":active";
-        String waitingKey = "queue:auction:" + auctionId + ":waiting";
-
-        long now = System.currentTimeMillis();
-
-        return redisOps.opsForValue().get(configKey)
-                .switchIfEmpty(Mono.error(new QueueException(QueueErrorCode.CONFIG_NOT_FOUND)))
-                .flatMap(configJson -> {
-                    return Mono.fromCallable(() -> objectMapper.readValue((JsonParser) configJson, QueueConfigModel.class))
-                            .subscribeOn(Schedulers.boundedElastic())
-                            .onErrorMap(e -> new QueueException(QueueErrorCode.AUCTION_CLOSED));
-                })
-                .flatMap(config -> {
-                    config.checkOpenStatus(Instant.now());
-
-                    return redisOps.opsForZSet().size(activeKey)
-                            .flatMap(currentSize -> {
-                                if (currentSize < config.getMaxActive()) {
-                                    return redisOps.opsForZSet().add(activeKey, userId, now)
-                                            .map(isSuccess -> {
-                                                return QueueEnterResponse.builder()
-                                                        .auctionId(auctionId)
-                                                        .userId(userId)
-                                                        .rank(0L)
-                                                        .retryAfter(0)
-                                                        .message("입장 성공")
-                                                        .build();
-                                            });
-                                } else {
-                                    return redisOps.opsForZSet().add(waitingKey, userId, now)
-                                            .flatMap(isSuccess -> redisOps.opsForZSet().rank(waitingKey, userId))
-                                            .map(rank -> {
-                                                return QueueEnterResponse.builder()
-                                                        .auctionId(auctionId)
-                                                        .userId(userId)
-                                                        .rank(rank)
-                                                        .retryAfter(3)
-                                                        .message("대기 중")
-                                                        .build();
-                                            });
-
-                                }
-                            });
-                });
-    }
-
-    @Override
     public Mono<Boolean> addActiveUser(String activeKey, Long maxActive, UUID userId) {
         long now = System.currentTimeMillis();
         return redisOps.opsForZSet().size(activeKey)
