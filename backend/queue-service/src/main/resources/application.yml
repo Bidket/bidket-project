@@ -31,4 +31,4 @@ eureka:
 
 jwt:
   secret: ${JWT_SECRET}
-  expire: ${JWT_EXPIRED_AT}
+  expiration: ${JWT_EXPIRATION}
