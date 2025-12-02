@@ -14,7 +14,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @SpringBootTest
@@ -33,8 +35,8 @@ public class IntegralTest {
                 .auctionId(UUID.randomUUID())
                 .maxActive(100L)
                 .permitsPerSec(1)
-                .openAt(LocalDateTime.now())
-                .closeAt(LocalDateTime.now().plusHours(5L))
+                .openAt(Instant.now())
+                .closeAt(Instant.now().plus(2, ChronoUnit.HOURS))
                 .build();
 
         ResponseEntity<ApiResponse<QueueCreateResponse>> response = queueController.createQueueConfig(request).block();

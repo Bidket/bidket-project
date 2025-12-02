@@ -2,10 +2,12 @@ package com.bidket.queue;
 
 import com.bidket.queue.application.service.QueueService;
 import com.bidket.queue.domain.exception.QueueException;
+import com.bidket.queue.domain.model.QueueConfigModel;
 import com.bidket.queue.domain.model.QueueErrorCode;
 import com.bidket.queue.infrastructure.redis.RedisRepositoryImpl;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
+import com.bidket.queue.presentation.dto.response.QueueEnterResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,7 +20,6 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
@@ -29,9 +30,10 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 public class UnitTest {
     @InjectMocks
-    private RedisRepositoryImpl redisRepository;
-    @InjectMocks
     private QueueService queueService;
+
+    @Mock
+    private RedisRepositoryImpl redisRepository;
 
     @Mock
     private ReactiveRedisOperations<String, Object> redisOps;
@@ -91,7 +93,7 @@ public class UnitTest {
         StepVerifier.create(response)
                 .expectErrorMatches(throwable ->
                         throwable instanceof QueueException &&
-                        ((QueueException) throwable).getErrorCode() == QueueErrorCode.REDIS_SAVE_FAILED
+                                ((QueueException) throwable).getErrorCode() == QueueErrorCode.REDIS_SAVE_FAILED
                 )
                 .verify();
     }
@@ -128,6 +130,33 @@ public class UnitTest {
     @Test
     @DisplayName("성공: 대기열 입장 성공")
     void enterQueue_Enter_Success() {
+        // given
+        UUID userId = UUID.randomUUID();
+        UUID auctionId = UUID.randomUUID();
+        String configKey = "configKey";
+        QueueConfigModel queueConfig = QueueConfigModel.builder()
+                .auctionId(auctionId)
+                .openAt(Instant.now())
+                .closeAt(Instant.now().plus(1, ChronoUnit.DAYS))
+                .permitsPerSec(5)
+                .maxActive(1000L)
+                .build();
 
+        when(redisRepository.getConfig(any(String.class)))
+                .thenReturn(Mono.just(queueConfig));
+        when(redisRepository.addWaitingUser(any(String.class), any()))
+                .thenReturn(Mono.just(true));
+        when(redisRepository.getRank(any(String.class), any()))
+                .thenReturn(Mono.just(100L));
+
+        Mono<QueueEnterResponse> response = queueService.enterQueue(userId, auctionId);
+
+        StepVerifier.create(response)
+                .expectNextMatches(result ->
+                        result.token() == null &&
+                                result.rank() == 100L &&
+                                result.userId() == userId
+                )
+                .verifyComplete();
     }
 }
