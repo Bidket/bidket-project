@@ -27,13 +27,19 @@ public class QueueService {
         QueueConfigModel queueConfig = request.toModel();
         return redisRepository.saveConfig(key, queueConfig)
                 .flatMap(isSuccess -> {
-                    if (isSuccess)
-                        return redisRepository.setConfigExpiration(key, request.closeAt().plus(1, ChronoUnit.DAYS));
-                    return Mono.error(new QueueException(QueueErrorCode.REDIS_SAVE_FAILED));
+                    if (!isSuccess)
+                        return Mono.error(new QueueException(QueueErrorCode.REDIS_SAVE_FAILED));
+
+                    return redisRepository.setConfigExpiration(key, request.closeAt().plus(1, ChronoUnit.DAYS));
                 })
-                .filter(isSuccess -> isSuccess)
-                .switchIfEmpty(Mono.error(new QueueException(QueueErrorCode.REDIS_EXPIRE_SET_FAILED)))
-                .map(aa -> queueConfig.toCreateResponse())
+                .onErrorResume(e -> {
+                    if(e instanceof QueueException)
+                        return Mono.error(e);
+
+                    return redisRepository.deleteConfig(key)
+                            .then(Mono.error(new QueueException(QueueErrorCode.REDIS_EXPIRE_SET_FAILED)));
+                })
+                .map(isExpireSetSuccess -> queueConfig.toCreateResponse())
                 .onErrorMap(e -> {
                     if (e instanceof QueueException)
                         return e;

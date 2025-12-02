@@ -29,25 +29,6 @@ public class RedisRepositoryImpl implements RedisRepository {
     private final ObjectMapper objectMapper;
 
     @Override
-    public Mono<Object> getValue(String key) {
-        return redisOps.opsForValue()
-                .get(key)
-                .map(String::valueOf);
-    }
-
-    @Override
-    public Mono<Boolean> setValue(String key, Object value) {
-        return redisOps.opsForValue()
-                .set(key, value);
-    }
-
-    @Override
-    public Mono<Boolean> deleteValue(String key) {
-        return redisOps.opsForValue()
-                .delete(key);
-    }
-
-    @Override
     public Mono<Boolean> saveConfig(String configKey, QueueConfigModel model) {
         Map<String, String> configMap = model.toMap();
 
@@ -58,6 +39,12 @@ public class RedisRepositoryImpl implements RedisRepository {
     @Override
     public Mono<Boolean> setConfigExpiration(String key, Instant expireAt) {
         return redisOps.expireAt(key, expireAt);
+    }
+
+    @Override
+    public Mono<Boolean> deleteConfig(String configKey) {
+        return redisOps.opsForHash()
+                .delete(configKey);
     }
 
     @Override
