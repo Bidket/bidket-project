@@ -117,11 +117,17 @@ services:
     environment:
       POSTGRES_USER: bidket
       POSTGRES_PASSWORD: bidket
-      POSTGRES_DB: bidket_user
+      POSTGRES_DB: postgres
     ports:
       - "5432:5432"
     volumes:
       - ./docker/init:/docker-entrypoint-initdb.d
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bidket -d bidket_auction"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     networks:
       - bidket-net
 
@@ -165,6 +171,7 @@ services:
 
 volumes:
   redis-data:
+  postgres-data:
 
 networks:
   bidket-net:
