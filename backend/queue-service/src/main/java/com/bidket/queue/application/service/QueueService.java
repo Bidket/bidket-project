@@ -64,6 +64,7 @@ public class QueueService {
                 .switchIfEmpty(Mono.error(new QueueException(QueueErrorCode.CONFIG_NOT_FOUND)))
                 .flatMap(config -> {
                     config.checkOpenStatus(Instant.now());
+                    log.info("사용자[{}]: 대기열 입장[{}]", userId, waitingKey);
                     return redisRepository.addWaitingUser(waitingKey, userId);
                 })
                 .flatMap(isAdded -> redisRepository.getRank(waitingKey, userId))
