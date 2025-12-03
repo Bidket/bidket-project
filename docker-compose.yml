@@ -77,6 +77,25 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - EUREKA_SERVER_URL=http://eureka-server:8761/eureka
+      # Postgresql
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+
+      # Eureka & Gateway
+      - EUREKA_SERVER_URL=${EUREKA_SERVER_URL}
+      - EUREKA_PORT=8761
+      - GATEWAY_PORT=8000
+
+      # DB
+      - USER_DB=bidket_user
+      - QUEUE_DB=${QUEUE_DB}
+      - ORDER_DB=bidket_order
+      - NOTIFICATION_DB=bidket_notification
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRED_AT=${JWT_EXPIRED_AT}
+
     networks:
       - bidket-net
 
