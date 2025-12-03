@@ -61,7 +61,7 @@ public class RedisRepositoryImpl implements RedisRepository {
     public Flux<UUID> getAllActiveAuctions() {
         return redisOps.opsForSet()
                 .members(GLOBAL_ACTIVE_AUCTIONS_KEY)
-                .cast(UUID.class);
+                .map(uuid -> UUID.fromString((String) uuid));
     }
 
     public Mono<Long> removeActiveAuction(UUID auctionId) {
