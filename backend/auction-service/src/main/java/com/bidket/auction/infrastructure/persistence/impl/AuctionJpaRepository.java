@@ -24,6 +24,6 @@ public interface AuctionJpaRepository extends JpaRepository<Auction, UUID> {
     List<Auction> findPendingAuctionsStartingBefore(@Param("dateTime") LocalDateTime dateTime);
 
     @Modifying
-    @Query("UPDATE Auction a SET a.stats.viewCount = :viewCount WHERE a.id = :auctionId")
+    @Query(value = "UPDATE auction SET view_count = :viewCount WHERE id = :auctionId", nativeQuery = true)
     int updateViewCount(@Param("auctionId") UUID auctionId, @Param("viewCount") Integer viewCount);
 }
