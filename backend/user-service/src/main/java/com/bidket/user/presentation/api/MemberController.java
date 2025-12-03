@@ -2,15 +2,18 @@ package com.bidket.user.presentation.api;
 
 import com.bidket.common.presentation.response.ApiResponse;
 import com.bidket.user.application.service.LoginService;
+import com.bidket.user.application.service.MyInfoService;
 import com.bidket.user.application.service.SignupService;
 import com.bidket.user.presentation.dto.request.LoginRequest;
 import com.bidket.user.presentation.dto.request.SignupRequest;
 import com.bidket.user.presentation.dto.response.LoginResponse;
+import com.bidket.user.presentation.dto.response.MyInfoResponse;
 import com.bidket.user.presentation.dto.response.SignupResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,6 +31,7 @@ public class MemberController {
 
     private final SignupService signupService;
     private final LoginService loginService;
+    private final MyInfoService myInfoService;
 
     /**
      * 회원가입 API
@@ -58,6 +62,22 @@ public class MemberController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.success("로그인에 성공했습니다.", response));
+    }
+
+    /**
+     * 내 정보 조회 API
+     * 
+     * 현재 로그인한 사용자의 정보를 조회
+     * Authorization 헤더에 Bearer JWT 토큰이 필요
+     * 
+     * @return 내 정보 응답 (memberId, loginId, email, nickname, role, createdAt, status)
+     */
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<MyInfoResponse>> getMyInfo() {
+        MyInfoResponse response = myInfoService.getMyInfo();
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success("내 정보 조회에 성공했습니다.", response));
     }
 }
 
