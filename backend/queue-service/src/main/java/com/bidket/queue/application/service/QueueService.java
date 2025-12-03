@@ -4,10 +4,12 @@ import com.bidket.queue.domain.exception.QueueException;
 import com.bidket.queue.domain.jwt.TokenProvider;
 import com.bidket.queue.domain.model.QueueConfigModel;
 import com.bidket.queue.domain.model.QueueErrorCode;
+import com.bidket.queue.domain.model.QueueStatus;
 import com.bidket.queue.domain.repository.RedisRepository;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
 import com.bidket.queue.presentation.dto.response.QueueEnterResponse;
+import com.bidket.queue.presentation.dto.response.QueueStatusResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -76,5 +78,34 @@ public class QueueService {
                             .retryAfter(3)
                             .message("대기 중")
                             .build());
+    }
+
+    public Mono<QueueStatusResponse> getQueueStatus(UUID userId, UUID auctionId) {
+        String tokenKey = "queue:token:" + auctionId;
+        String waitingKey = "queue:auction:" + auctionId + ":waiting";
+
+        return redisRepository.getToken(tokenKey, userId)
+                .flatMap(token ->
+                    Mono.just(QueueStatusResponse.builder()
+                            .auctionId(auctionId)
+                            .userId(userId)
+                            .status(QueueStatus.ACTIVE)
+                            .rank(0L)
+                            .retryAfter(3)
+                            .token(token)
+                            .message("입장이 가능합니다. 입찰 페이지로 이동합니다.")
+                            .build())
+                )
+                .switchIfEmpty(redisRepository.getRank(waitingKey, userId)
+                        .map(rank -> QueueStatusResponse.builder()
+                                .auctionId(auctionId)
+                                .userId(userId)
+                                .status(QueueStatus.WAITING)
+                                .rank(rank)
+                                .retryAfter(0)
+                                .token(null)
+                                .message("현재 대기 인원 " + rank + "명 남았습니다.")
+                                .build())
+                );
     }
 }

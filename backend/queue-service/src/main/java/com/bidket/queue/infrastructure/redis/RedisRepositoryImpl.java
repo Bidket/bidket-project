@@ -53,17 +53,20 @@ public class RedisRepositoryImpl implements RedisRepository {
                 .delete(configKey);
     }
 
+    @Override
     public Mono<Long> registerActiveAuction(UUID auctionId) {
         return redisOps.opsForSet()
                 .add(GLOBAL_ACTIVE_AUCTIONS_KEY, auctionId);
     }
 
+    @Override
     public Flux<UUID> getAllActiveAuctions() {
         return redisOps.opsForSet()
                 .members(GLOBAL_ACTIVE_AUCTIONS_KEY)
                 .map(uuid -> UUID.fromString((String) uuid));
     }
 
+    @Override
     public Mono<Long> removeActiveAuction(UUID auctionId) {
         return redisOps.opsForSet()
                 .remove(GLOBAL_ACTIVE_AUCTIONS_KEY, auctionId);
@@ -81,6 +84,7 @@ public class RedisRepositoryImpl implements RedisRepository {
                 });
     }
 
+    @Override
     public Mono<Long> addAllActiveUser(String activeKey, List<UUID> userIds) {
         if (userIds.isEmpty())
             return Mono.just(0L);
@@ -95,6 +99,7 @@ public class RedisRepositoryImpl implements RedisRepository {
                 .addAll(activeKey, tuples);
     }
 
+    @Override
     public Mono<Long> activeUserCount(String activeKey) {
         return redisOps.opsForZSet().size(activeKey);
     }
@@ -106,6 +111,7 @@ public class RedisRepositoryImpl implements RedisRepository {
         return redisOps.opsForZSet().add(waitingKey, userId, now);
     }
 
+    @Override
     public Mono<List<UUID>> popUserIdWaitingQueue(String waitingKey, long limit) {
         return redisOps.opsForZSet()
                 .popMin(waitingKey, limit)
@@ -123,5 +129,12 @@ public class RedisRepositoryImpl implements RedisRepository {
     public Mono<Boolean> saveToken(String tokenKey, Map<UUID, String> tokens) {
         return redisOps.opsForHash()
                 .putAll(tokenKey, tokens);
+    }
+
+    @Override
+    public Mono<String> getToken(String tokenKey, UUID userId) {
+        return redisOps.opsForHash()
+                .get(tokenKey, userId)
+                .map(String::valueOf);
     }
 }
