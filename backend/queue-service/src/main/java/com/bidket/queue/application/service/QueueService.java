@@ -41,12 +41,14 @@ public class QueueService {
                     return redisRepository.deleteConfig(key)
                             .then(Mono.error(new QueueException(QueueErrorCode.REDIS_EXPIRE_SET_FAILED)));
                 })
-                .map(isRegisterSuccess -> {
-                    if (isRegisterSuccess)
-                        redisRepository.registerActiveAuction(request.auctionId())
-                                .onErrorMap(e -> new QueueException(QueueErrorCode.AUCTION_REGISTER_FAIL));
+                .flatMap(isExpireSuccess -> {
+                    if (isExpireSuccess) {
+                        return redisRepository.registerActiveAuction(request.auctionId())
+                                .onErrorMap(e -> new QueueException(QueueErrorCode.AUCTION_REGISTER_FAIL))
+                                .map(addedCount -> queueConfig.toCreateResponse());
+                    }
 
-                    return queueConfig.toCreateResponse();
+                    return Mono.error(new QueueException(QueueErrorCode.REDIS_EXPIRE_SET_FAILED));
                 })
                 .onErrorMap(e -> {
                     if (e instanceof QueueException)

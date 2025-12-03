@@ -13,7 +13,6 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
-import java.util.Objects;
 import java.util.UUID;
 
 @RestController
@@ -31,17 +30,13 @@ public class QueueController {
     }
 
     @PostMapping("/queues/{auctionId}")
-    public Mono<ResponseEntity<ApiResponse<QueueEnterResponse>>> enterQueue(@PathVariable UUID auctionId, ServerRequest request) {
+    public Mono<ResponseEntity<ApiResponse<QueueEnterResponse>>> enterQueue(@PathVariable UUID auctionId) {
         // TODO userId 전달 방식 확립 이후 변경
         // UUID userId = UUID.fromString(Objects.requireNonNull(request.headers().firstHeader("USER-ID")));
         UUID userId = UUID.randomUUID();
         return queueService.enterQueue(userId, auctionId)
-                .map(response -> {
-                    ResponseEntity<ApiResponse<QueueEnterResponse>> responseEntity = ResponseEntity.ok(ApiResponse.success(response));
-                    if(response.token() != null)
-                        responseEntity.getHeaders().add("X-ACTIVE-TOKEN", response.token());
-
-                    return responseEntity;
-                });
+                .map(response ->
+                        ResponseEntity.ok(ApiResponse.success(response))
+                );
     }
 }

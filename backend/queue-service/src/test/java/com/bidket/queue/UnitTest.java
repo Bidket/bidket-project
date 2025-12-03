@@ -149,8 +149,10 @@ public class UnitTest {
         when(redisRepository.getRank(any(String.class), any()))
                 .thenReturn(Mono.just(100L));
 
+        // when
         Mono<QueueEnterResponse> response = queueService.enterQueue(userId, auctionId);
 
+        // then
         StepVerifier.create(response)
                 .expectNextMatches(result ->
                         result.token() == null &&

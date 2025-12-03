@@ -23,10 +23,10 @@ public class QueueConfigModel {
 
     public Map<String, String> toMap() {
         return Map.of("auctionId", auctionId.toString(),
-                "max_active", maxActive.toString(),
-                "permits_per_sec", permitsPerSec.toString(),
-                "open_at", openAt.toString(),
-                "close_at", closeAt.toString());
+                "maxActive", maxActive.toString(),
+                "permitsPerSec", permitsPerSec.toString(),
+                "openAt", openAt.toString(),
+                "closeAt", closeAt.toString());
     }
 
     public QueueCreateResponse toCreateResponse() {

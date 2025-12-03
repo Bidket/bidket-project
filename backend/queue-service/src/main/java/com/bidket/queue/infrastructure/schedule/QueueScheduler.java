@@ -22,13 +22,14 @@ public class QueueScheduler {
 
     @Scheduled(fixedDelay = 1000)
     public void entranceSchedule() {
+        log.info("스케줄링 시작");
         redisRepository.getAllActiveAuctions()
                 .parallel()
                 .runOn(Schedulers.boundedElastic())
                 .flatMap(this::processAuction)
                 .subscribe(
                         null,
-                        error -> log.error("대기열 입장 스케줄러 에러")
+                        e -> log.error("대기열 입장 스케줄러 에러", e)
                 );
     }
 
@@ -60,7 +61,7 @@ public class QueueScheduler {
                                                 });
 
                                                 log.info("경매[{}] {} 명 입장", auctionId, userIds.size());
-                                                return redisRepository.addAllActiveUser(waitingKey, userIds)
+                                                return redisRepository.addAllActiveUser(activeKey, userIds)
                                                         .flatMap(added -> {
                                                             String tokenKey = "queue:token:" + auctionId;
                                                             return redisRepository.saveToken(tokenKey, userTokens);
