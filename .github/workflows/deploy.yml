@@ -32,3 +32,4 @@ jobs:
         run: |
           ssh -i ~/.ssh/bidket.pem ubuntu@${{ secrets.EC2_HOST }} \
           "bash /opt/bidket/run.sh"
+# 배포 테스트용 임시 주석
