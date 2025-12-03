@@ -1,8 +1,11 @@
 package com.bidket.user.presentation.api;
 
 import com.bidket.common.presentation.response.ApiResponse;
+import com.bidket.user.application.service.LoginService;
 import com.bidket.user.application.service.SignupService;
+import com.bidket.user.presentation.dto.request.LoginRequest;
 import com.bidket.user.presentation.dto.request.SignupRequest;
+import com.bidket.user.presentation.dto.response.LoginResponse;
 import com.bidket.user.presentation.dto.response.SignupResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +27,7 @@ import java.net.URI;
 public class MemberController {
 
     private final SignupService signupService;
+    private final LoginService loginService;
 
     /**
      * 회원가입 API
@@ -38,6 +42,22 @@ public class MemberController {
                 .status(HttpStatus.CREATED)
                 .location(URI.create("/v1/members/" + response.memberId()))
                 .body(ApiResponse.success("회원가입이 완료되었습니다.", response));
+    }
+
+    /**
+     * 로그인 API
+     * 
+     * 아이디 + 비밀번호 로그인 → 블랙리스트(p_user_blacklist) active인 유저는 로그인 차단
+     * 
+     * @param request 로그인 요청 정보 (loginId, password)
+     * @return 로그인 응답 (accessToken, refreshToken, tokenType, expiresIn, memberId, loginId, nickname, name, email, role, status)
+     */
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody @Valid LoginRequest request) {
+        LoginResponse response = loginService.login(request);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success("로그인에 성공했습니다.", response));
     }
 }
 

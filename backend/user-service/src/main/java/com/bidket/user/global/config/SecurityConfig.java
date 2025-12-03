@@ -21,7 +21,7 @@ public class SecurityConfig {
      *
      * - CSRF 비활성화
      * - Stateless 세션 정책 (JWT 사용)
-     * - /v1/members/signup 엔드포인트는 인증 없이 접근 가능
+     * - /v1/members/signup, /v1/members/login 엔드포인트는 인증 없이 접근 가능
      * - 그 외 엔드포인트는 인증 필요
      */
     @Bean
@@ -30,7 +30,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/v1/members/signup").permitAll()
+                        .requestMatchers("/v1/members/signup", "/v1/members/login").permitAll()
                         .anyRequest().permitAll()  // TODO: 개발 단계 - 추후 인증 필요 엔드포인트로 변경
                 );
 
