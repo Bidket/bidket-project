@@ -9,15 +9,15 @@ import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
 import com.bidket.queue.presentation.dto.response.QueueEnterResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.server.ServerRequest;
-import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class QueueService {
@@ -32,7 +32,7 @@ public class QueueService {
                     if (!isSuccess)
                         return Mono.error(new QueueException(QueueErrorCode.REDIS_SAVE_FAILED));
 
-                    return redisRepository.setConfigExpiration(key, request.closeAt().plus(1, ChronoUnit.DAYS));
+                    return redisRepository.setExpiration(key, request.closeAt().plus(1, ChronoUnit.DAYS));
                 })
                 .onErrorResume(e -> {
                     if(e instanceof QueueException)
@@ -41,7 +41,13 @@ public class QueueService {
                     return redisRepository.deleteConfig(key)
                             .then(Mono.error(new QueueException(QueueErrorCode.REDIS_EXPIRE_SET_FAILED)));
                 })
-                .map(isExpireSetSuccess -> queueConfig.toCreateResponse())
+                .map(isRegisterSuccess -> {
+                    if (isRegisterSuccess)
+                        redisRepository.registerActiveAuction(request.auctionId())
+                                .onErrorMap(e -> new QueueException(QueueErrorCode.AUCTION_REGISTER_FAIL));
+
+                    return queueConfig.toCreateResponse();
+                })
                 .onErrorMap(e -> {
                     if (e instanceof QueueException)
                         return e;

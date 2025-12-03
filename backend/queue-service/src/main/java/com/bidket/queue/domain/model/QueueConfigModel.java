@@ -15,6 +15,7 @@ public class QueueConfigModel {
     private UUID auctionId;
     @Getter
     private Long maxActive;
+    @Getter
     private Integer permitsPerSec;
     private Instant openAt;
     @Getter

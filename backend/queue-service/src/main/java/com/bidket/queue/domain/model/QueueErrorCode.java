@@ -14,6 +14,7 @@ public enum QueueErrorCode implements BaseErrorCode {
 
     INVALID_TOKEN(HttpStatus.FORBIDDEN, "유효하지 않은 Active Token"),
     CONFIG_NOT_FOUND(HttpStatus.NOT_FOUND, "저장된 설정이 없습니다."),
+    AUCTION_REGISTER_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "경매 캐싱 등록 실패"),
 
     AUCTION_CLOSED(HttpStatus.FORBIDDEN, "이미 종료된 경매입니다."),
     AUCTION_NOT_OPENED(HttpStatus.FORBIDDEN, "경매 오픈 전입니다.");
