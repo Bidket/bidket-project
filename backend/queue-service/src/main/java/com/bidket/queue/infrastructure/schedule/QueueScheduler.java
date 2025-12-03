@@ -47,12 +47,12 @@ public class QueueScheduler {
                                     long limit = Math.min(availableSlots, config.getPermitsPerSec());
 
                                     if (limit <= 0)
-                                        return Mono.empty();
+                                        return Mono.just(0L);
 
                                     return redisRepository.popUserIdWaitingQueue(waitingKey, limit)
                                             .flatMap(userIds -> {
                                                 if (userIds.isEmpty())
-                                                    return Mono.empty();
+                                                    return Mono.just(0L);
 
                                                 Map<UUID, String> userTokens = new HashMap<>();
                                                 userIds.forEach(userId -> {
@@ -72,11 +72,11 @@ public class QueueScheduler {
 
                 )
                 .switchIfEmpty(Mono.defer(() -> {
-                    log.warn("경매[{}] 설정 만료", auctionId);
-                    log.debug("경매[{}] 관리 목록에서 제거", auctionId);
+                    log.warn("경매[{}] 설정 만료, 관리 목록에서 제거", auctionId);
 
-                    return redisRepository.removeActiveAuction(auctionId);
-                }).hasElement())
+                    return redisRepository.removeActiveAuction(auctionId)
+                            .then(Mono.empty());
+                }))
                 .then();
     }
 }
