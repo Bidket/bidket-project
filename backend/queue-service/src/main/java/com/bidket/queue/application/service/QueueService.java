@@ -22,7 +22,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class QueueService {
     private final RedisRepository redisRepository;
-    private final TokenProvider tokenProvider;
 
     public Mono<QueueCreateResponse> createConfigQueue(QueueCreateRequest request) {
         String key = "queue:auction:" + request.auctionId() + ":config";

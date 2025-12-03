@@ -53,12 +53,12 @@ public class UnitTest {
                 .closeAt(Instant.now().plus(1, ChronoUnit.DAYS))
                 .build();
 
-        doReturn(hashOps).when(redisOps).opsForHash();
-
-        when(hashOps.putAll(any(String.class), any()))
+        when(redisRepository.saveConfig(any(String.class), any(QueueConfigModel.class)))
                 .thenReturn(Mono.just(true));
-        when(redisOps.expireAt(any(String.class), any(Instant.class)))
+        when(redisRepository.setExpiration(any(String.class), any(Instant.class)))
                 .thenReturn(Mono.just(true));
+        when(redisRepository.registerActiveAuction(any(UUID.class)))
+                .thenReturn(Mono.just(1L));
 
         // when
         Mono<QueueCreateResponse> response = queueService.createConfigQueue(request);
@@ -83,10 +83,9 @@ public class UnitTest {
                 .closeAt(Instant.now().plus(1, ChronoUnit.DAYS))
                 .build();
 
-        doReturn(hashOps).when(redisOps).opsForHash();
-
-        when(hashOps.putAll(any(String.class), any()))
+        when(redisRepository.saveConfig(any(String.class), any(QueueConfigModel.class)))
                 .thenReturn(Mono.just(false));
+
 
         Mono<QueueCreateResponse> response = queueService.createConfigQueue(request);
 
@@ -110,11 +109,9 @@ public class UnitTest {
                 .closeAt(Instant.now().plus(1, ChronoUnit.DAYS))
                 .build();
 
-        doReturn(hashOps).when(redisOps).opsForHash();
-
-        when(hashOps.putAll(any(String.class), any()))
+        when(redisRepository.saveConfig(any(String.class), any(QueueConfigModel.class)))
                 .thenReturn(Mono.just(true));
-        when(redisOps.expireAt(any(String.class), any()))
+        when(redisRepository.setExpiration(any(String.class), any(Instant.class)))
                 .thenReturn(Mono.just(false));
 
         Mono<QueueCreateResponse> response = queueService.createConfigQueue(request);
