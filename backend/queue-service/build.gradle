@@ -20,4 +20,9 @@ dependencies {
     runtimeOnly 'org.postgresql:postgresql'
 
     implementation 'com.github.Bidket:bidket-common-repo:main-SNAPSHOT'
+
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    implementation 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    implementation 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+    runtimeOnly 'com.h2database:h2'
 }
