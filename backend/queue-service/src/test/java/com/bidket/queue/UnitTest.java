@@ -1,10 +1,13 @@
 package com.bidket.queue;
 
+import com.bidket.queue.application.service.QueueService;
 import com.bidket.queue.domain.exception.QueueException;
+import com.bidket.queue.domain.model.QueueConfigModel;
 import com.bidket.queue.domain.model.QueueErrorCode;
-import com.bidket.queue.domain.repository.RedisRepositoryImpl;
+import com.bidket.queue.infrastructure.redis.RedisRepositoryImpl;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
+import com.bidket.queue.presentation.dto.response.QueueEnterResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,7 +20,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -27,6 +30,9 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 public class UnitTest {
     @InjectMocks
+    private QueueService queueService;
+
+    @Mock
     private RedisRepositoryImpl redisRepository;
 
     @Mock
@@ -43,19 +49,19 @@ public class UnitTest {
                 .auctionId(UUID.randomUUID())
                 .maxActive(100L)
                 .permitsPerSec(1)
-                .openAt(LocalDateTime.now())
-                .closeAt(LocalDateTime.now().plusHours(5L))
+                .openAt(Instant.now())
+                .closeAt(Instant.now().plus(1, ChronoUnit.DAYS))
                 .build();
 
-        doReturn(hashOps).when(redisOps).opsForHash();
-
-        when(hashOps.putAll(any(String.class), any()))
+        when(redisRepository.saveConfig(any(String.class), any(QueueConfigModel.class)))
                 .thenReturn(Mono.just(true));
-        when(redisOps.expireAt(any(String.class), any(Instant.class)))
+        when(redisRepository.setExpiration(any(String.class), any(Instant.class)))
                 .thenReturn(Mono.just(true));
+        when(redisRepository.registerActiveAuction(any(UUID.class)))
+                .thenReturn(Mono.just(1L));
 
         // when
-        Mono<QueueCreateResponse> response = redisRepository.createQueueConfig(request);
+        Mono<QueueCreateResponse> response = queueService.createConfigQueue(request);
 
         StepVerifier.create(response)
                 .expectNextMatches(result ->
@@ -73,21 +79,20 @@ public class UnitTest {
                 .auctionId(UUID.randomUUID())
                 .maxActive(100L)
                 .permitsPerSec(1)
-                .openAt(LocalDateTime.now())
-                .closeAt(LocalDateTime.now().plusHours(5L))
+                .openAt(Instant.now())
+                .closeAt(Instant.now().plus(1, ChronoUnit.DAYS))
                 .build();
 
-        doReturn(hashOps).when(redisOps).opsForHash();
-
-        when(hashOps.putAll(any(String.class), any()))
+        when(redisRepository.saveConfig(any(String.class), any(QueueConfigModel.class)))
                 .thenReturn(Mono.just(false));
 
-        Mono<QueueCreateResponse> response = redisRepository.createQueueConfig(request);
+
+        Mono<QueueCreateResponse> response = queueService.createConfigQueue(request);
 
         StepVerifier.create(response)
                 .expectErrorMatches(throwable ->
                         throwable instanceof QueueException &&
-                        ((QueueException) throwable).getErrorCode() == QueueErrorCode.REDIS_SAVE_FAILED
+                                ((QueueException) throwable).getErrorCode() == QueueErrorCode.REDIS_SAVE_FAILED
                 )
                 .verify();
     }
@@ -100,18 +105,16 @@ public class UnitTest {
                 .auctionId(UUID.randomUUID())
                 .maxActive(100L)
                 .permitsPerSec(1)
-                .openAt(LocalDateTime.now())
-                .closeAt(LocalDateTime.now().plusHours(5L))
+                .openAt(Instant.now())
+                .closeAt(Instant.now().plus(1, ChronoUnit.DAYS))
                 .build();
 
-        doReturn(hashOps).when(redisOps).opsForHash();
-
-        when(hashOps.putAll(any(String.class), any()))
+        when(redisRepository.saveConfig(any(String.class), any(QueueConfigModel.class)))
                 .thenReturn(Mono.just(true));
-        when(redisOps.expireAt(any(String.class), any()))
+        when(redisRepository.setExpiration(any(String.class), any(Instant.class)))
                 .thenReturn(Mono.just(false));
 
-        Mono<QueueCreateResponse> response = redisRepository.createQueueConfig(request);
+        Mono<QueueCreateResponse> response = queueService.createConfigQueue(request);
 
         StepVerifier.create(response)
                 .expectErrorMatches(throwable ->
@@ -119,5 +122,40 @@ public class UnitTest {
                                 ((QueueException) throwable).getErrorCode() == QueueErrorCode.REDIS_EXPIRE_SET_FAILED
                 )
                 .verify();
+    }
+
+    @Test
+    @DisplayName("성공: 대기열 입장 성공")
+    void enterQueue_Enter_Success() {
+        // given
+        UUID userId = UUID.randomUUID();
+        UUID auctionId = UUID.randomUUID();
+        String configKey = "configKey";
+        QueueConfigModel queueConfig = QueueConfigModel.builder()
+                .auctionId(auctionId)
+                .openAt(Instant.now())
+                .closeAt(Instant.now().plus(1, ChronoUnit.DAYS))
+                .permitsPerSec(5)
+                .maxActive(1000L)
+                .build();
+
+        when(redisRepository.getConfig(any(String.class)))
+                .thenReturn(Mono.just(queueConfig));
+        when(redisRepository.addWaitingUser(any(String.class), any()))
+                .thenReturn(Mono.just(true));
+        when(redisRepository.getRank(any(String.class), any()))
+                .thenReturn(Mono.just(100L));
+
+        // when
+        Mono<QueueEnterResponse> response = queueService.enterQueue(userId, auctionId);
+
+        // then
+        StepVerifier.create(response)
+                .expectNextMatches(result ->
+                        result.token() == null &&
+                                result.rank() == 100L &&
+                                result.userId() == userId
+                )
+                .verifyComplete();
     }
 }
