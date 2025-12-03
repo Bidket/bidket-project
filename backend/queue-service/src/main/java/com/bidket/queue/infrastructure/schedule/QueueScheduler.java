@@ -1,5 +1,6 @@
 package com.bidket.queue.infrastructure.schedule;
 
+import com.bidket.queue.domain.jwt.TokenProvider;
 import com.bidket.queue.domain.repository.RedisRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +9,8 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -15,6 +18,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class QueueScheduler {
     private final RedisRepository redisRepository;
+    private final TokenProvider tokenProvider;
 
     @Scheduled(fixedDelay = 1000)
     public void entranceSchedule() {
@@ -45,13 +49,22 @@ public class QueueScheduler {
                                         return Mono.empty();
 
                                     return redisRepository.popUserIdWaitingQueue(waitingKey, limit)
-                                            .flatMap(users -> {
-                                                if (users.isEmpty())
+                                            .flatMap(userIds -> {
+                                                if (userIds.isEmpty())
                                                     return Mono.empty();
 
-                                                log.info("경매[{}] {} 명 입장", auctionId, users.size());
+                                                Map<UUID, String> userTokens = new HashMap<>();
+                                                userIds.forEach(userId -> {
+                                                    String token = tokenProvider.generateToken(userId, auctionId);
+                                                    userTokens.put(userId, token);
+                                                });
 
-                                                return redisRepository.addAllActiveUser(waitingKey, users);
+                                                log.info("경매[{}] {} 명 입장", auctionId, userIds.size());
+                                                return redisRepository.addAllActiveUser(waitingKey, userIds)
+                                                        .flatMap(added -> {
+                                                            String tokenKey = "queue:token:" + auctionId;
+                                                            return redisRepository.saveToken(tokenKey, userTokens);
+                                                        });
                                             });
 
                                 })
@@ -62,7 +75,7 @@ public class QueueScheduler {
                     log.debug("경매[{}] 관리 목록에서 제거", auctionId);
 
                     return redisRepository.removeActiveAuction(auctionId);
-                }))
+                }).hasElement())
                 .then();
     }
 }

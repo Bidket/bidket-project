@@ -118,4 +118,10 @@ public class RedisRepositoryImpl implements RedisRepository {
     public Mono<Long> getRank(String waitingKey, UUID userId) {
         return redisOps.opsForZSet().rank(waitingKey, userId);
     }
+
+    @Override
+    public Mono<Boolean> saveToken(String tokenKey, Map<UUID, String> tokens) {
+        return redisOps.opsForHash()
+                .putAll(tokenKey, tokens);
+    }
 }

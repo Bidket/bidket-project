@@ -6,6 +6,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public interface RedisRepository {
@@ -34,4 +35,6 @@ public interface RedisRepository {
     Mono<List<UUID>> popUserIdWaitingQueue(String waitingKey, long limit);
 
     Mono<Long> getRank(String waitingKey, UUID userId);
+
+    Mono<Boolean> saveToken(String tokenKey, Map<UUID, String> tokens);
 }
