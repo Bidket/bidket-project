@@ -34,13 +34,5 @@ public class AuctionStats {
                 .viewCount(this.viewCount)
                 .build();
     }
-
-    @Deprecated
-    public AuctionStats incrementViewCount() {
-        return AuctionStats.builder()
-                .totalBidsCount(this.totalBidsCount)
-                .viewCount(this.viewCount + 1)
-                .build();
-    }
 }
 
