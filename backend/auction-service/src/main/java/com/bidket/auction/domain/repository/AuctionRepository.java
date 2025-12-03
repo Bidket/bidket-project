@@ -25,4 +25,6 @@ public interface AuctionRepository {
     void delete(Auction auction);
 
     boolean existsById(UUID id);
+
+    int updateViewCount(UUID auctionId, Integer viewCount);
 }

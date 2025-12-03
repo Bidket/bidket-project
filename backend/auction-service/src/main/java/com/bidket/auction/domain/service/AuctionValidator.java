@@ -30,16 +30,16 @@ public class AuctionValidator {
             throw new IllegalStateException("PENDING 상태에서만 수정할 수 있습니다");
         }
 
-        if (LocalDateTime.now().isAfter(auction.getStartTime())) {
+        if (LocalDateTime.now().isAfter(auction.getPeriod().getStartTime())) {
             throw new IllegalStateException("시작 시간이 이미 지난 경매는 수정할 수 없습니다");
         }
 
-        LocalDateTime startTime = request.startTime() != null ? request.startTime() : auction.getStartTime();
-        LocalDateTime endTime = request.endTime() != null ? request.endTime() : auction.getEndTime();
+        LocalDateTime startTime = request.startTime() != null ? request.startTime() : auction.getPeriod().getStartTime();
+        LocalDateTime endTime = request.endTime() != null ? request.endTime() : auction.getPeriod().getEndTime();
         validateTimeRange(startTime, endTime);
 
         if (request.buyNowPrice() != null) {
-            validateBuyNowPrice(auction.getStartPrice(), request.buyNowPrice());
+            validateBuyNowPrice(auction.getPriceInfo().getStartPrice(), request.buyNowPrice());
         }
     }
 
@@ -52,7 +52,7 @@ public class AuctionValidator {
         }
 
         if (auction.getStatus() == AuctionStatus.ACTIVE) {
-            if (auction.getTotalBidsCount() > 0) {
+            if (auction.getStats().getTotalBidsCount() > 0) {
                 throw new IllegalStateException("입찰이 있는 경매는 취소할 수 없습니다");
             }
             return;

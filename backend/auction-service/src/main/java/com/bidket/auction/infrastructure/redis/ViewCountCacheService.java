@@ -1,10 +1,12 @@
 package com.bidket.auction.infrastructure.redis;
 
+import com.bidket.auction.domain.repository.AuctionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -21,6 +23,7 @@ import java.util.UUID;
 public class ViewCountCacheService {
 
     private final RedisTemplate<String, Object> redisTemplate;
+    private final AuctionRepository auctionRepository;
 
     private static final String VIEW_COUNT_KEY_PREFIX = "auction:view:";
     private static final String DIRTY_FLAG_KEY = "auction:view:dirty";
@@ -141,6 +144,7 @@ public class ViewCountCacheService {
         }
     }
 
+    @Transactional
     private int processBatchChunk(List<Object> chunkAuctionIds, String batchKey) {
         int syncedCount = 0;
 
@@ -152,12 +156,19 @@ public class ViewCountCacheService {
                 Object viewCountObj = redisTemplate.opsForValue().get(viewKey);
                 if (viewCountObj != null) {
                     Integer viewCount = Integer.valueOf(viewCountObj.toString());
+                    UUID auctionId = UUID.fromString(auctionIdStr);
 
-                    redisTemplate.opsForHash().put(batchKey, auctionIdStr, viewCount.toString());
-                    redisTemplate.opsForSet().remove(DIRTY_FLAG_KEY, auctionIdStr);
-
-                    syncedCount++;
-                    log.debug("조회수 배치 저장: auctionId={}, count={}", auctionIdStr, viewCount);
+                    int updatedCount = auctionRepository.updateViewCount(auctionId, viewCount);
+                    
+                    if (updatedCount > 0) {
+                        redisTemplate.opsForHash().put(batchKey, auctionIdStr, viewCount.toString());
+                        redisTemplate.opsForSet().remove(DIRTY_FLAG_KEY, auctionIdStr);
+                        
+                        syncedCount++;
+                        log.debug("조회수 DB 동기화 완료: auctionId={}, count={}", auctionIdStr, viewCount);
+                    } else {
+                        log.warn("조회수 DB 업데이트 실패 (경매 없음?): auctionId={}", auctionIdStr);
+                    }
                 }
             } catch (Exception e) {
                 log.error("조회수 동기화 실패: auctionId={}", auctionIdStr, e);

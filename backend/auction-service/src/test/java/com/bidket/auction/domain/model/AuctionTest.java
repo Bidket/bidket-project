@@ -41,11 +41,11 @@ class AuctionTest {
         assertThat(auction).isNotNull();
         assertThat(auction.getProductSizeId()).isEqualTo(productSizeId);
         assertThat(auction.getSellerId()).isEqualTo(sellerId);
-        assertThat(auction.getStartPrice()).isEqualTo(startPrice);
-        assertThat(auction.getCurrentPrice()).isEqualTo(startPrice); // 초기 currentPrice = startPrice
+        assertThat(auction.getPriceInfo().getStartPrice()).isEqualTo(startPrice);
+        assertThat(auction.getPriceInfo().getCurrentPrice()).isEqualTo(startPrice); // 초기 currentPrice = startPrice
         assertThat(auction.getStatus()).isEqualTo(AuctionStatus.CREATING);
-        assertThat(auction.getTotalBidsCount()).isEqualTo(0);
-        assertThat(auction.getExtensionCount()).isEqualTo(0);
+        assertThat(auction.getStats().getTotalBidsCount()).isEqualTo(0);
+        assertThat(auction.getPeriod().getExtensionCount()).isEqualTo(0);
     }
 
     @Test
@@ -206,7 +206,7 @@ class AuctionTest {
         Auction auction = createValidAuction();
         auction.confirmCreation();
         auction.start();
-        LocalDateTime originalEndTime = auction.getEndTime();
+        LocalDateTime originalEndTime = auction.getPeriod().getEndTime();
 
         // When - 3번 연장
         auction.extend();
@@ -214,8 +214,8 @@ class AuctionTest {
         auction.extend();
 
         // Then
-        assertThat(auction.getExtensionCount()).isEqualTo(3);
-        assertThat(auction.getEndTime()).isAfter(originalEndTime);
+        assertThat(auction.getPeriod().getExtensionCount()).isEqualTo(3);
+        assertThat(auction.getPeriod().getEndTime()).isAfter(originalEndTime);
     }
 
     @Test

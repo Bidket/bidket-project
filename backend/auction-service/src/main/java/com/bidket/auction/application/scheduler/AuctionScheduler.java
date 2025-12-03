@@ -65,7 +65,7 @@ public class AuctionScheduler {
 
         for (Auction auction : activeAuctions) {
             try {
-                boolean hasBids = auction.getTotalBidsCount() > 0;
+                boolean hasBids = auction.getStats().getTotalBidsCount() > 0;
                 auction.end(hasBids);
                 auctionRepository.save(auction);
                 

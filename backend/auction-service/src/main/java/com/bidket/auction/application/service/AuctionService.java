@@ -56,30 +56,7 @@ public class AuctionService {
         AuctionResponse response = AuctionResponse.from(auction);
         Integer cachedViewCount = viewCountCacheService.getViewCount(auctionId, response.viewCount());
 
-        return new AuctionResponse(
-                response.id(),
-                response.productSizeId(),
-                response.sellerId(),
-                response.auctionTitle(),
-                response.description(),
-                response.condition(),
-                response.startPrice(),
-                response.currentPrice(),
-                response.bidIncrement(),
-                response.buyNowPrice(),
-                response.status(),
-                response.startTime(),
-                response.endTime(),
-                response.originalEndTime(),
-                response.extensionCount(),
-                response.winnerId(),
-                response.winningBidId(),
-                response.finalPrice(),
-                response.totalBidsCount(),
-                cachedViewCount,
-                response.createdAt(),
-                response.updatedAt()
-        );
+        return response.withViewCount(cachedViewCount);
     }
 
     public List<AuctionResponse> getAuctionsBySeller(UUID sellerId) {

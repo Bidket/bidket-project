@@ -1,7 +1,12 @@
 package com.bidket.auction.domain.model;
 
+import com.bidket.auction.domain.model.vo.AuctionPeriod;
+import com.bidket.auction.domain.model.vo.AuctionStats;
+import com.bidket.auction.domain.model.vo.PriceInfo;
+import com.bidket.auction.domain.model.vo.WinnerInfo;
 import com.bidket.common.infra.BaseEntity;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -12,8 +17,6 @@ import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -29,8 +32,6 @@ import java.util.UUID;
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Builder
 public class Auction extends BaseEntity {
 
     @Id
@@ -53,113 +54,283 @@ public class Auction extends BaseEntity {
     @Column(nullable = false, length = 20)
     private AuctionCondition condition;
 
-    @Column(nullable = false, name = "start_price")
-    private Long startPrice;
+    @Embedded
+    private PriceInfo priceInfo;
 
-    @Column(nullable = false, name = "current_price")
-    private Long currentPrice;
+    @Embedded
+    private AuctionPeriod period;
 
-    @Column(nullable = false, name = "bid_increment")
-    private Long bidIncrement;
+    @Embedded
+    private WinnerInfo winnerInfo;
 
-    @Column(name = "buy_now_price")
-    private Long buyNowPrice;
+    @Embedded
+    private AuctionStats stats;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private AuctionStatus status;
 
-    @Column(nullable = false, name = "start_time")
-    private LocalDateTime startTime;
-
-    @Column(nullable = false, name = "end_time")
-    private LocalDateTime endTime;
-
-    @Column(nullable = false, name = "original_end_time")
-    private LocalDateTime originalEndTime;
-
-    @Column(nullable = false, name = "extension_count")
-    private Integer extensionCount;
-
-    @Column(name = "winner_id")
-    private UUID winnerId;
-
-    @Column(name = "winning_bid_id")
-    private UUID winningBidId;
-
-    @Column(name = "final_price")
-    private Long finalPrice;
-
-    @Column(nullable = false, name = "total_bids_count")
-    private Integer totalBidsCount;
-
-    @Column(nullable = false, name = "view_count")
-    private Integer viewCount;
-
     @Version
     private Long version;
 
-    public static AuctionBuilder builder() {
-        return new AuctionBuilderImpl();
+    // ===== Private 생성자 =====
+    private Auction(UUID id, UUID productSizeId, UUID sellerId, String auctionTitle, 
+                    String description, AuctionCondition condition, PriceInfo priceInfo,
+                    AuctionPeriod period, WinnerInfo winnerInfo, AuctionStats stats,
+                    AuctionStatus status, Long version) {
+        this.id = id;
+        this.productSizeId = productSizeId;
+        this.sellerId = sellerId;
+        this.auctionTitle = auctionTitle;
+        this.description = description;
+        this.condition = condition;
+        this.priceInfo = priceInfo;
+        this.period = period;
+        this.winnerInfo = winnerInfo;
+        this.stats = stats;
+        this.status = status;
+        this.version = version;
     }
 
-    private static class AuctionBuilderImpl extends AuctionBuilder {
-        @Override
+    // ===== Builder =====
+    public static AuctionBuilder builder() {
+        return new AuctionBuilder();
+    }
+
+    public static class AuctionBuilder {
+        private UUID id;
+        private UUID productSizeId;
+        private UUID sellerId;
+        private String auctionTitle;
+        private String description;
+        private AuctionCondition condition;
+        private PriceInfo priceInfo;
+        private AuctionPeriod period;
+        private WinnerInfo winnerInfo;
+        private AuctionStats stats;
+        private AuctionStatus status;
+        private Long version;
+
+        // 하위 호환성을 위한 개별 필드 (레거시 코드 지원용)
+        private Long startPrice;
+        private Long currentPrice;
+        private Long bidIncrement;
+        private Long buyNowPrice;
+        private LocalDateTime startTime;
+        private LocalDateTime endTime;
+        private LocalDateTime originalEndTime;
+        private Integer extensionCount;
+        private UUID winnerId;
+        private UUID winningBidId;
+        private Long finalPrice;
+        private Integer totalBidsCount;
+        private Integer viewCount;
+
+        public AuctionBuilder id(UUID id) {
+            this.id = id;
+            return this;
+        }
+
+        public AuctionBuilder productSizeId(UUID productSizeId) {
+            this.productSizeId = productSizeId;
+            return this;
+        }
+
+        public AuctionBuilder sellerId(UUID sellerId) {
+            this.sellerId = sellerId;
+            return this;
+        }
+
+        public AuctionBuilder auctionTitle(String auctionTitle) {
+            this.auctionTitle = auctionTitle;
+            return this;
+        }
+
+        public AuctionBuilder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        public AuctionBuilder condition(AuctionCondition condition) {
+            this.condition = condition;
+            return this;
+        }
+
+        public AuctionBuilder priceInfo(PriceInfo priceInfo) {
+            this.priceInfo = priceInfo;
+            return this;
+        }
+
+        public AuctionBuilder period(AuctionPeriod period) {
+            this.period = period;
+            return this;
+        }
+
+        public AuctionBuilder winnerInfo(WinnerInfo winnerInfo) {
+            this.winnerInfo = winnerInfo;
+            return this;
+        }
+
+        public AuctionBuilder stats(AuctionStats stats) {
+            this.stats = stats;
+            return this;
+        }
+
+        public AuctionBuilder status(AuctionStatus status) {
+            this.status = status;
+            return this;
+        }
+
+        public AuctionBuilder version(Long version) {
+            this.version = version;
+            return this;
+        }
+
+        // ===== 하위 호환성 메서드 (레거시) =====
+        public AuctionBuilder startPrice(Long startPrice) {
+            this.startPrice = startPrice;
+            return this;
+        }
+
+        public AuctionBuilder currentPrice(Long currentPrice) {
+            this.currentPrice = currentPrice;
+            return this;
+        }
+
+        public AuctionBuilder bidIncrement(Long bidIncrement) {
+            this.bidIncrement = bidIncrement;
+            return this;
+        }
+
+        public AuctionBuilder buyNowPrice(Long buyNowPrice) {
+            this.buyNowPrice = buyNowPrice;
+            return this;
+        }
+
+        public AuctionBuilder startTime(LocalDateTime startTime) {
+            this.startTime = startTime;
+            return this;
+        }
+
+        public AuctionBuilder endTime(LocalDateTime endTime) {
+            this.endTime = endTime;
+            return this;
+        }
+
+        public AuctionBuilder originalEndTime(LocalDateTime originalEndTime) {
+            this.originalEndTime = originalEndTime;
+            return this;
+        }
+
+        public AuctionBuilder extensionCount(Integer extensionCount) {
+            this.extensionCount = extensionCount;
+            return this;
+        }
+
+        public AuctionBuilder winnerId(UUID winnerId) {
+            this.winnerId = winnerId;
+            return this;
+        }
+
+        public AuctionBuilder winningBidId(UUID winningBidId) {
+            this.winningBidId = winningBidId;
+            return this;
+        }
+
+        public AuctionBuilder finalPrice(Long finalPrice) {
+            this.finalPrice = finalPrice;
+            return this;
+        }
+
+        public AuctionBuilder totalBidsCount(Integer totalBidsCount) {
+            this.totalBidsCount = totalBidsCount;
+            return this;
+        }
+
+        public AuctionBuilder viewCount(Integer viewCount) {
+            this.viewCount = viewCount;
+            return this;
+        }
+
         public Auction build() {
-            if (super.currentPrice == null && super.startPrice != null) {
-                super.currentPrice = super.startPrice;
-            }
-            if (super.originalEndTime == null && super.endTime != null) {
-                super.originalEndTime = super.endTime;
-            }
-            if (super.bidIncrement == null) {
-                super.bidIncrement = 10000L;
-            }
-            if (super.status == null) {
-                super.status = AuctionStatus.CREATING;
-            }
-            if (super.extensionCount == null) {
-                super.extensionCount = 0;
-            }
-            if (super.totalBidsCount == null) {
-                super.totalBidsCount = 0;
-            }
-            if (super.viewCount == null) {
-                super.viewCount = 0;
+            // PriceInfo 생성
+            PriceInfo resolvedPriceInfo = this.priceInfo;
+            if (resolvedPriceInfo == null && this.startPrice != null) {
+                resolvedPriceInfo = PriceInfo.builder()
+                        .startPrice(this.startPrice)
+                        .currentPrice(this.currentPrice != null ? this.currentPrice : this.startPrice)
+                        .bidIncrement(this.bidIncrement != null ? this.bidIncrement : 10000L)
+                        .buyNowPrice(this.buyNowPrice)
+                        .build();
             }
 
-            Auction auction = super.build();
+            // AuctionPeriod 생성
+            AuctionPeriod resolvedPeriod = this.period;
+            if (resolvedPeriod == null && this.startTime != null) {
+                resolvedPeriod = AuctionPeriod.builder()
+                        .startTime(this.startTime)
+                        .endTime(this.endTime)
+                        .originalEndTime(this.originalEndTime != null ? this.originalEndTime : this.endTime)
+                        .extensionCount(this.extensionCount != null ? this.extensionCount : 0)
+                        .build();
+            }
+
+            // WinnerInfo 생성
+            WinnerInfo resolvedWinnerInfo = this.winnerInfo;
+            if (resolvedWinnerInfo == null) {
+                if (this.winnerId != null || this.winningBidId != null || this.finalPrice != null) {
+                    resolvedWinnerInfo = WinnerInfo.builder()
+                            .winnerId(this.winnerId)
+                            .winningBidId(this.winningBidId)
+                            .finalPrice(this.finalPrice)
+                            .build();
+                } else {
+                    resolvedWinnerInfo = WinnerInfo.empty();
+                }
+            }
+
+            // AuctionStats 생성
+            AuctionStats resolvedStats = this.stats;
+            if (resolvedStats == null) {
+                resolvedStats = AuctionStats.builder()
+                        .totalBidsCount(this.totalBidsCount != null ? this.totalBidsCount : 0)
+                        .viewCount(this.viewCount != null ? this.viewCount : 0)
+                        .build();
+            }
+
+            // 기본값 설정
+            AuctionStatus resolvedStatus = this.status != null ? this.status : AuctionStatus.CREATING;
+
+            Auction auction = new Auction(
+                    this.id,
+                    this.productSizeId,
+                    this.sellerId,
+                    this.auctionTitle,
+                    this.description,
+                    this.condition,
+                    resolvedPriceInfo,
+                    resolvedPeriod,
+                    resolvedWinnerInfo,
+                    resolvedStats,
+                    resolvedStatus,
+                    this.version
+            );
+
             auction.validate();
             return auction;
         }
     }
 
     private void validate() {
-        validatePrice();
-        validateTimeRange();
-    }
-
-    private void validatePrice() {
-        if (startPrice == null || startPrice <= 0) {
-            throw new IllegalArgumentException("시작가는 0보다 커야 합니다");
+        if (priceInfo != null) {
+            priceInfo.validate();
         }
-        if (bidIncrement == null || bidIncrement <= 0) {
-            throw new IllegalArgumentException("입찰 단위는 0보다 커야 합니다");
-        }
-        if (buyNowPrice != null && buyNowPrice <= startPrice) {
-            throw new IllegalArgumentException("즉시구매가는 시작가보다 커야 합니다");
+        if (period != null) {
+            period.validate();
         }
     }
 
-    private void validateTimeRange() {
-        if (startTime == null || endTime == null) {
-            throw new IllegalArgumentException("시작시간과 종료시간은 필수입니다");
-        }
-        if (!endTime.isAfter(startTime)) {
-            throw new IllegalArgumentException("종료시간은 시작시간보다 이후여야 합니다");
-        }
-    }
-
+    // ===== 도메인 비즈니스 메서드 =====
     public void confirmCreation() {
         if (this.status != AuctionStatus.CREATING) {
             throw new IllegalStateException("CREATING 상태에서만 생성을 확정할 수 있습니다");
@@ -181,7 +352,7 @@ public class Auction extends BaseEntity {
         }
 
         if (this.status == AuctionStatus.ACTIVE) {
-            if (this.totalBidsCount > 0) {
+            if (this.stats.getTotalBidsCount() > 0) {
                 throw new IllegalStateException("입찰이 있는 경매는 취소할 수 없습니다");
             }
             this.status = AuctionStatus.CANCELLED;
@@ -196,35 +367,21 @@ public class Auction extends BaseEntity {
             throw new IllegalStateException("ACTIVE 상태에서만 종료할 수 있습니다");
         }
 
-        if (hasBids) {
-            this.status = AuctionStatus.SUCCESS;
-        } else {
-            this.status = AuctionStatus.EXPIRED;
-        }
+        this.status = hasBids ? AuctionStatus.SUCCESS : AuctionStatus.EXPIRED;
     }
 
     public void extend() {
         if (this.status != AuctionStatus.ACTIVE) {
             throw new IllegalStateException("ACTIVE 상태에서만 연장할 수 있습니다");
         }
-
-        final int MAX_EXTENSIONS = 3;
-        if (this.extensionCount >= MAX_EXTENSIONS) {
-            throw new IllegalStateException("최대 연장 횟수를 초과했습니다");
-        }
-
-        final int EXTENSION_MINUTES = 5;
-        this.endTime = this.endTime.plusMinutes(EXTENSION_MINUTES);
-        this.extensionCount++;
+        this.period = this.period.extend();
     }
 
     public void setWinner(UUID winnerId, UUID winningBidId, Long finalPrice) {
         if (this.status != AuctionStatus.SUCCESS) {
             throw new IllegalStateException("SUCCESS 상태에서만 낙찰자를 설정할 수 있습니다");
         }
-        this.winnerId = winnerId;
-        this.winningBidId = winningBidId;
-        this.finalPrice = finalPrice;
+        this.winnerInfo = WinnerInfo.of(winnerId, winningBidId, finalPrice);
     }
 
     public void reopen() {
@@ -232,11 +389,8 @@ public class Auction extends BaseEntity {
             throw new IllegalStateException("SUCCESS 상태에서만 재오픈할 수 있습니다");
         }
 
-        this.status = AuctionStatus.REOPENED;
-        this.winnerId = null;
-        this.winningBidId = null;
-        this.finalPrice = null;
-        this.endTime = LocalDateTime.now().plusDays(1);
+        this.winnerInfo = WinnerInfo.empty();
+        this.period = this.period.withReopenedEndTime(LocalDateTime.now().plusDays(1));
         this.status = AuctionStatus.ACTIVE;
     }
 
@@ -244,16 +398,8 @@ public class Auction extends BaseEntity {
         if (this.status != AuctionStatus.ACTIVE) {
             throw new IllegalStateException("ACTIVE 상태에서만 가격을 업데이트할 수 있습니다");
         }
-        if (newPrice <= this.currentPrice) {
-            throw new IllegalArgumentException("새 가격은 현재가보다 커야 합니다");
-        }
-        this.currentPrice = newPrice;
-        this.totalBidsCount++;
-    }
-
-    @Deprecated
-    public void incrementViewCount() {
-        this.viewCount++;
+        this.priceInfo = this.priceInfo.withUpdatedCurrentPrice(newPrice);
+        this.stats = this.stats.incrementBidCount();
     }
 
     public void update(String auctionTitle, String description, 
@@ -268,25 +414,22 @@ public class Auction extends BaseEntity {
         if (description != null) {
             this.description = description;
         }
-        if (startTime != null) {
-            this.startTime = startTime;
-            this.originalEndTime = endTime != null ? endTime : this.endTime;
-        }
-        if (endTime != null) {
-            this.endTime = endTime;
+        if (startTime != null || endTime != null) {
+            this.period = this.period.withUpdatedTimes(startTime, endTime);
         }
         if (buyNowPrice != null) {
-            this.buyNowPrice = buyNowPrice;
+            this.priceInfo = this.priceInfo.withBuyNowPrice(buyNowPrice);
         }
 
         validate();
     }
 
     public boolean isNearEnd() {
-        return LocalDateTime.now().isAfter(this.endTime.minusMinutes(5));
+        return period != null && period.isNearEnd();
     }
 
     public boolean isEnded() {
-        return LocalDateTime.now().isAfter(this.endTime);
+        return period != null && period.isEnded();
     }
 }
+

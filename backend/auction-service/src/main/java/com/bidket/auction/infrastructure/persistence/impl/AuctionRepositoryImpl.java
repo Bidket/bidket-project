@@ -56,4 +56,9 @@ public class AuctionRepositoryImpl implements AuctionRepository {
     public boolean existsById(UUID id) {
         return jpaRepository.existsById(id);
     }
+
+    @Override
+    public int updateViewCount(UUID auctionId, Integer viewCount) {
+        return jpaRepository.updateViewCount(auctionId, viewCount);
+    }
 }

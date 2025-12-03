@@ -69,7 +69,7 @@ class AuctionRepositoryImplTest {
             assertThat(saved.getId()).isNotNull();
             assertThat(saved.getAuctionTitle()).isEqualTo("[새제품] Nike Air Jordan 1");
             assertThat(saved.getStatus()).isEqualTo(AuctionStatus.CREATING);
-            assertThat(saved.getCurrentPrice()).isEqualTo(250000L);
+            assertThat(saved.getPriceInfo().getCurrentPrice()).isEqualTo(250000L);
             assertThat(saved.getCreatedAt()).isNotNull();
             assertThat(saved.getUpdatedAt()).isNotNull();
         }
