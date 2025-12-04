@@ -8,6 +8,7 @@ import com.bidket.user.application.service.EmailCheckService;
 import com.bidket.user.application.service.LoginService;
 import com.bidket.user.application.service.MyInfoService;
 import com.bidket.user.application.service.PermissionsService;
+import com.bidket.user.application.service.PointBalanceService;
 import com.bidket.user.application.service.SignupService;
 import com.bidket.user.presentation.dto.request.BlacklistRegisterRequest;
 import com.bidket.user.presentation.dto.request.LoginRequest;
@@ -19,6 +20,7 @@ import com.bidket.user.presentation.dto.response.EmailCheckResponse;
 import com.bidket.user.presentation.dto.response.LoginResponse;
 import com.bidket.user.presentation.dto.response.MyInfoResponse;
 import com.bidket.user.presentation.dto.response.PermissionsResponse;
+import com.bidket.user.presentation.dto.response.PointBalanceResponse;
 import com.bidket.user.presentation.dto.response.SignupResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +53,7 @@ public class MemberController {
     private final BlacklistStatusService blacklistStatusService;
     private final BlacklistRegisterService blacklistRegisterService;
     private final BidEligibilityService bidEligibilityService;
+    private final PointBalanceService pointBalanceService;
 
     /**
      * 회원가입 API
@@ -177,6 +180,20 @@ public class MemberController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.success("내 정보 조회에 성공했습니다.", response));
+    }
+
+    /**
+     * 포인트 잔액 조회 API
+     * 현재 로그인한 사용자의 포인트 잔액을 조회
+     * Authorization 헤더에 Bearer JWT 토큰이 필요
+     * @return 포인트 잔액 조회 응답 (memberId, balance, currency, updatedAt)
+     */
+    @GetMapping("/points")
+    public ResponseEntity<PointBalanceResponse> getPointBalance() {
+        PointBalanceResponse response = pointBalanceService.getPointBalance();
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
     }
 }
 
