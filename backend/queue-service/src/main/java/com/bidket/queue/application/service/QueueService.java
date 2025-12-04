@@ -48,7 +48,6 @@ public class QueueService {
                                 .onErrorMap(e -> new QueueException(QueueErrorCode.AUCTION_REGISTER_FAIL))
                                 .map(addedCount -> queueConfig.toCreateResponse());
                     }
-
                     return Mono.error(new QueueException(QueueErrorCode.REDIS_EXPIRE_SET_FAILED));
                 })
                 .onErrorMap(e -> {
@@ -83,18 +82,25 @@ public class QueueService {
     public Mono<QueueStatusResponse> getQueueStatus(UUID userId, UUID auctionId) {
         String tokenKey = "queue:token:" + auctionId;
         String waitingKey = "queue:auction:" + auctionId + ":waiting";
+        String configKey = "queue:auction:" + auctionId + ":config";
 
-        return redisRepository.getToken(tokenKey, userId)
+        return redisRepository.getConfig(configKey)
+                .switchIfEmpty(Mono.error(new QueueException(QueueErrorCode.CONFIG_NOT_FOUND)))
+                .flatMap(config -> {
+                    config.checkOpenStatus(Instant.now());
+                    log.info("사용자[{}]: 대기열 상태 확인[{}]", userId, waitingKey);
+                    return redisRepository.getToken(tokenKey, userId);
+                })
                 .flatMap(token ->
-                    Mono.just(QueueStatusResponse.builder()
-                            .auctionId(auctionId)
-                            .userId(userId)
-                            .status(QueueStatus.ACTIVE)
-                            .rank(0L)
-                            .retryAfter(3)
-                            .token(token)
-                            .message("입장이 가능합니다. 입찰 페이지로 이동합니다.")
-                            .build())
+                        Mono.just(QueueStatusResponse.builder()
+                                .auctionId(auctionId)
+                                .userId(userId)
+                                .status(QueueStatus.ACTIVE)
+                                .rank(0L)
+                                .retryAfter(3)
+                                .token(token)
+                                .message("입장이 가능합니다. 입찰 페이지로 이동합니다.")
+                                .build())
                 )
                 .switchIfEmpty(redisRepository.getRank(waitingKey, userId)
                         .map(rank -> QueueStatusResponse.builder()
@@ -106,6 +112,8 @@ public class QueueService {
                                 .token(null)
                                 .message("현재 대기 인원 " + rank + "명 남았습니다.")
                                 .build())
+                        .switchIfEmpty(Mono.error(() -> new QueueException(QueueErrorCode.WAITING_USER_NOT_FOUND)))
                 );
+
     }
 }
