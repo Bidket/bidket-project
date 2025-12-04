@@ -17,6 +17,13 @@ public enum UserErrorCode {
     INVALID_EMAIL_FORMAT(HttpStatus.BAD_REQUEST, "INVALID_EMAIL_FORMAT", "잘못된 이메일 형식입니다."),
     WEAK_PASSWORD(HttpStatus.BAD_REQUEST, "WEAK_PASSWORD", "비밀번호 강도가 부족합니다."),
     
+    // 401 Unauthorized
+    INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "이메일 또는 비밀번호가 올바르지 않습니다."),
+    
+    // 403 Forbidden
+    INACTIVE_MEMBER(HttpStatus.FORBIDDEN, "INACTIVE_MEMBER", "비활성화된 계정입니다."),
+    BLACKLISTED_MEMBER(HttpStatus.FORBIDDEN, "BLACKLISTED_MEMBER", "블랙리스트 회원으로 로그인할 수 없습니다."),
+    
     // 405 Method Not Allowed
     METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "METHOD_NOT_ALLOWED", "이 요청 방식은 허용되지 않습니다."),
     
