@@ -4,6 +4,7 @@ import com.bidket.auction.domain.auction.model.Auction;
 import com.bidket.auction.domain.auction.model.AuctionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
@@ -16,13 +17,12 @@ public interface AuctionJpaRepository extends JpaRepository<Auction, UUID> {
 
     List<Auction> findByStatus(AuctionStatus status);
 
-    // JPQL 대신 메서드 이름 기반 쿼리 사용
     List<Auction> findByStatusAndPeriod_EndTimeBefore(AuctionStatus status, LocalDateTime dateTime);
 
     List<Auction> findByStatusAndPeriod_StartTimeBefore(AuctionStatus status, LocalDateTime dateTime);
 
     @Modifying
-    @org.springframework.data.jpa.repository.Query(
+    @Query(
             value = "UPDATE auction SET view_count = :viewCount WHERE id = :auctionId",
             nativeQuery = true
     )
