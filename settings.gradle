@@ -3,6 +3,7 @@ rootProject.name = "bidket-project"
 include 'backend:eureka-server'
 include 'backend:gateway-service'
 include 'backend:user-service'
+include 'backend:product-service'
 include 'backend:auction-service'
 include 'backend:order-service'
 include 'backend:queue-service'
