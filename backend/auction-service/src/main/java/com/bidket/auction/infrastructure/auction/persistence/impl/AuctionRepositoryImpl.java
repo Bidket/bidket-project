@@ -1,0 +1,68 @@
+package com.bidket.auction.infrastructure.auction.persistence.impl;
+
+import com.bidket.auction.domain.auction.model.Auction;
+import com.bidket.auction.domain.auction.model.AuctionStatus;
+import com.bidket.auction.domain.auction.repository.AuctionRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+@Repository
+@RequiredArgsConstructor
+public class AuctionRepositoryImpl implements AuctionRepository {
+
+    private final AuctionJpaRepository jpaRepository;
+
+    @Override
+    public Auction save(Auction auction) {
+        return jpaRepository.save(auction);
+    }
+
+    @Override
+    public Optional<Auction> findById(UUID id) {
+        return jpaRepository.findById(id);
+    }
+
+    @Override
+    public List<Auction> findBySellerId(UUID sellerId) {
+        return jpaRepository.findBySellerId(sellerId);
+    }
+
+    @Override
+    public List<Auction> findByStatus(AuctionStatus status) {
+        return jpaRepository.findByStatus(status);
+    }
+
+    @Override
+    public List<Auction> findActiveAuctionsEndingBefore(LocalDateTime dateTime) {
+        // ACTIVE 상태이면서 종료 시간이 기준 시각 이전인 경매 조회
+        return jpaRepository.findByStatusAndPeriod_EndTimeBefore(AuctionStatus.ACTIVE, dateTime);
+    }
+
+    @Override
+    public List<Auction> findPendingAuctionsStartingBefore(LocalDateTime dateTime) {
+        // PENDING 상태이면서 시작 시간이 기준 시각 이전인 경매 조회
+        return jpaRepository.findByStatusAndPeriod_StartTimeBefore(AuctionStatus.PENDING, dateTime);
+    }
+
+    @Override
+    public void delete(Auction auction) {
+        jpaRepository.delete(auction);
+    }
+
+    @Override
+    public boolean existsById(UUID id) {
+        return jpaRepository.existsById(id);
+    }
+
+    @Override
+    public int updateViewCount(UUID auctionId, Integer viewCount) {
+        return jpaRepository.updateViewCount(auctionId, viewCount);
+    }
+}
+
+
