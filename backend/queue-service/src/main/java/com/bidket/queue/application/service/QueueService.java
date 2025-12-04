@@ -5,6 +5,7 @@ import com.bidket.queue.domain.model.QueueConfigModel;
 import com.bidket.queue.domain.model.QueueErrorCode;
 import com.bidket.queue.domain.model.QueueStatus;
 import com.bidket.queue.domain.repository.RedisRepository;
+import com.bidket.queue.global.annotation.CheckQueueConfig;
 import com.bidket.queue.global.util.jwt.TokenProvider;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
@@ -59,17 +60,11 @@ public class QueueService {
                 });
     }
 
+    @CheckQueueConfig
     public Mono<QueueEnterResponse> enterQueue(UUID userId, UUID auctionId) {
-        String configKey = "queue:auction:" + auctionId + ":config";
         String waitingKey = "queue:auction:" + auctionId + ":waiting";
 
-        return redisRepository.getConfig(configKey)
-                .switchIfEmpty(Mono.error(new QueueException(QueueErrorCode.CONFIG_NOT_FOUND)))
-                .flatMap(config -> {
-                    config.checkOpenStatus(Instant.now());
-                    log.info("사용자[{}]: 대기열 입장[{}]", userId, waitingKey);
-                    return redisRepository.addWaitingUser(waitingKey, userId);
-                })
+        return redisRepository.addWaitingUser(waitingKey, userId)
                 .flatMap(isAdded -> redisRepository.getRank(waitingKey, userId))
                 .map(rank -> QueueEnterResponse.builder()
                             .auctionId(auctionId)
