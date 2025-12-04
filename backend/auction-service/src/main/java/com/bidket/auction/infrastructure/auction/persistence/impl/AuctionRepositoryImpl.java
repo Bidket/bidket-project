@@ -39,13 +39,11 @@ public class AuctionRepositoryImpl implements AuctionRepository {
 
     @Override
     public List<Auction> findActiveAuctionsEndingBefore(LocalDateTime dateTime) {
-        // ACTIVE 상태이면서 종료 시간이 기준 시각 이전인 경매 조회
         return jpaRepository.findByStatusAndPeriod_EndTimeBefore(AuctionStatus.ACTIVE, dateTime);
     }
 
     @Override
     public List<Auction> findPendingAuctionsStartingBefore(LocalDateTime dateTime) {
-        // PENDING 상태이면서 시작 시간이 기준 시각 이전인 경매 조회
         return jpaRepository.findByStatusAndPeriod_StartTimeBefore(AuctionStatus.PENDING, dateTime);
     }
 

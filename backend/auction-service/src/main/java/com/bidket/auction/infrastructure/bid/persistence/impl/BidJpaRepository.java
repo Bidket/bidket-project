@@ -14,7 +14,6 @@ public interface BidJpaRepository extends JpaRepository<Bid, UUID> {
 
     List<Bid> findByBidderIdOrderByCreatedAtDesc(UUID bidderId);
 
-    // 최고가 입찰 조회: Embedded VO 경로 + 메서드명 기반 쿼리
     Optional<Bid> findFirstByAuctionIdAndBidAmount_HighestTrue(UUID auctionId);
 
     List<Bid> findByAuctionIdAndBidderId(UUID auctionId, UUID bidderId);
@@ -23,7 +22,6 @@ public interface BidJpaRepository extends JpaRepository<Bid, UUID> {
 
     boolean existsByAuctionIdAndBidderId(UUID auctionId, UUID bidderId);
 
-    // 멱등성 키로 조회: Embedded VO 경로 사용
     Optional<Bid> findByBidMetadata_IdempotencyKey(String idempotencyKey);
 
     long countByAuctionId(UUID auctionId);
