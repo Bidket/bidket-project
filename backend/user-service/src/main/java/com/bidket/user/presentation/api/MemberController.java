@@ -1,14 +1,17 @@
 package com.bidket.user.presentation.api;
 
 import com.bidket.common.presentation.response.ApiResponse;
+import com.bidket.user.application.service.BlacklistRegisterService;
 import com.bidket.user.application.service.BlacklistStatusService;
 import com.bidket.user.application.service.EmailCheckService;
 import com.bidket.user.application.service.LoginService;
 import com.bidket.user.application.service.MyInfoService;
 import com.bidket.user.application.service.PermissionsService;
 import com.bidket.user.application.service.SignupService;
+import com.bidket.user.presentation.dto.request.BlacklistRegisterRequest;
 import com.bidket.user.presentation.dto.request.LoginRequest;
 import com.bidket.user.presentation.dto.request.SignupRequest;
+import com.bidket.user.presentation.dto.response.BlacklistRegisterResponse;
 import com.bidket.user.presentation.dto.response.BlacklistStatusResponse;
 import com.bidket.user.presentation.dto.response.EmailCheckResponse;
 import com.bidket.user.presentation.dto.response.LoginResponse;
@@ -44,6 +47,7 @@ public class MemberController {
     private final EmailCheckService emailCheckService;
     private final PermissionsService permissionsService;
     private final BlacklistStatusService blacklistStatusService;
+    private final BlacklistRegisterService blacklistRegisterService;
 
     /**
      * 회원가입 API
@@ -122,6 +126,22 @@ public class MemberController {
         BlacklistStatusResponse response = blacklistStatusService.getBlacklistStatus(memberId);
         return ResponseEntity
                 .status(HttpStatus.OK)
+                .body(response);
+    }
+
+    /**
+     * 블랙리스트 등록 API
+     * @param memberId 블랙리스트로 등록할 회원 ID
+     * @param request 블랙리스트 등록 요청 정보 (reason, expireAt)
+     * @return 블랙리스트 등록 응답 (memberId, blacklisted, reason, expireAt, createdAt)
+     */
+    @PostMapping("/{memberId}/blacklist")
+    public ResponseEntity<BlacklistRegisterResponse> registerBlacklist(
+            @PathVariable UUID memberId,
+            @RequestBody @Valid BlacklistRegisterRequest request) {
+        BlacklistRegisterResponse response = blacklistRegisterService.registerBlacklist(memberId, request);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
                 .body(response);
     }
 
