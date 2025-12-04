@@ -1,11 +1,11 @@
 package com.bidket.queue.application.service;
 
 import com.bidket.queue.domain.exception.QueueException;
-import com.bidket.queue.domain.jwt.TokenProvider;
 import com.bidket.queue.domain.model.QueueConfigModel;
 import com.bidket.queue.domain.model.QueueErrorCode;
 import com.bidket.queue.domain.model.QueueStatus;
 import com.bidket.queue.domain.repository.RedisRepository;
+import com.bidket.queue.global.util.jwt.TokenProvider;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
 import com.bidket.queue.presentation.dto.response.QueueEnterResponse;
@@ -24,6 +24,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class QueueService {
     private final RedisRepository redisRepository;
+    private final TokenProvider tokenProvider;
 
     public Mono<QueueCreateResponse> createConfigQueue(QueueCreateRequest request) {
         String key = "queue:auction:" + request.auctionId() + ":config";
@@ -91,17 +92,20 @@ public class QueueService {
                     log.info("사용자[{}]: 대기열 상태 확인[{}]", userId, waitingKey);
                     return redisRepository.getToken(tokenKey, userId);
                 })
-                .flatMap(token ->
-                        Mono.just(QueueStatusResponse.builder()
-                                .auctionId(auctionId)
-                                .userId(userId)
-                                .status(QueueStatus.ACTIVE)
-                                .rank(0L)
-                                .retryAfter(3)
-                                .token(token)
-                                .message("입장이 가능합니다. 입찰 페이지로 이동합니다.")
-                                .build())
-                )
+                .flatMap(token -> {
+                    if (!tokenProvider.validateToken(token, userId, auctionId))
+                        return Mono.error(new QueueException(QueueErrorCode.INVALID_TOKEN));
+
+                    return Mono.just(QueueStatusResponse.builder()
+                            .auctionId(auctionId)
+                            .userId(userId)
+                            .status(QueueStatus.ACTIVE)
+                            .rank(0L)
+                            .retryAfter(3)
+                            .token(token)
+                            .message("입장이 가능합니다. 입찰 페이지로 이동합니다.")
+                            .build());
+                })
                 .switchIfEmpty(redisRepository.getRank(waitingKey, userId)
                         .map(rank -> QueueStatusResponse.builder()
                                 .auctionId(auctionId)

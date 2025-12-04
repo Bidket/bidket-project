@@ -1,7 +1,6 @@
-package com.bidket.queue.infrastructure.jwt;
+package com.bidket.queue.global.util.jwt;
 
 import com.bidket.queue.domain.exception.QueueException;
-import com.bidket.queue.domain.jwt.TokenProvider;
 import com.bidket.queue.domain.model.QueueErrorCode;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -16,13 +15,12 @@ import java.util.Date;
 import java.util.UUID;
 
 @Component
-public class TokenProviderImpl implements TokenProvider {
+public class TokenProvider {
     @Value("${jwt.secret}")
     private String secret;
     @Value("${jwt.expiration}")
     private long expiration;
 
-    @Override
     public String generateToken(UUID userId, UUID auctionId) {
         SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64URL.decode(secret));
         return Jwts.builder()
@@ -34,7 +32,6 @@ public class TokenProviderImpl implements TokenProvider {
                 .compact();
     }
 
-    @Override
     public String extractToken(ServerRequest request) {
         String headerVal = request.headers().firstHeader("ACTIVE-TOKEN");
         assert headerVal != null;
@@ -44,7 +41,6 @@ public class TokenProviderImpl implements TokenProvider {
         return headerVal;
     }
 
-    @Override
     public boolean validateToken(String token, UUID userId, UUID auctionId) {
         SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64URL.decode(secret));
         UUID userIdPayload = Jwts.parserBuilder()
