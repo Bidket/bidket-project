@@ -32,6 +32,8 @@ public interface RedisRepository {
 
     Mono<Boolean> addWaitingUser(String waitingKey, UUID userId);
 
+    Mono<Long> removeWaitingUser(String waitingKey, UUID userId);
+
     Mono<List<UUID>> popUserIdWaitingQueue(String waitingKey, long limit);
 
     Mono<Long> getRank(String waitingKey, UUID userId);

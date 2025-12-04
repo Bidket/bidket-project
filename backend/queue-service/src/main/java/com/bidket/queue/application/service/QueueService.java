@@ -16,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
@@ -38,7 +37,7 @@ public class QueueService {
                     return redisRepository.setExpiration(key, request.closeAt().plus(1, ChronoUnit.DAYS));
                 })
                 .onErrorResume(e -> {
-                    if(e instanceof QueueException)
+                    if (e instanceof QueueException)
                         return Mono.error(e);
 
                     return redisRepository.deleteConfig(key)
@@ -67,26 +66,20 @@ public class QueueService {
         return redisRepository.addWaitingUser(waitingKey, userId)
                 .flatMap(isAdded -> redisRepository.getRank(waitingKey, userId))
                 .map(rank -> QueueEnterResponse.builder()
-                            .auctionId(auctionId)
-                            .userId(userId)
-                            .rank(rank)
-                            .retryAfter(3)
-                            .message("대기 중")
-                            .build());
+                        .auctionId(auctionId)
+                        .userId(userId)
+                        .rank(rank)
+                        .retryAfter(3)
+                        .message("대기 중")
+                        .build());
     }
 
+    @CheckQueueConfig
     public Mono<QueueStatusResponse> getQueueStatus(UUID userId, UUID auctionId) {
         String tokenKey = "queue:token:" + auctionId;
         String waitingKey = "queue:auction:" + auctionId + ":waiting";
-        String configKey = "queue:auction:" + auctionId + ":config";
 
-        return redisRepository.getConfig(configKey)
-                .switchIfEmpty(Mono.error(new QueueException(QueueErrorCode.CONFIG_NOT_FOUND)))
-                .flatMap(config -> {
-                    config.checkOpenStatus(Instant.now());
-                    log.info("사용자[{}]: 대기열 상태 확인[{}]", userId, waitingKey);
-                    return redisRepository.getToken(tokenKey, userId);
-                })
+        return redisRepository.getToken(tokenKey, userId)
                 .flatMap(token -> {
                     if (!tokenProvider.validateToken(token, userId, auctionId))
                         return Mono.error(new QueueException(QueueErrorCode.INVALID_TOKEN));
@@ -114,5 +107,18 @@ public class QueueService {
                         .switchIfEmpty(Mono.error(() -> new QueueException(QueueErrorCode.WAITING_USER_NOT_FOUND)))
                 );
 
+    }
+
+    @CheckQueueConfig
+    public Mono<String> cancelWaiting(UUID userId, UUID auctionId) {
+        String waitingKey = "queue:auction:" + auctionId + ":waiting";
+
+        return redisRepository.removeWaitingUser(waitingKey, userId)
+                .flatMap(removed -> {
+                    if(removed <= 0)
+                        return Mono.error(() -> new QueueException(QueueErrorCode.WAITING_USER_NOT_FOUND));
+
+                    return Mono.just("대기가 취소되었습니다.");
+                });
     }
 }

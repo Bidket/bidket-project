@@ -112,6 +112,12 @@ public class RedisRepositoryImpl implements RedisRepository {
     }
 
     @Override
+    public Mono<Long> removeWaitingUser(String waitingKey, UUID userId) {
+        return redisOps.opsForZSet()
+                .remove(waitingKey, userId);
+    }
+
+    @Override
     public Mono<List<UUID>> popUserIdWaitingQueue(String waitingKey, long limit) {
         return redisOps.opsForZSet()
                 .popMin(waitingKey, limit)
