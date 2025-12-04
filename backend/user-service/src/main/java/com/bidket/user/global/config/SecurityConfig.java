@@ -32,7 +32,7 @@ public class SecurityConfig {
      * - Stateless 세션 정책 (JWT 사용)
      * - JWT 인증 필터 추가
      * - 인증 실패 시 커스텀 EntryPoint 사용
-     * - /v1/members/signup, /v1/members/login 엔드포인트는 인증 없이 접근 가능
+     * - /v1/members/signup, /v1/members/login, /v1/members/check-email 엔드포인트는 인증 없이 접근 가능
      * - /v1/members/me 등 그 외 엔드포인트는 인증 필요
      */
     @Bean
@@ -45,7 +45,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/v1/members/signup", "/v1/members/login").permitAll()
+                        .requestMatchers("/v1/members/signup", "/v1/members/login", "/v1/members/check-email").permitAll()
                         .anyRequest().authenticated()  // 인증이 필요한 엔드포인트
                 );
 

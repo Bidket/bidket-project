@@ -1,11 +1,13 @@
 package com.bidket.user.presentation.api;
 
 import com.bidket.common.presentation.response.ApiResponse;
+import com.bidket.user.application.service.EmailCheckService;
 import com.bidket.user.application.service.LoginService;
 import com.bidket.user.application.service.MyInfoService;
 import com.bidket.user.application.service.SignupService;
 import com.bidket.user.presentation.dto.request.LoginRequest;
 import com.bidket.user.presentation.dto.request.SignupRequest;
+import com.bidket.user.presentation.dto.response.EmailCheckResponse;
 import com.bidket.user.presentation.dto.response.LoginResponse;
 import com.bidket.user.presentation.dto.response.MyInfoResponse;
 import com.bidket.user.presentation.dto.response.SignupResponse;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
@@ -32,6 +35,7 @@ public class MemberController {
     private final SignupService signupService;
     private final LoginService loginService;
     private final MyInfoService myInfoService;
+    private final EmailCheckService emailCheckService;
 
     /**
      * 회원가입 API
@@ -62,6 +66,24 @@ public class MemberController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.success("로그인에 성공했습니다.", response));
+    }
+
+    /**
+     * 이메일 중복 체크 API
+     * 
+     * 비로그인/로그인 모두 사용 가능 (회원 가입 화면 등)
+     * 회원가입 화면에서 실시간 중복 체크용으로 사용함
+     * 
+     * @param email 중복 여부를 확인할 이메일 주소 (Query Parameter)
+     * @return 이메일 중복 체크 응답 (email, available, reason)
+     */
+    @GetMapping("/check-email")
+    public ResponseEntity<EmailCheckResponse> checkEmail(
+            @RequestParam(required = false) String email) {
+        EmailCheckResponse response = emailCheckService.checkEmail(email);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
     }
 
     /**
