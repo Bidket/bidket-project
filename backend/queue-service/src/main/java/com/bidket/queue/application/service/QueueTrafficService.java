@@ -73,15 +73,10 @@ public class QueueTrafficService {
     }
 
     @CheckQueueConfig
-    public Mono<String> cancelWaiting(UUID userId, UUID auctionId) {
+    public Mono<Void> cancelWaiting(UUID userId, UUID auctionId) {
         String waitingKey = "queue:auction:" + auctionId + ":waiting";
 
         return trafficRepository.removeWaitingUser(waitingKey, userId)
-                .flatMap(removed -> {
-                    if(removed <= 0)
-                        return Mono.error(() -> new QueueException(QueueErrorCode.WAITING_USER_NOT_FOUND));
-
-                    return Mono.just("대기가 취소되었습니다.");
-                });
+                .then();
     }
 }

@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public interface QueueTrafficRepository {
+
     Mono<Long> addAllActiveUser(String activeKey, List<UUID> userIds);
 
     Mono<Long> getActiveUserCount(String activeKey);
