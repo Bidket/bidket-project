@@ -6,6 +6,7 @@ import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
 import com.bidket.queue.presentation.dto.response.QueueEnterResponse;
 import com.bidket.queue.presentation.dto.response.QueueAccommodatableResponse;
+import com.bidket.queue.presentation.dto.response.QueueStatusResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -26,11 +27,15 @@ public class QueueFacade {
         return queueTrafficService.enterQueue(userId, auctionId);
     }
 
-    public Mono<QueueAccommodatableResponse> getQueueStatus(UUID userId, UUID auctionId) {
+    public Mono<QueueAccommodatableResponse> isAccommodatable(UUID userId, UUID auctionId) {
         return queueTrafficService.isAccommodatable(userId, auctionId);
     }
 
     public Mono<Void> cancelWaiting(UUID userId, UUID auctionId) {
         return queueTrafficService.cancelWaiting(userId, auctionId);
+    }
+
+    public Mono<QueueStatusResponse> getQueueStatus(UUID auctionId) {
+        return queueTrafficService.getQueueStatus(auctionId);
     }
 }
