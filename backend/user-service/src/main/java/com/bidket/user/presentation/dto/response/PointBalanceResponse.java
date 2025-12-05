@@ -2,6 +2,7 @@ package com.bidket.user.presentation.dto.response;
 
 import lombok.Builder;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -18,8 +19,8 @@ public record PointBalanceResponse(
         /** 포인트 기준 통화/단위 (예: POINT) */
         String currency,
         
-        /** 잔액 기준 시각 (ISO-8601 형식) */
-        String updatedAt
+        /** 잔액 기준 시각 */
+        LocalDateTime updatedAt
 ) {
 }
 

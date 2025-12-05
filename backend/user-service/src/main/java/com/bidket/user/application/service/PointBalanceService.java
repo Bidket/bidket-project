@@ -10,8 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 /**
@@ -22,7 +20,6 @@ import java.util.UUID;
 public class PointBalanceService {
 
     private final PointAccountRepository pointAccountRepository;
-    private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
     private static final String DEFAULT_CURRENCY = "POINT";
 
     /**
@@ -40,17 +37,12 @@ public class PointBalanceService {
         PointAccount pointAccount = pointAccountRepository.findByUserId(userId)
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
         
-        // updatedAt을 ISO-8601 형식으로 변환
-        String updatedAt = pointAccount.getUpdatedAt() != null
-                ? pointAccount.getUpdatedAt().atOffset(ZoneOffset.UTC).format(ISO_FORMATTER)
-                : null;
-        
         // 응답 생성
         return PointBalanceResponse.builder()
                 .memberId(pointAccount.getUserId())
                 .balance(pointAccount.getBalance())
                 .currency(DEFAULT_CURRENCY)
-                .updatedAt(updatedAt)
+                .updatedAt(pointAccount.getUpdatedAt())
                 .build();
     }
 }

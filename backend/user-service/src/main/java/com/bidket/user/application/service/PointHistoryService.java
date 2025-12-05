@@ -15,8 +15,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -29,7 +27,6 @@ import java.util.stream.Collectors;
 public class PointHistoryService {
 
     private final PointHistoryRepository pointHistoryRepository;
-    private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
     private static final int DEFAULT_PAGE_SIZE = 20;
     private static final int DEFAULT_PAGE = 0;
 
@@ -86,11 +83,6 @@ public class PointHistoryService {
      * PointHistory 엔티티를 PointHistoryItemResponse로 변환
      */
     private PointHistoryItemResponse toItemResponse(PointHistory history) {
-        // createdAt을 ISO-8601 형식으로 변환
-        String createdAt = history.getCreatedAt() != null
-                ? history.getCreatedAt().atOffset(ZoneOffset.UTC).format(ISO_FORMATTER)
-                : null;
-        
         // amount가 USE 타입인 경우 음수로 변환 (API 스펙에 따르면 음수: 사용)
         Long amount = history.getAmount();
         if (history.getType() == PointHistoryType.USE) {
@@ -105,7 +97,7 @@ public class PointHistoryService {
                 .description(history.getDescription())
                 .relatedAuctionId(null) // 현재 엔티티에 auction_id 필드가 없음 (추후 추가 가능)
                 .relatedOrderId(history.getOrderId())
-                .createdAt(createdAt)
+                .createdAt(history.getCreatedAt())
                 .build();
     }
 }

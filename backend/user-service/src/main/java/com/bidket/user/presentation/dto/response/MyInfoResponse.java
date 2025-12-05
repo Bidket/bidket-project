@@ -2,6 +2,7 @@ package com.bidket.user.presentation.dto.response;
 
 import lombok.Builder;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -24,8 +25,8 @@ public record MyInfoResponse(
         /** 권한 (ROLE_USER, ROLE_ADMIN 등) */
         String role,
         
-        /** 가입일 (ISO-8601 형식) */
-        String createdAt,
+        /** 가입일 */
+        LocalDateTime createdAt,
         
         /** 회원 상태 (ACTIVE, SUSPENDED, WITHDRAWN) */
         String status

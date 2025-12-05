@@ -2,6 +2,7 @@ package com.bidket.user.presentation.dto.response;
 
 import lombok.Builder;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -30,8 +31,8 @@ public record PointHistoryItemResponse(
         /** 관련 주문 ID (있다면) */
         UUID relatedOrderId,
         
-        /** 거래 발생 일시 (ISO-8601 형식) */
-        String createdAt
+        /** 거래 발생 일시 */
+        LocalDateTime createdAt
 ) {
 }
 

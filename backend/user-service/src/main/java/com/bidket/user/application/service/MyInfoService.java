@@ -10,8 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 /**
@@ -22,7 +20,6 @@ import java.util.UUID;
 public class MyInfoService {
 
     private final UserRepository userRepository;
-    private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
     /**
      * 현재 로그인한 사용자의 정보 조회
@@ -39,11 +36,6 @@ public class MyInfoService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
         
-        // createdAt을 ISO-8601 형식으로 변환
-        String createdAt = user.getCreatedAt() != null
-                ? user.getCreatedAt().atOffset(ZoneOffset.UTC).format(ISO_FORMATTER)
-                : null;
-        
         // 응답 생성
         return MyInfoResponse.builder()
                 .memberId(user.getId())
@@ -51,7 +43,7 @@ public class MyInfoService {
                 .email(user.getEmail())
                 .nickname(user.getNickname())
                 .role("ROLE_USER") // 기본 권한 (추후 User-Role 관계 구현 시 수정 필요)
-                .createdAt(createdAt)
+                .createdAt(user.getCreatedAt())
                 .status(user.getStatus().name())
                 .build();
     }
