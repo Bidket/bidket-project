@@ -18,9 +18,6 @@ dependencies {
 
     runtimeOnly 'org.postgresql:postgresql'
     
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-
     implementation 'com.github.Bidket:bidket-common-repo:main-SNAPSHOT'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

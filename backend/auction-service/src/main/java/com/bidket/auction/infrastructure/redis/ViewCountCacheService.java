@@ -1,6 +1,6 @@
 package com.bidket.auction.infrastructure.redis;
 
-import com.bidket.auction.domain.repository.AuctionRepository;
+import com.bidket.auction.domain.auction.repository.AuctionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;

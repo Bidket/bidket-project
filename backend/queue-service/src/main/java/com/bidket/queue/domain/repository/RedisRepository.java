@@ -37,4 +37,6 @@ public interface RedisRepository {
     Mono<Long> getRank(String waitingKey, UUID userId);
 
     Mono<Boolean> saveToken(String tokenKey, Map<UUID, String> tokens);
+
+    Mono<String> getToken(String tokenKey, UUID userId);
 }
