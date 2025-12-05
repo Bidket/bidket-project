@@ -56,10 +56,8 @@ public class QueueController {
     public Mono<ResponseEntity<Void>> cancelWaiting(@PathVariable UUID auctionId) {
         UUID userId = UUID.randomUUID();
         return queueFacade.cancelWaiting(userId, auctionId)
-                .map(response ->
-                        ResponseEntity.noContent()
-                                .location(URI.create("/temp"))
-                                .build()
-                );
+                .then(Mono.fromCallable(() -> ResponseEntity.noContent()
+                        .location(URI.create("/temp"))
+                        .build()));
     }
 }
