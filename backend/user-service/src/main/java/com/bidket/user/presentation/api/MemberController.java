@@ -9,6 +9,7 @@ import com.bidket.user.application.service.LoginService;
 import com.bidket.user.application.service.MyInfoService;
 import com.bidket.user.application.service.PermissionsService;
 import com.bidket.user.application.service.PointBalanceService;
+import com.bidket.user.application.service.PointHistoryService;
 import com.bidket.user.application.service.SignupService;
 import com.bidket.user.presentation.dto.request.BlacklistRegisterRequest;
 import com.bidket.user.presentation.dto.request.LoginRequest;
@@ -21,6 +22,7 @@ import com.bidket.user.presentation.dto.response.LoginResponse;
 import com.bidket.user.presentation.dto.response.MyInfoResponse;
 import com.bidket.user.presentation.dto.response.PermissionsResponse;
 import com.bidket.user.presentation.dto.response.PointBalanceResponse;
+import com.bidket.user.presentation.dto.response.PointHistoryResponse;
 import com.bidket.user.presentation.dto.response.SignupResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -54,6 +56,7 @@ public class MemberController {
     private final BlacklistRegisterService blacklistRegisterService;
     private final BidEligibilityService bidEligibilityService;
     private final PointBalanceService pointBalanceService;
+    private final PointHistoryService pointHistoryService;
 
     /**
      * 회원가입 API
@@ -191,6 +194,26 @@ public class MemberController {
     @GetMapping("/points")
     public ResponseEntity<PointBalanceResponse> getPointBalance() {
         PointBalanceResponse response = pointBalanceService.getPointBalance();
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
+    }
+
+    /**
+     * 포인트 히스토리 조회 API
+     * 현재 로그인한 사용자의 포인트 거래 내역을 조회
+     * Authorization 헤더에 Bearer JWT 토큰이 필요
+     * @param page 페이지 번호 (0부터 시작, 기본값 0)
+     * @param size 페이지 사이즈 (기본값 20)
+     * @param type 필터용 타입 (CHARGE, USE, REFUND, CANCEL 등, 선택사항)
+     * @return 포인트 히스토리 조회 응답 (페이지네이션 포함)
+     */
+    @GetMapping("/points/history")
+    public ResponseEntity<PointHistoryResponse> getPointHistory(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) String type) {
+        PointHistoryResponse response = pointHistoryService.getPointHistory(page, size, type);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(response);
