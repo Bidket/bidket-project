@@ -8,6 +8,9 @@ import org.springframework.http.HttpStatus;
 public enum ProductErrorCode implements BaseErrorCode {
 
     //PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "상품을 찾을 수 없습니다.")
+    PRODUCT_TYPE_NOT_FOUND(HttpStatus.NOT_FOUND, "상품타입을 찾을 수 없습니다."),
+    CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "카테고리를 찾을 수 없습니다."),
+    SIZE_TYPE_NOT_FOUND(HttpStatus.NOT_FOUND, "사이즈타입을 찾을 수 없습니다.")
     ;
 
     private final HttpStatus status;

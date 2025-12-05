@@ -51,4 +51,14 @@ public class Brand extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private BrandStatus status;
+
+    public static Brand create(String name, String nameKr, String originCountry, String websiteUrl) {
+        Brand brand = new Brand();
+        brand.name = name;
+        brand.nameKr = nameKr;
+        brand.originCountry = originCountry;
+        brand.websiteUrl = websiteUrl;
+        brand.status = BrandStatus.ACTIVE;
+        return brand;
+    }
 }

@@ -57,4 +57,40 @@ public class Category extends BaseEntity {
 
     @Column(nullable = false, name = "is_leaf")
     private Boolean isLeaf;
+
+    public static Category create(
+            ProductType productType,
+            Category parent,
+            String name,
+            String code,
+            Long sortId
+    ) {
+        Category category = new Category();
+        category.productType = productType;
+        category.parentId = parent;
+        category.name = name;
+        category.code = code;
+        category.sortId = sortId;
+
+        category.updateDepth();
+        category.markAsLeaf();
+
+        return category;
+    }
+
+    public void markAsLeaf() {
+        this.isLeaf = true;
+    }
+
+    public void markAsNotLeaf() {
+        this.isLeaf = false;
+    }
+
+    public void updateDepth() {
+        if (this.parentId == null) {
+            this.depth = 0;
+        } else {
+            this.depth = this.parentId.getDepth() + 1;
+        }
+    }
 }
