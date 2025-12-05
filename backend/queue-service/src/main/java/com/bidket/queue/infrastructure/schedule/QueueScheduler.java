@@ -1,7 +1,7 @@
 package com.bidket.queue.infrastructure.schedule;
 
-import com.bidket.queue.domain.jwt.TokenProvider;
 import com.bidket.queue.domain.repository.RedisRepository;
+import com.bidket.queue.global.util.jwt.TokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
