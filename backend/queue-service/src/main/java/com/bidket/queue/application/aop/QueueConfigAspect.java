@@ -2,7 +2,7 @@ package com.bidket.queue.application.aop;
 
 import com.bidket.queue.domain.exception.QueueException;
 import com.bidket.queue.domain.model.QueueErrorCode;
-import com.bidket.queue.domain.repository.RedisRepository;
+import com.bidket.queue.domain.repository.QueueManagementRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -20,14 +20,14 @@ import java.util.UUID;
 @Component
 @RequiredArgsConstructor
 public class QueueConfigAspect {
-    private final RedisRepository redisRepository;
+    private final QueueManagementRepository managementRepository;
 
     @Around("@annotation(com.bidket.queue.global.annotation.CheckQueueConfig)")
     public Object checkQueueConfig(ProceedingJoinPoint joinPoint) {
         UUID auctionId = findAuctionId(joinPoint);
         String configKey = "queue:auction:" + auctionId + ":config";
 
-        return redisRepository.getConfig(configKey)
+        return managementRepository.getConfig(configKey)
                 .switchIfEmpty(Mono.error(new QueueException(QueueErrorCode.CONFIG_NOT_FOUND)))
                 .flatMap(config -> {
                     config.checkOpenStatus(Instant.now());

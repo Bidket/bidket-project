@@ -1,7 +1,8 @@
 package com.bidket.queue.presentation.api;
 
 import com.bidket.common.presentation.response.ApiResponse;
-import com.bidket.queue.application.service.QueueService;
+import com.bidket.queue.application.facade.QueueFacade;
+import com.bidket.queue.application.service.QueueTrafficService;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
 import com.bidket.queue.presentation.dto.response.QueueEnterResponse;
@@ -19,11 +20,11 @@ import java.util.UUID;
 @RequestMapping("/v1")
 @RequiredArgsConstructor
 public class QueueController {
-    private final QueueService queueService;
+    private final QueueFacade queueFacade;
 
     @PostMapping("/internal/queues")
     public Mono<ResponseEntity<ApiResponse<QueueCreateResponse>>> createQueueConfig(@RequestBody @Valid QueueCreateRequest request) {
-        return queueService.createConfigQueue(request)
+        return queueFacade.createConfigQueue(request)
                 .map(response -> ResponseEntity
                         .created(URI.create("/v1/internal/queues/" + response.auctionId()))
                         .body(ApiResponse.success("queue config 생성", response)));
@@ -34,7 +35,7 @@ public class QueueController {
         // TODO userId 전달 방식 확립 이후 변경
         // UUID userId = UUID.fromString(Objects.requireNonNull(request.headers().firstHeader("USER-ID")));
         UUID userId = UUID.randomUUID();
-        return queueService.enterQueue(userId, auctionId)
+        return queueFacade.enterQueue(userId, auctionId)
                 .map(response ->
                         ResponseEntity.ok(ApiResponse.success(response))
                 );
@@ -43,7 +44,7 @@ public class QueueController {
     @GetMapping("/queues/{auctionId}/status")
     public Mono<ResponseEntity<ApiResponse<QueueStatusResponse>>> getQueueStats(@PathVariable UUID auctionId) {
         UUID userId = UUID.fromString("3cd28e63-55fc-47f9-b0a7-f3ccaabb78b9");
-        return queueService.getQueueStatus(userId, auctionId)
+        return queueFacade.getQueueStatus(userId, auctionId)
                 .map(response ->
                         ResponseEntity
                                 .ok()
