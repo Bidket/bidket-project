@@ -1,21 +1,26 @@
 package com.bidket.user.presentation.api;
 
 import com.bidket.common.presentation.response.ApiResponse;
+import com.bidket.user.application.service.BlacklistStatusService;
 import com.bidket.user.application.service.EmailCheckService;
 import com.bidket.user.application.service.LoginService;
 import com.bidket.user.application.service.MyInfoService;
+import com.bidket.user.application.service.PermissionsService;
 import com.bidket.user.application.service.SignupService;
 import com.bidket.user.presentation.dto.request.LoginRequest;
 import com.bidket.user.presentation.dto.request.SignupRequest;
+import com.bidket.user.presentation.dto.response.BlacklistStatusResponse;
 import com.bidket.user.presentation.dto.response.EmailCheckResponse;
 import com.bidket.user.presentation.dto.response.LoginResponse;
 import com.bidket.user.presentation.dto.response.MyInfoResponse;
+import com.bidket.user.presentation.dto.response.PermissionsResponse;
 import com.bidket.user.presentation.dto.response.SignupResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
+import java.util.UUID;
 
 /**
  * 회원 관련 API 컨트롤러
@@ -36,6 +42,8 @@ public class MemberController {
     private final LoginService loginService;
     private final MyInfoService myInfoService;
     private final EmailCheckService emailCheckService;
+    private final PermissionsService permissionsService;
+    private final BlacklistStatusService blacklistStatusService;
 
     /**
      * 회원가입 API
@@ -81,6 +89,37 @@ public class MemberController {
     public ResponseEntity<EmailCheckResponse> checkEmail(
             @RequestParam(required = false) String email) {
         EmailCheckResponse response = emailCheckService.checkEmail(email);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
+    }
+
+    /**
+     * 권한 조회 API
+     * 관리자가 특정 회원의 권한/역할 정보(예: ROLE_USER, ROLE_ADMIN) 조회
+     * Authorization 헤더에 Bearer JWT 토큰이 필요
+     * @param memberId 조회할 회원 ID
+     * @return 권한 조회 응답 (memberId, roles)
+     */
+    @GetMapping("/{memberId}/permissions")
+    public ResponseEntity<PermissionsResponse> getPermissions(@PathVariable UUID memberId) {
+        PermissionsResponse response = permissionsService.getPermissions(memberId);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
+    }
+
+    /**
+     * 블랙리스트 상태 조회 API
+     * 관리자가 특정 회원의 블랙리스트 여부를 조회
+     * 입찰 가능 여부 판단 등에 활용
+     * Authorization 헤더에 Bearer JWT 토큰이 필요
+     * @param memberId 조회할 회원 ID
+     * @return 블랙리스트 상태 조회 응답 (memberId, isBlacklisted, reason, expireAt)
+     */
+    @GetMapping("/{memberId}/blacklist-status")
+    public ResponseEntity<BlacklistStatusResponse> getBlacklistStatus(@PathVariable UUID memberId) {
+        BlacklistStatusResponse response = blacklistStatusService.getBlacklistStatus(memberId);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(response);
