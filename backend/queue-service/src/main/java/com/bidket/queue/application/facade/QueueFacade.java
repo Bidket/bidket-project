@@ -30,7 +30,7 @@ public class QueueFacade {
         return queueTrafficService.getQueueStatus(userId, auctionId);
     }
 
-    public Mono<String> cancelWaiting(UUID userId, UUID auctionId) {
+    public Mono<Void> cancelWaiting(UUID userId, UUID auctionId) {
         return queueTrafficService.cancelWaiting(userId, auctionId);
     }
 }

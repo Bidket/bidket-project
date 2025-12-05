@@ -2,7 +2,6 @@ package com.bidket.queue.presentation.api;
 
 import com.bidket.common.presentation.response.ApiResponse;
 import com.bidket.queue.application.facade.QueueFacade;
-import com.bidket.queue.application.service.QueueTrafficService;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
 import com.bidket.queue.presentation.dto.response.QueueEnterResponse;
@@ -50,6 +49,17 @@ public class QueueController {
                                 .ok()
                                 .header("X-ACTIVE_TOKEN", response.token())
                                 .body(ApiResponse.success(response))
+                );
+    }
+
+    @DeleteMapping("/queues/{auctionId}")
+    public Mono<ResponseEntity<Void>> cancelWaiting(@PathVariable UUID auctionId) {
+        UUID userId = UUID.randomUUID();
+        return queueFacade.cancelWaiting(userId, auctionId)
+                .map(response ->
+                        ResponseEntity.noContent()
+                                .location(URI.create("/temp"))
+                                .build()
                 );
     }
 }
