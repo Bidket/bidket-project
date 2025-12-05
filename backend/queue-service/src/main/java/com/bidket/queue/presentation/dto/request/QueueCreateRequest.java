@@ -4,6 +4,7 @@ import com.bidket.queue.domain.model.QueueConfigModel;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -12,8 +13,8 @@ public record QueueCreateRequest(
         @NotNull UUID auctionId,
         @NotNull Long maxActive,
         @NotNull Integer permitsPerSec,
-        @NotNull LocalDateTime openAt,
-        @NotNull LocalDateTime closeAt
+        @NotNull Instant openAt,
+        @NotNull Instant closeAt
 ) {
     public QueueConfigModel toModel() {
         return QueueConfigModel.builder()
