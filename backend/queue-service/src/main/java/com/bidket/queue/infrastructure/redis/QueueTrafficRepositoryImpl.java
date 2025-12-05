@@ -1,6 +1,7 @@
 package com.bidket.queue.infrastructure.redis;
 
 import com.bidket.queue.domain.repository.QueueTrafficRepository;
+import com.bidket.queue.global.util.KeyGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.ReactiveRedisOperations;
 import org.springframework.data.redis.core.ZSetOperations;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class QueueTrafficRepositoryImpl implements QueueTrafficRepository {
     private final ReactiveRedisOperations<String, Object> redisOps;
+    private final KeyGenerator keyGenerator;
 
     @Override
     public Mono<Long> addAllActiveUser(String activeKey, List<UUID> userIds) {
@@ -34,9 +36,10 @@ public class QueueTrafficRepositoryImpl implements QueueTrafficRepository {
     }
 
     @Override
-    public Mono<Long> getActiveUserCount(String activeKey) {
+    public Mono<Long> getActiveUserCount(UUID auctionId) {
+        String key = keyGenerator.activeKey(auctionId);
         return redisOps.opsForZSet()
-                .size(activeKey);
+                .size(key);
     }
 
     @Override
@@ -44,6 +47,14 @@ public class QueueTrafficRepositoryImpl implements QueueTrafficRepository {
         long now = System.currentTimeMillis();
         // TODO waiting queue 용량 제한
         return redisOps.opsForZSet().add(waitingKey, userId, now);
+    }
+
+    @Override
+    public Mono<Long> getWaitingUserCount(UUID auctionId) {
+        String key = keyGenerator.waitingKey(auctionId);
+
+        return redisOps.opsForZSet()
+                .size(key);
     }
 
     @Override

@@ -5,12 +5,11 @@ import com.bidket.queue.application.facade.QueueFacade;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
 import com.bidket.queue.presentation.dto.response.QueueEnterResponse;
-import com.bidket.queue.presentation.dto.response.QueueStatusResponse;
+import com.bidket.queue.presentation.dto.response.QueueAccommodatableResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.reactive.function.server.ServerRequest;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
@@ -42,7 +41,7 @@ public class QueueController {
     }
 
     @GetMapping("/queues/{auctionId}/status")
-    public Mono<ResponseEntity<ApiResponse<QueueStatusResponse>>> getQueueStats(@PathVariable UUID auctionId) {
+    public Mono<ResponseEntity<ApiResponse<QueueAccommodatableResponse>>> getQueueStats(@PathVariable UUID auctionId) {
         UUID userId = UUID.fromString("3cd28e63-55fc-47f9-b0a7-f3ccaabb78b9");
         return queueFacade.getQueueStatus(userId, auctionId)
                 .map(response ->
