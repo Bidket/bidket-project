@@ -1,0 +1,35 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - dev        # dev 브랜치에 push될 때 배포
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1) 저장소 Checkout
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2) GitHub Actions 환경에서 SSH 설정
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/bidket.pem
+          chmod 600 ~/.ssh/bidket.pem
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      # 3) 프로젝트 파일을 EC2로 전송 (docker-compose.yml 등)
+      - name: Upload project to EC2
+        run: |
+          rsync -avz --delete -e "ssh -i ~/.ssh/bidket.pem" ./ ubuntu@${{ secrets.EC2_HOST }}:/opt/bidket/
+
+      # 4) EC2에서 run.sh 실행하여 배포
+      - name: Run deployment script on EC2
+        run: |
+          ssh -i ~/.ssh/bidket.pem ubuntu@${{ secrets.EC2_HOST }} \
+          "bash /opt/bidket/run.sh"
+# 배포 테스트용 임시 주석
