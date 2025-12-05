@@ -1,6 +1,7 @@
 package com.bidket.user.presentation.api;
 
 import com.bidket.common.presentation.response.ApiResponse;
+import com.bidket.user.application.service.BidEligibilityService;
 import com.bidket.user.application.service.BlacklistRegisterService;
 import com.bidket.user.application.service.BlacklistStatusService;
 import com.bidket.user.application.service.EmailCheckService;
@@ -11,6 +12,7 @@ import com.bidket.user.application.service.SignupService;
 import com.bidket.user.presentation.dto.request.BlacklistRegisterRequest;
 import com.bidket.user.presentation.dto.request.LoginRequest;
 import com.bidket.user.presentation.dto.request.SignupRequest;
+import com.bidket.user.presentation.dto.response.BidEligibilityResponse;
 import com.bidket.user.presentation.dto.response.BlacklistRegisterResponse;
 import com.bidket.user.presentation.dto.response.BlacklistStatusResponse;
 import com.bidket.user.presentation.dto.response.EmailCheckResponse;
@@ -48,6 +50,7 @@ public class MemberController {
     private final PermissionsService permissionsService;
     private final BlacklistStatusService blacklistStatusService;
     private final BlacklistRegisterService blacklistRegisterService;
+    private final BidEligibilityService bidEligibilityService;
 
     /**
      * 회원가입 API
@@ -142,6 +145,21 @@ public class MemberController {
         BlacklistRegisterResponse response = blacklistRegisterService.registerBlacklist(memberId, request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
+                .body(response);
+    }
+
+    /**
+     * 입찰 가능 여부 체크 API
+     * 현재 로그인한 회원의 입찰 가능 여부를 확인
+     * 블랙리스트 여부, 회원상태 확인
+     * Authorization 헤더에 Bearer JWT 토큰이 필요
+     * @return 입찰 가능 여부 체크 응답 (eligible, reasons, memberStatus)
+     */
+    @GetMapping("/bid-eligibility")
+    public ResponseEntity<BidEligibilityResponse> checkBidEligibility() {
+        BidEligibilityResponse response = bidEligibilityService.checkBidEligibility();
+        return ResponseEntity
+                .status(HttpStatus.OK)
                 .body(response);
     }
 
