@@ -1,6 +1,6 @@
-package com.bidket.product.domain.repository;
+package com.bidket.product.infrastructure.persistence.repository;
 
-import com.bidket.product.domain.model.Product;
+import com.bidket.product.infrastructure.persistence.entity.Product;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 

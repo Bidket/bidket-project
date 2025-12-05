@@ -1,4 +1,4 @@
-package com.bidket.product.domain.model.enums;
+package com.bidket.product.domain.model;
 
 public enum Gender {
     UNISEX,

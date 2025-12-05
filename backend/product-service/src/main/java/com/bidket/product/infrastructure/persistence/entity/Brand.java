@@ -1,7 +1,7 @@
-package com.bidket.product.domain.model;
+package com.bidket.product.infrastructure.persistence.entity;
 
 import com.bidket.common.infra.BaseEntity;
-import com.bidket.product.domain.model.enums.BrandStatus;
+import com.bidket.product.domain.model.BrandStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

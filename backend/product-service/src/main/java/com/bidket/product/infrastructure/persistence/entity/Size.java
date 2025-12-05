@@ -1,4 +1,4 @@
-package com.bidket.product.domain.model;
+package com.bidket.product.infrastructure.persistence.entity;
 
 import com.bidket.common.infra.BaseEntity;
 import jakarta.persistence.Column;
@@ -17,33 +17,30 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(
-        name = "p_size_type",
+        name = "p_size",
         indexes = {
-                @Index(name = "idx_size_type_product_type", columnList = "product_type_id"),
-                @Index(name = "idx_size_type_code", columnList = "code")
+                @Index(name = "idx_size_size_type", columnList = "size_type_id"),
+                @Index(name = "idx_size_sort_id", columnList = "sort_id")
         }
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class SizeType extends BaseEntity {
+public class Size extends BaseEntity {
 
     @Id
     @GeneratedValue
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_type_id", nullable = false)
-    private ProductType productType;
+    @JoinColumn(name = "size_type_id", nullable = false)
+    private SizeType sizeType;
 
     @Column(nullable = false, length = 50)
     private String code;
 
-    @Column(name = "region_code", length = 10)
-    private String regionCode;
+    @Column(nullable = false, name = "display_label", length = 50)
+    private String displayLabel;
 
-    @Column(columnDefinition = "TEXT")
-    private String description;
-
-    @Column(nullable = false, name = "is_default")
-    private Boolean isDefault;
+    @Column(nullable = false, name = "sort_id")
+    private Long sortId;
 }

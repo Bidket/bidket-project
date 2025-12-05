@@ -1,8 +1,8 @@
-package com.bidket.product.domain.model;
+package com.bidket.product.infrastructure.persistence.entity;
 
 import com.bidket.common.infra.BaseEntity;
-import com.bidket.product.domain.model.enums.Gender;
-import com.bidket.product.domain.model.enums.ProductStatus;
+import com.bidket.product.domain.model.Gender;
+import com.bidket.product.domain.model.ProductStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

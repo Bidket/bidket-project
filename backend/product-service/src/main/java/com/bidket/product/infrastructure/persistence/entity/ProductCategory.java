@@ -1,4 +1,4 @@
-package com.bidket.product.domain.model;
+package com.bidket.product.infrastructure.persistence.entity;
 
 import com.bidket.common.infra.BaseEntity;
 import jakarta.persistence.Column;

@@ -1,4 +1,4 @@
-package com.bidket.product.domain.model.ProductDetail;
+package com.bidket.product.domain.model;
 
 import java.util.UUID;
 
