@@ -1,9 +1,14 @@
 package com.bidket.auction.infrastructure.redis;
 
-import com.bidket.auction.domain.model.Auction;
-import com.bidket.auction.domain.model.AuctionCondition;
-import com.bidket.auction.domain.repository.AuctionRepository;
-import com.bidket.auction.infrastructure.persistence.impl.AuctionJpaRepository;
+import com.bidket.auction.domain.auction.model.Auction;
+import com.bidket.auction.domain.auction.model.AuctionCondition;
+import com.bidket.auction.domain.auction.model.AuctionStatus;
+import com.bidket.auction.domain.auction.model.vo.AuctionPeriod;
+import com.bidket.auction.domain.auction.model.vo.AuctionStats;
+import com.bidket.auction.domain.auction.model.vo.PriceInfo;
+import com.bidket.auction.domain.auction.model.vo.WinnerInfo;
+import com.bidket.auction.domain.auction.repository.AuctionRepository;
+import com.bidket.auction.infrastructure.auction.persistence.impl.AuctionJpaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -42,16 +47,30 @@ class ViewCountCacheServiceTest {
         viewCountCacheService.clearCache();
         
         // 테스트용 경매 생성 및 저장 (DB 동기화 테스트를 위해 필요)
+        PriceInfo priceInfo = PriceInfo.builder()
+                .startPrice(10000L)
+                .currentPrice(10000L)
+                .bidIncrement(1000L)
+                .build();
+
+        AuctionPeriod period = AuctionPeriod.builder()
+                .startTime(LocalDateTime.now().plusHours(1))
+                .endTime(LocalDateTime.now().plusDays(1))
+                .originalEndTime(LocalDateTime.now().plusDays(1))
+                .extensionCount(0)
+                .build();
+
         Auction auction = Auction.builder()
                 .productSizeId(UUID.randomUUID())
                 .sellerId(UUID.randomUUID())
                 .auctionTitle("Test Auction")
                 .description("Test Description")
-                .condition(AuctionCondition.NEW) 
-                .startPrice(10000L)
-                .bidIncrement(1000L)
-                .startTime(LocalDateTime.now().plusHours(1))
-                .endTime(LocalDateTime.now().plusDays(1))
+                .condition(AuctionCondition.NEW)
+                .priceInfo(priceInfo)
+                .period(period)
+                .stats(AuctionStats.createDefault())
+                .winnerInfo(WinnerInfo.empty())
+                .status(AuctionStatus.CREATING)
                 .build();
         
         auctionRepository.save(auction);
@@ -218,16 +237,30 @@ class ViewCountCacheServiceTest {
             // Given 
             List<Auction> auctions = new ArrayList<>();
             for (int i = 0; i < 150; i++) {
+                PriceInfo priceInfo = PriceInfo.builder()
+                        .startPrice(10000L)
+                        .currentPrice(10000L)
+                        .bidIncrement(1000L)
+                        .build();
+
+                AuctionPeriod period = AuctionPeriod.builder()
+                        .startTime(LocalDateTime.now().plusHours(1))
+                        .endTime(LocalDateTime.now().plusDays(1))
+                        .originalEndTime(LocalDateTime.now().plusDays(1))
+                        .extensionCount(0)
+                        .build();
+
                 Auction auction = Auction.builder()
                         .productSizeId(UUID.randomUUID())
                         .sellerId(UUID.randomUUID())
                         .auctionTitle("Bulk Test " + i)
                         .description("Bulk Description " + i)
                         .condition(AuctionCondition.NEW)
-                        .startPrice(10000L)
-                        .bidIncrement(1000L)
-                        .startTime(LocalDateTime.now().plusHours(1))
-                        .endTime(LocalDateTime.now().plusDays(1))
+                        .priceInfo(priceInfo)
+                        .period(period)
+                        .stats(AuctionStats.createDefault())
+                        .winnerInfo(WinnerInfo.empty())
+                        .status(AuctionStatus.CREATING)
                         .build();
                 auctions.add(auction);
             }
