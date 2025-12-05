@@ -8,7 +8,7 @@ spring:
     import: optional:file:.env[.properties]
 
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${QUEUE_DB}
+    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${USER_DB}
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
 
@@ -28,3 +28,7 @@ eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_SERVER_URL}
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION}
