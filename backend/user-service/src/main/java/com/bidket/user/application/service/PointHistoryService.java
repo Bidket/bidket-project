@@ -3,6 +3,7 @@ package com.bidket.user.application.service;
 import com.bidket.user.domain.exception.UserErrorCode;
 import com.bidket.user.domain.exception.UserException;
 import com.bidket.user.domain.model.PointHistoryType;
+import com.bidket.user.global.security.AuthenticationHelper;
 import com.bidket.user.infrastructure.persistence.entity.PointHistory;
 import com.bidket.user.infrastructure.persistence.repository.PointHistoryRepository;
 import com.bidket.user.presentation.dto.response.PointHistoryItemResponse;
@@ -11,8 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,7 +43,7 @@ public class PointHistoryService {
     @Transactional(readOnly = true)
     public PointHistoryResponse getPointHistory(Integer page, Integer size, String type) {
         // SecurityContext에서 userId 추출
-        UUID userId = getCurrentUserId();
+        UUID userId = AuthenticationHelper.getCurrentUserId();
         
         // 페이지네이션 파라미터 설정
         int pageNumber = (page != null && page >= 0) ? page : DEFAULT_PAGE;
@@ -108,34 +107,6 @@ public class PointHistoryService {
                 .relatedOrderId(history.getOrderId())
                 .createdAt(createdAt)
                 .build();
-    }
-
-    /**
-     * SecurityContext에서 현재 사용자 ID 추출
-     * @return 사용자 ID
-     * @throws UserException 인증 정보가 없는 경우
-     */
-    private UUID getCurrentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        
-        if (authentication == null || authentication.getPrincipal() == null) {
-            throw new UserException(UserErrorCode.UNAUTHORIZED);
-        }
-        
-        try {
-            if (authentication.getPrincipal() instanceof UUID) {
-                return (UUID) authentication.getPrincipal();
-            } else if (authentication.getPrincipal() instanceof String) {
-                return UUID.fromString((String) authentication.getPrincipal());
-            } else {
-                throw new UserException(UserErrorCode.UNAUTHORIZED);
-            }
-        } catch (IllegalArgumentException e) {
-            // UUID 형식이 잘못된 경우
-            throw new UserException(UserErrorCode.INVALID_TOKEN);
-        } catch (Exception e) {
-            throw new UserException(UserErrorCode.UNAUTHORIZED);
-        }
     }
 }
 
