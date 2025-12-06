@@ -12,6 +12,7 @@ import com.bidket.product.presentation.dto.response.CategoryCreateResponse;
 import com.bidket.product.presentation.dto.response.ProductTypeCreateResponse;
 import com.bidket.product.presentation.dto.response.SizeCreateResponse;
 import com.bidket.product.presentation.dto.response.SizeTypeCreateResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -27,35 +28,35 @@ public class ProductAdminController {
 
     @PostMapping("/product-types")
     public ApiResponse<ProductTypeCreateResponse> createProductType(
-            @RequestBody ProductTypeCreateRequest req
+            @Valid @RequestBody ProductTypeCreateRequest req
     ) {
         return ApiResponse.success(productAdminService.createProductType(req));
     }
 
     @PostMapping("/brands")
     public ApiResponse<BrandCreateResponse> createBrand(
-            @RequestBody BrandCreateRequest req
+            @Valid @RequestBody BrandCreateRequest req
     ) {
         return ApiResponse.success(productAdminService.createBrand(req));
     }
 
     @PostMapping("/categories")
     public ApiResponse<CategoryCreateResponse> createCategory(
-            @RequestBody CategoryCreateRequest req
+            @Valid @RequestBody CategoryCreateRequest req
     ) {
         return ApiResponse.success(productAdminService.createCategory(req));
     }
 
     @PostMapping("/size-types")
     public ApiResponse<SizeTypeCreateResponse> createSizeType(
-            @RequestBody SizeTypeCreateRequest req
+            @Valid @RequestBody SizeTypeCreateRequest req
     ) {
         return ApiResponse.success(productAdminService.createSizeType(req));
     }
 
     @PostMapping("/sizes")
     public ApiResponse<SizeCreateResponse> createSize(
-            @RequestBody SizeCreateRequest req
+            @Valid @RequestBody SizeCreateRequest req
     ) {
         return ApiResponse.success(productAdminService.createSize(req));
     }
