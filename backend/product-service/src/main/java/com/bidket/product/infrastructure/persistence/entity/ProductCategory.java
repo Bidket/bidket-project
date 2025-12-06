@@ -49,4 +49,16 @@ public class ProductCategory extends BaseEntity {
 
     @Column(nullable = false, name = "is_primary")
     private Boolean isPrimary;
+
+    public static ProductCategory create(
+            Product product,
+            Category category,
+            Boolean isPrimary
+    ) {
+        ProductCategory productCategory = new ProductCategory();
+        productCategory.product = product;
+        productCategory.category = category;
+        productCategory.isPrimary = isPrimary != null && isPrimary;
+        return productCategory;
+    }
 }

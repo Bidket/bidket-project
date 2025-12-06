@@ -20,6 +20,7 @@ import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.cglib.core.Local;
 
 @Entity
 @Table(
@@ -79,4 +80,30 @@ public class Product extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ProductStatus status;
+
+    public static Product create(
+            ProductType productType,
+            Brand brand,
+            String name,
+            String nameKr,
+            String modelCode,
+            Gender gender,
+            String description,
+            LocalDate releaseDate,
+            BigDecimal releasePrice,
+            ProductStatus status
+    ) {
+       Product product = new Product();
+       product.productType = productType;
+       product.brand = brand;
+       product.name = name;
+       product.nameKr = nameKr;
+       product.modelCode = modelCode;
+       product.gender = gender;
+       product.description = description;
+       product.releaseDate = releaseDate;
+       product.releasePrice = releasePrice;
+       product.status = status;
+       return product;
+    }
 }

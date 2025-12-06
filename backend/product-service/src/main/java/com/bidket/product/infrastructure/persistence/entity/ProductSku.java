@@ -54,4 +54,18 @@ public class ProductSku extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private SkuStatus status;
+
+    public static ProductSku create(
+            Product product,
+            Size size,
+            String skuCode,
+            SkuStatus status
+    ) {
+        ProductSku sku = new ProductSku();
+        sku.product = product;
+        sku.size = size;
+        sku.skuCode = skuCode;
+        sku.status = status;
+        return sku;
+    }
 }

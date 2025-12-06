@@ -68,4 +68,24 @@ public class ProductShoesDetail extends BaseEntity implements ProductDetail {
     public UUID getProductId() {
         return product != null ? product.getId() : null;
     }
+
+    public static ProductShoesDetail create(
+            Product product,
+            String colorway,
+            String mainMaterial,
+            Silhouette silhouette,
+            String style,
+            String originCountry,
+            BigDecimal weight
+    ) {
+        ProductShoesDetail detail = new ProductShoesDetail();
+        detail.product = product;
+        detail.colorway = colorway;
+        detail.mainMaterial = mainMaterial;
+        detail.silhouette = silhouette;
+        detail.style = style;
+        detail.originCountry = originCountry;
+        detail.weight = weight;
+        return detail;
+    }
 }
