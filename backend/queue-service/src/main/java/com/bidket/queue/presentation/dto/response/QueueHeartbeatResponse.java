@@ -4,6 +4,7 @@ import com.bidket.queue.domain.model.HeartbeatStatus;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.UUID;
 
 @Builder
@@ -11,6 +12,6 @@ public record QueueHeartbeatResponse(
         UUID userId,
         String activeToken,
         HeartbeatStatus status,
-        LocalDateTime enterTime
+        Date enterTime
 ) {
 }

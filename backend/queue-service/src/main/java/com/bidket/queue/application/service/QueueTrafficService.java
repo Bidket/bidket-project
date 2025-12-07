@@ -138,6 +138,7 @@ public class QueueTrafficService {
                             .map(isSaved ->
                                     QueueHeartbeatResponse.builder()
                                             .userId(userId)
+                                            .enterTime(tokenProvider.getIssuedAt(savedToken))
                                             .status(HeartbeatStatus.ACTIVE)
                                             .build()
                             );

@@ -27,7 +27,7 @@ public class TokenProvider {
         SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64URL.decode(secret));
         return Jwts.builder()
                 .claim("userId", userId)
-                .claim("acutionId", auctionId)
+                .claim("auctionId", auctionId)
                 .setIssuedAt(Date.from(Instant.now()))
                 .setExpiration(Date.from(Instant.now().plusSeconds(expiration)))
                 .signWith(key)
@@ -55,15 +55,25 @@ public class TokenProvider {
         Date expired = claims
                 .getExpiration();
 
-        if(expired.after(Date.from(Instant.now())))
+        if(expired.before(Date.from(Instant.now())))
             return false;
 
-        UUID userIdPayload = claims
-                .get("userId", UUID.class);
+        UUID userIdPayload = UUID.fromString(claims
+                .get("userId", String.class));
 
-        UUID auctionIdPayload = claims
-                .get("auctionId", UUID.class);
+        UUID auctionIdPayload = UUID.fromString(claims
+                .get("auctionId", String.class));
 
         return userId.equals(userIdPayload) && auctionId.equals(auctionIdPayload);
+    }
+
+    public Date getIssuedAt(String token) {
+        SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64URL.decode(secret));
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getIssuedAt();
     }
 }

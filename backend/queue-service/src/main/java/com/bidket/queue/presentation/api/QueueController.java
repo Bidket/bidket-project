@@ -69,8 +69,8 @@ public class QueueController {
 
     @PostMapping("/queues/{auctionId}/heartbeat")
     public Mono<ResponseEntity<ApiResponse<QueueHeartbeatResponse>>> heartbeat(@PathVariable UUID auctionId) {
-        UUID userId = UUID.randomUUID();
-        String token = "tempToken";
+        UUID userId = UUID.fromString("983c3afb-14b4-4a30-b4fe-80168202fc7e");
+        String token = "eyJhbGciOiJIUzM4NCJ9.eyJ1c2VySWQiOiI5ODNjM2FmYi0xNGI0LTRhMzAtYjRmZS04MDE2ODIwMmZjN2UiLCJhdWN0aW9uSWQiOiIzZmE4NWY2NC01NzE3LTQ1NjItYjNmYy0yYzk2M2Y2NmFmYTkiLCJpYXQiOjE3NjUxMTU0NDMsImV4cCI6MTc3MjMxNTQ0M30.eOY4IU7Pb-zqv3_TCKZb3WLpXFhFfMPY1Z_Nas8WZpZEvqJzWzuoq_XF-66jsSst";
         return queueFacade.heartbeat(userId, auctionId, token)
                 .map(response ->
                         ResponseEntity.ok(ApiResponse.success(response))
