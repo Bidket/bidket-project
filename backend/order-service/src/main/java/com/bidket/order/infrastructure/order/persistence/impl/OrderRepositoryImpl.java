@@ -1,9 +1,9 @@
-package com.bidket.order.infrastructure.persistence.impl;
+package com.bidket.order.infrastructure.order.persistence.impl;
 
-import com.bidket.order.domain.model.Order;
-import com.bidket.order.domain.repository.OrderRepository;
-import com.bidket.order.infrastructure.persistence.entity.OrderEntity;
-import com.bidket.order.infrastructure.persistence.repository.OrderJpaRepository;
+import com.bidket.order.domain.order.model.Order;
+import com.bidket.order.domain.order.repository.OrderRepository;
+import com.bidket.order.infrastructure.order.persistence.entity.OrderEntity;
+import com.bidket.order.infrastructure.order.persistence.repository.OrderJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 

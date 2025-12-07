@@ -1,6 +1,6 @@
-package com.bidket.order.presentation.dto.response;
+package com.bidket.order.presentation.order.dto.response;
 
-import com.bidket.order.application.info.OrderInfo;
+import com.bidket.order.application.order.info.OrderInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.format.DateTimeFormatter;
 import lombok.Getter;

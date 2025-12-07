@@ -6,9 +6,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
-import com.bidket.order.application.info.OrderInfo;
-import com.bidket.order.domain.model.Order;
-import com.bidket.order.domain.repository.OrderRepository;
+import com.bidket.order.application.order.facade.OrderFacade;
+import com.bidket.order.application.order.info.OrderInfo;
+import com.bidket.order.domain.order.model.Order;
+import com.bidket.order.domain.order.repository.OrderRepository;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

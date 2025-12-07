@@ -10,9 +10,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.bidket.order.application.facade.OrderFacade;
-import com.bidket.order.application.info.OrderInfo;
-import com.bidket.order.domain.model.OrderStatus;
+import com.bidket.order.application.order.facade.OrderFacade;
+import com.bidket.order.application.order.info.OrderInfo;
+import com.bidket.order.domain.order.model.OrderStatus;
+import com.bidket.order.presentation.order.api.OrderController;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import java.time.LocalDateTime;

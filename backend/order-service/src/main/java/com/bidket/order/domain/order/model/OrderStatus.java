@@ -1,4 +1,4 @@
-package com.bidket.order.domain.model;
+package com.bidket.order.domain.order.model;
 
 public enum OrderStatus {
     PAYMENT,    // 결제 대기

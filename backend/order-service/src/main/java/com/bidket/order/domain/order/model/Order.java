@@ -1,4 +1,4 @@
-package com.bidket.order.domain.model;
+package com.bidket.order.domain.order.model;
 
 import java.time.LocalDateTime;
 import java.util.UUID;

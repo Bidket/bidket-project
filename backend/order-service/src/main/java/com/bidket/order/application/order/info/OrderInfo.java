@@ -1,7 +1,7 @@
-package com.bidket.order.application.info;
+package com.bidket.order.application.order.info;
 
-import com.bidket.order.domain.model.Order;
-import com.bidket.order.domain.model.OrderStatus;
+import com.bidket.order.domain.order.model.Order;
+import com.bidket.order.domain.order.model.OrderStatus;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.Getter;

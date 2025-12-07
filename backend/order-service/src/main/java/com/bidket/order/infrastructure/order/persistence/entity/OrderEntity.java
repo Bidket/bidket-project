@@ -1,7 +1,7 @@
-package com.bidket.order.infrastructure.persistence.entity;
+package com.bidket.order.infrastructure.order.persistence.entity;
 
 import com.bidket.common.infra.BaseEntity;
-import com.bidket.order.domain.model.OrderStatus;
+import com.bidket.order.domain.order.model.OrderStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

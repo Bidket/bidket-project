@@ -1,6 +1,6 @@
-package com.bidket.order.infrastructure.persistence.repository;
+package com.bidket.order.infrastructure.order.persistence.repository;
 
-import com.bidket.order.infrastructure.persistence.entity.OrderEntity;
+import com.bidket.order.infrastructure.order.persistence.entity.OrderEntity;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 

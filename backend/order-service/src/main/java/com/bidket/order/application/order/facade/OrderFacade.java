@@ -1,8 +1,8 @@
-package com.bidket.order.application.facade;
+package com.bidket.order.application.order.facade;
 
-import com.bidket.order.application.info.OrderInfo;
-import com.bidket.order.domain.model.Order;
-import com.bidket.order.domain.repository.OrderRepository;
+import com.bidket.order.application.order.info.OrderInfo;
+import com.bidket.order.domain.order.model.Order;
+import com.bidket.order.domain.order.repository.OrderRepository;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
