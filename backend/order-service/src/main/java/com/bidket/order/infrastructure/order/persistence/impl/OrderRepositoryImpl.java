@@ -4,7 +4,10 @@ import com.bidket.order.domain.order.model.Order;
 import com.bidket.order.domain.order.repository.OrderRepository;
 import com.bidket.order.infrastructure.order.persistence.entity.OrderEntity;
 import com.bidket.order.infrastructure.order.persistence.repository.OrderJpaRepository;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -18,6 +21,13 @@ public class OrderRepositoryImpl implements OrderRepository {
         OrderEntity entity = toEntity(order);
         OrderEntity saved = orderJpaRepository.save(entity);
         return toDomain(saved);
+    }
+
+    @Override
+    public Page<Order> findByUserId(UUID userId, Pageable pageable) {
+        Page<OrderEntity> page = orderJpaRepository.findByUserIdOrderByCreatedAtDesc(userId,
+                pageable);
+        return page.map(this::toDomain);
     }
 
     private OrderEntity toEntity(Order order) {
