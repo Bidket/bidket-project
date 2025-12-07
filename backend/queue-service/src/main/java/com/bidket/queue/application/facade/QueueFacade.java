@@ -2,6 +2,7 @@ package com.bidket.queue.application.facade;
 
 import com.bidket.queue.application.service.QueueManagementService;
 import com.bidket.queue.application.service.QueueTrafficService;
+import com.bidket.queue.presentation.dto.request.QueueConfigUpdateRequest;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.*;
 import lombok.RequiredArgsConstructor;
@@ -38,5 +39,9 @@ public class QueueFacade {
 
     public Mono<QueueHeartbeatResponse> heartbeat(UUID userId, UUID auctionId, String token) {
         return queueTrafficService.heartbeat(userId, auctionId, token);
+    }
+
+    public Mono<QueueConfigUpdateResponse> updateConfig(UUID auctionId, QueueConfigUpdateRequest request) {
+        return queueManagementService.updateConfig(auctionId, request);
     }
 }
