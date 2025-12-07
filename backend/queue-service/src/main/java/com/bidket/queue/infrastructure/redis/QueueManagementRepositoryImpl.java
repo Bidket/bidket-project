@@ -1,7 +1,9 @@
 package com.bidket.queue.infrastructure.redis;
 
 import com.bidket.queue.domain.model.QueueConfigModel;
+import com.bidket.queue.domain.model.QueueConfigStatus;
 import com.bidket.queue.domain.repository.QueueManagementRepository;
+import com.bidket.queue.presentation.dto.request.QueueConfigUpdateRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.ReactiveRedisOperations;
@@ -66,5 +68,23 @@ public class QueueManagementRepositoryImpl implements QueueManagementRepository 
     public Mono<Long> removeActiveAuction(UUID auctionId) {
         return redisOps.opsForSet()
                 .remove(GLOBAL_ACTIVE_AUCTIONS_KEY, auctionId);
+    }
+
+    public Mono<Boolean> updateMaxActive(UUID auctionId, Long maxActive) {
+        String configKey = "queue:auction:" + auctionId + ":config";
+        return redisOps.opsForHash()
+                .put(configKey, "maxActive", maxActive);
+    }
+
+    public Mono<Boolean> updatePermitsPerSec(UUID auctionId, Integer permitsPerSec) {
+        String configKey = "queue:auction:" + auctionId + ":config";
+        return redisOps.opsForHash()
+                .put(configKey, "permitsPerSec", permitsPerSec);
+    }
+
+    public Mono<Boolean> updateStatus(UUID auctionId, QueueConfigStatus status) {
+        String configKey = "queue:auction:" + auctionId + ":config";
+        return redisOps.opsForHash()
+                .put(configKey, "status", status.toString());
     }
 }

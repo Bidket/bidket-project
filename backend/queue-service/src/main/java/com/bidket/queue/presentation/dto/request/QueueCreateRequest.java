@@ -1,6 +1,7 @@
 package com.bidket.queue.presentation.dto.request;
 
 import com.bidket.queue.domain.model.QueueConfigModel;
+import com.bidket.queue.domain.model.QueueConfigStatus;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
@@ -24,13 +25,4 @@ public record QueueCreateRequest(
         @NotNull(message = "경매 종료 시간은 null일 수 없습니다.")
         Instant closeAt
 ) {
-    public QueueConfigModel toModel() {
-        return QueueConfigModel.builder()
-                .auctionId(auctionId)
-                .maxActive(maxActive)
-                .permitsPerSec(permitsPerSec)
-                .openAt(openAt)
-                .closeAt(closeAt)
-                .build();
-    }
 }

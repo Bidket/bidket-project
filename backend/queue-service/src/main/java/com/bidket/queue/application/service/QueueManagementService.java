@@ -14,12 +14,12 @@ import java.time.temporal.ChronoUnit;
 
 @Service
 @RequiredArgsConstructor
-public class QueueInternalService {
+public class QueueManagementService {
     private final QueueManagementRepository managementRepository;
 
     public Mono<QueueCreateResponse> createConfigQueue(QueueCreateRequest request) {
         String key = "queue:auction:" + request.auctionId() + ":config";
-        QueueConfigModel queueConfig = request.toModel();
+        QueueConfigModel queueConfig = QueueConfigModel.from(request);
         return managementRepository.saveConfig(key, queueConfig)
                 .flatMap(isSuccess -> {
                     if (!isSuccess)

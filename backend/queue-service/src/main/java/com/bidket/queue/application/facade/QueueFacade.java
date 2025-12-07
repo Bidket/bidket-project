@@ -1,6 +1,6 @@
 package com.bidket.queue.application.facade;
 
-import com.bidket.queue.application.service.QueueInternalService;
+import com.bidket.queue.application.service.QueueManagementService;
 import com.bidket.queue.application.service.QueueTrafficService;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.*;
@@ -13,11 +13,11 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class QueueFacade {
-    private final QueueInternalService queueInternalService;
+    private final QueueManagementService queueManagementService;
     private final QueueTrafficService queueTrafficService;
 
     public Mono<QueueCreateResponse> createConfigQueue(QueueCreateRequest request) {
-        return queueInternalService.createConfigQueue(request);
+        return queueManagementService.createConfigQueue(request);
     }
 
     public Mono<QueueEnterResponse> enterQueue(UUID userId, UUID auctionId) {
