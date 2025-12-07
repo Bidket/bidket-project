@@ -1,7 +1,11 @@
 package com.bidket.product.presentation.api;
 
 import com.bidket.common.presentation.response.ApiResponse;
+import com.bidket.product.application.service.BrandService;
+import com.bidket.product.application.service.CategoryService;
 import com.bidket.product.application.service.ProductAdminService;
+import com.bidket.product.application.service.ShoesDetailService;
+import com.bidket.product.application.service.SizeService;
 import com.bidket.product.presentation.dto.request.BrandCreateRequest;
 import com.bidket.product.presentation.dto.request.CategoryCreateRequest;
 import com.bidket.product.presentation.dto.request.ProductCategoryCreateRequest;
@@ -34,7 +38,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class ProductAdminController {
 
+    private final BrandService brandService;
+    private final CategoryService categoryService;
+    private final SizeService sizeService;
     private final ProductAdminService productAdminService;
+    private final ShoesDetailService shoesDetailService;
 
     @PostMapping("/product-types")
     public ApiResponse<ProductTypeCreateResponse> createProductType(
@@ -47,28 +55,28 @@ public class ProductAdminController {
     public ApiResponse<BrandCreateResponse> createBrand(
             @Valid @RequestBody BrandCreateRequest req
     ) {
-        return ApiResponse.success(productAdminService.createBrand(req));
+        return ApiResponse.success(brandService.createBrand(req));
     }
 
     @PostMapping("/categories")
     public ApiResponse<CategoryCreateResponse> createCategory(
             @Valid @RequestBody CategoryCreateRequest req
     ) {
-        return ApiResponse.success(productAdminService.createCategory(req));
+        return ApiResponse.success(categoryService.createCategory(req));
     }
 
     @PostMapping("/size-types")
     public ApiResponse<SizeTypeCreateResponse> createSizeType(
             @Valid @RequestBody SizeTypeCreateRequest req
     ) {
-        return ApiResponse.success(productAdminService.createSizeType(req));
+        return ApiResponse.success(sizeService.createSizeType(req));
     }
 
     @PostMapping("/sizes")
     public ApiResponse<SizeCreateResponse> createSize(
             @Valid @RequestBody SizeCreateRequest req
     ) {
-        return ApiResponse.success(productAdminService.createSize(req));
+        return ApiResponse.success(sizeService.createSize(req));
     }
 
     @PostMapping("/products")
@@ -83,7 +91,7 @@ public class ProductAdminController {
             @PathVariable UUID productId,
             @Valid @RequestBody ProductShoesDetailCreateRequest req
     ) {
-        return ApiResponse.success(productAdminService.createShoesDetail(productId, req));
+        return ApiResponse.success(shoesDetailService.createShoesDetail(productId, req));
     }
 
     @PostMapping("/products/{productId}/categories")
