@@ -10,13 +10,13 @@ import java.util.Map;
 import java.util.UUID;
 
 public interface QueueManagementRepository {
-    Mono<Boolean> saveConfig(String configKey, QueueConfigModel model);
+    Mono<Boolean> saveConfig(UUID auctionId, QueueConfigModel model);
 
     Mono<QueueConfigModel> getConfig(UUID auctionId);
 
     Mono<Boolean> setExpiration(String key, Instant expireAt);
 
-    Mono<Boolean> deleteConfig(String configKey);
+    Mono<Boolean> deleteConfig(UUID auctionId);
 
     Mono<Long> registerActiveAuction(UUID auctionId);
 

@@ -37,10 +37,8 @@ public class QueueTrafficService {
 
     @CheckQueueConfig
     public Mono<QueueEnterResponse> enterQueue(UUID userId, UUID auctionId) {
-        String waitingKey = "queue:auction:" + auctionId + ":waiting";
-
-        return trafficRepository.addWaitingUser(waitingKey, userId)
-                .flatMap(isAdded -> trafficRepository.getRank(waitingKey, userId))
+        return trafficRepository.addWaitingUser(auctionId, userId)
+                .flatMap(isAdded -> trafficRepository.getRank(auctionId, userId))
                 .map(rank -> QueueEnterResponse.builder()
                         .auctionId(auctionId)
                         .userId(userId)
@@ -52,7 +50,6 @@ public class QueueTrafficService {
 
     @CheckQueueConfig
     public Mono<QueueAccommodatableResponse> isAccommodatable(UUID userId, UUID auctionId) {
-        String waitingKey = "queue:auction:" + auctionId + ":waiting";
 
         return trafficRepository.getToken(userId, auctionId)
                 .flatMap(token -> {
@@ -69,7 +66,7 @@ public class QueueTrafficService {
                             .message("입장이 가능합니다. 입찰 페이지로 이동합니다.")
                             .build());
                 })
-                .switchIfEmpty(trafficRepository.getRank(waitingKey, userId)
+                .switchIfEmpty(trafficRepository.getRank(auctionId, userId)
                         .map(rank -> QueueAccommodatableResponse.builder()
                                 .auctionId(auctionId)
                                 .userId(userId)

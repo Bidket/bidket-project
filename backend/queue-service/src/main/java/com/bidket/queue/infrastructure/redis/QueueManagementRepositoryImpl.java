@@ -22,8 +22,9 @@ public class QueueManagementRepositoryImpl implements QueueManagementRepository 
     private static final String GLOBAL_ACTIVE_AUCTIONS_KEY = "global:active_auctions";
 
     @Override
-    public Mono<Boolean> saveConfig(String configKey, QueueConfigModel model) {
+    public Mono<Boolean> saveConfig(UUID auctionId, QueueConfigModel model) {
         Map<String, String> configMap = model.toMap();
+        String configKey = "queue:auction:" + auctionId + ":config";
 
         return redisOps.opsForHash()
                 .putAll(configKey, configMap);
@@ -45,7 +46,8 @@ public class QueueManagementRepositoryImpl implements QueueManagementRepository 
     }
 
     @Override
-    public Mono<Boolean> deleteConfig(String configKey) {
+    public Mono<Boolean> deleteConfig(UUID auctionId) {
+        String configKey = "queue:auction:" + auctionId + ":config";
         return redisOps.opsForHash()
                 .delete(configKey);
     }

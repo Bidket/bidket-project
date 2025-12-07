@@ -49,7 +49,8 @@ public class QueueTrafficRepositoryImpl implements QueueTrafficRepository {
     }
 
     @Override
-    public Mono<Boolean> addWaitingUser(String waitingKey, UUID userId) {
+    public Mono<Boolean> addWaitingUser(UUID auctionId, UUID userId) {
+        String waitingKey = "queue:auction:" + auctionId + ":waiting";
         long now = System.currentTimeMillis();
         // TODO waiting queue 용량 제한
         return redisOps.opsForZSet().add(waitingKey, userId, now);
@@ -79,7 +80,8 @@ public class QueueTrafficRepositoryImpl implements QueueTrafficRepository {
     }
 
     @Override
-    public Mono<Long> getRank(String waitingKey, UUID userId) {
+    public Mono<Long> getRank(UUID auctionId, UUID userId) {
+        String waitingKey = "queue:auction:" + auctionId + ":waiting";
         return redisOps.opsForZSet().rank(waitingKey, userId);
     }
 

@@ -24,20 +24,20 @@ public class QueueManagementService {
     private final QueueManagementRepository managementRepository;
 
     public Mono<QueueCreateResponse> createConfigQueue(QueueCreateRequest request) {
-        String key = "queue:auction:" + request.auctionId() + ":config";
+        String configKey = "queue:auction:" + request.auctionId() + ":config";
         QueueConfigModel queueConfig = QueueConfigModel.from(request);
-        return managementRepository.saveConfig(key, queueConfig)
+        return managementRepository.saveConfig(request.auctionId(), queueConfig)
                 .flatMap(isSuccess -> {
                     if (!isSuccess)
                         return Mono.error(new QueueException(QueueErrorCode.REDIS_SAVE_FAILED));
 
-                    return managementRepository.setExpiration(key, request.closeAt().plus(1, ChronoUnit.DAYS));
+                    return managementRepository.setExpiration(configKey, request.closeAt().plus(1, ChronoUnit.DAYS));
                 })
                 .onErrorResume(e -> {
                     if (e instanceof QueueException)
                         return Mono.error(e);
 
-                    return managementRepository.deleteConfig(key)
+                    return managementRepository.deleteConfig(request.auctionId())
                             .then(Mono.error(new QueueException(QueueErrorCode.REDIS_EXPIRE_SET_FAILED)));
                 })
                 .flatMap(isExpireSuccess -> {
