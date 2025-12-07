@@ -2,6 +2,7 @@ package com.bidket.queue.global.util.jwt;
 
 import com.bidket.queue.domain.exception.QueueException;
 import com.bidket.queue.domain.model.QueueErrorCode;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -11,6 +12,7 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 
 import javax.crypto.SecretKey;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.UUID;
 
@@ -35,7 +37,7 @@ public class TokenProvider {
     public String extractToken(ServerRequest request) {
         String headerVal = request.headers().firstHeader("ACTIVE-TOKEN");
         assert headerVal != null;
-        if(!headerVal.startsWith("Bearer") || headerVal.isBlank())
+        if (!headerVal.startsWith("Bearer") || headerVal.isBlank())
             throw new QueueException(QueueErrorCode.INVALID_TOKEN);
 
         return headerVal;
@@ -43,18 +45,23 @@ public class TokenProvider {
 
     public boolean validateToken(String token, UUID userId, UUID auctionId) {
         SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64URL.decode(secret));
-        UUID userIdPayload = Jwts.parserBuilder()
+
+        Claims claims = Jwts.parserBuilder()
                 .setSigningKey(key)
                 .build()
                 .parseClaimsJws(token)
-                .getBody()
+                .getBody();
+
+        Date expired = claims
+                .getExpiration();
+
+        if(expired.after(Date.from(Instant.now())))
+            return false;
+
+        UUID userIdPayload = claims
                 .get("userId", UUID.class);
 
-        UUID auctionIdPayload = Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
+        UUID auctionIdPayload = claims
                 .get("auctionId", UUID.class);
 
         return userId.equals(userIdPayload) && auctionId.equals(auctionIdPayload);

@@ -12,6 +12,8 @@ public interface QueueTrafficRepository {
 
     Mono<Long> getActiveUserCount(UUID auctionId);
 
+    Mono<Long> kickActiveUser(UUID auctionId, UUID userId);
+
     Mono<Boolean> addWaitingUser(String waitingKey, UUID userId);
 
     Mono<Long> getWaitingUserCount(UUID auctionId);
@@ -22,7 +24,7 @@ public interface QueueTrafficRepository {
 
     Mono<Long> getRank(String waitingKey, UUID userId);
 
-    Mono<Boolean> saveToken(String tokenKey, Map<UUID, String> tokens);
+    Mono<Boolean> saveToken(UUID auctionId, Map<UUID, String> tokens);
 
-    Mono<String> getToken(String tokenKey, UUID userId);
+    Mono<String> getToken(UUID userId, UUID auctionId);
 }

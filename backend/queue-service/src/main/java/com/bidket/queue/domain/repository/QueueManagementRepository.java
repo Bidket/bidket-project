@@ -12,7 +12,7 @@ public interface QueueManagementRepository {
 
     Mono<QueueConfigModel> getConfig(String configKey);
 
-    Mono<Boolean> setExpiration(String configKey, Instant expireAt);
+    Mono<Boolean> setExpiration(String key, Instant expireAt);
 
     Mono<Boolean> deleteConfig(String configKey);
 

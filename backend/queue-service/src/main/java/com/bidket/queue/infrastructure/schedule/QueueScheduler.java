@@ -65,8 +65,8 @@ public class QueueScheduler {
                                                 log.info("경매[{}] {} 명 입장", auctionId, userIds.size());
                                                 return trafficRepository.addAllActiveUser(activeKey, userIds)
                                                         .flatMap(added -> {
-                                                            String tokenKey = "queue:token:" + auctionId;
-                                                            return trafficRepository.saveToken(tokenKey, userTokens);
+
+                                                            return trafficRepository.saveToken(auctionId, userTokens);
                                                         });
                                             });
 

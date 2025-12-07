@@ -13,6 +13,7 @@ public enum QueueErrorCode implements BaseErrorCode {
     REDIS_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "Redis 저장 실패"),
 
     INVALID_TOKEN(HttpStatus.FORBIDDEN, "유효하지 않은 Active Token"),
+    TOKEN_NOT_FOUND(HttpStatus.NOT_FOUND, "저장된 토큰이 없습니다."),
     CONFIG_NOT_FOUND(HttpStatus.NOT_FOUND, "저장된 설정이 없습니다."),
     AUCTION_REGISTER_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "경매 캐싱 등록 실패"),
 
