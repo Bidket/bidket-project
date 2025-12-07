@@ -3,10 +3,7 @@ package com.bidket.queue.presentation.api;
 import com.bidket.common.presentation.response.ApiResponse;
 import com.bidket.queue.application.facade.QueueFacade;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
-import com.bidket.queue.presentation.dto.response.QueueAccommodatableResponse;
-import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
-import com.bidket.queue.presentation.dto.response.QueueEnterResponse;
-import com.bidket.queue.presentation.dto.response.QueueStatusResponse;
+import com.bidket.queue.presentation.dto.response.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -65,6 +62,16 @@ public class QueueController {
     @GetMapping("/queues/{auctionId}")
     public Mono<ResponseEntity<ApiResponse<QueueStatusResponse>>> getQueueStatus(@PathVariable UUID auctionId) {
         return queueFacade.getQueueStatus(auctionId)
+                .map(response ->
+                        ResponseEntity.ok(ApiResponse.success(response))
+                );
+    }
+
+    @PostMapping("/queues/{auctionId}/heartbeat")
+    public Mono<ResponseEntity<ApiResponse<QueueHeartbeatResponse>>> heartbeat(@PathVariable UUID auctionId) {
+        UUID userId = UUID.randomUUID();
+        String token = "tempToken";
+        return queueFacade.heartbeat(userId, auctionId, token)
                 .map(response ->
                         ResponseEntity.ok(ApiResponse.success(response))
                 );

@@ -134,7 +134,7 @@ public class QueueTrafficService {
 
                     String tokenKey = "queue:token:" + auctionId;
 
-                    return managementRepository.setExpiration(tokenKey, Instant.now().plus(heartbeatFrequency, ChronoUnit.MINUTES))
+                    return managementRepository.setExpiration(tokenKey, Instant.now().plus(heartbeatFrequency + 1, ChronoUnit.MINUTES))
                             .map(isSaved ->
                                     QueueHeartbeatResponse.builder()
                                             .userId(userId)
