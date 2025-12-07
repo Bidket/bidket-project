@@ -20,8 +20,9 @@ public record OrderCreateRequest(
         @Schema(description = "신발 ID", example = "b1a2c3d4-e5f6-7890-abcd-ef0123456789")
         String shoeId,
 
-        @NotNull
+
         @Min(1)
+        @NotNull
         @Schema(description = "주문 결제 금액(원)", example = "250000")
         Long amount,
 
