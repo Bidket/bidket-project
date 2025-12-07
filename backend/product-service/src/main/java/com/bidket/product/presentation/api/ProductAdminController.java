@@ -1,6 +1,7 @@
 package com.bidket.product.presentation.api;
 
 import com.bidket.common.presentation.response.ApiResponse;
+import com.bidket.product.application.facade.ProductAdminFacade;
 import com.bidket.product.application.service.BrandService;
 import com.bidket.product.application.service.CategoryService;
 import com.bidket.product.application.service.ProductAdminService;
@@ -12,6 +13,7 @@ import com.bidket.product.presentation.dto.request.ProductCategoryCreateRequest;
 import com.bidket.product.presentation.dto.request.ProductCreateRequest;
 import com.bidket.product.presentation.dto.request.ProductShoesDetailCreateRequest;
 import com.bidket.product.presentation.dto.request.ProductTypeCreateRequest;
+import com.bidket.product.presentation.dto.request.ProductWithShoesCreateRequest;
 import com.bidket.product.presentation.dto.request.SizeCreateRequest;
 import com.bidket.product.presentation.dto.request.SizeTypeCreateRequest;
 import com.bidket.product.presentation.dto.request.SkuCreateRequest;
@@ -21,6 +23,7 @@ import com.bidket.product.presentation.dto.response.ProductCategoryCreateRespons
 import com.bidket.product.presentation.dto.response.ProductCreateResponse;
 import com.bidket.product.presentation.dto.response.ProductShoesDetailCreateResponse;
 import com.bidket.product.presentation.dto.response.ProductTypeCreateResponse;
+import com.bidket.product.presentation.dto.response.ProductWithShoesCreateResponse;
 import com.bidket.product.presentation.dto.response.SizeCreateResponse;
 import com.bidket.product.presentation.dto.response.SizeTypeCreateResponse;
 import com.bidket.product.presentation.dto.response.SkuCreateResponse;
@@ -43,6 +46,7 @@ public class ProductAdminController {
     private final SizeService sizeService;
     private final ProductAdminService productAdminService;
     private final ShoesDetailService shoesDetailService;
+    private final ProductAdminFacade productAdminFacade;
 
     @PostMapping("/product-types")
     public ApiResponse<ProductTypeCreateResponse> createProductType(
@@ -108,5 +112,14 @@ public class ProductAdminController {
             @Valid @RequestBody SkuCreateRequest req
     ) {
         return ApiResponse.success(productAdminService.createSku(productId, req));
+    }
+
+    @PostMapping("/products/with-shoes")
+    public ApiResponse<ProductWithShoesCreateResponse> createProductWithShoes(
+            @Valid @RequestBody ProductWithShoesCreateRequest req
+    ) {
+        return ApiResponse.success(
+                productAdminFacade.createProductWithShoes(req)
+        );
     }
 }
