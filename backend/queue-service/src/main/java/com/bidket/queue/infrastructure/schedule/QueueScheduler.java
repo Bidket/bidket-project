@@ -42,7 +42,7 @@ public class QueueScheduler {
 
         return managementRepository.getConfig(configKey)
                 .flatMap(config ->
-                        trafficRepository.getActiveUserCount(activeKey)
+                        trafficRepository.getActiveUserCount(auctionId)
                                 .flatMap(currentActive -> {
                                     long maxUser = config.getMaxActive();
                                     long availableSlots = maxUser - currentActive;

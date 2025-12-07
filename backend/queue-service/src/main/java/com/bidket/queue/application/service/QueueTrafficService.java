@@ -85,18 +85,24 @@ public class QueueTrafficService {
     @CheckQueueConfig
     public Mono<QueueStatusResponse> getQueueStatus(UUID auctionId) {
 
-        return trafficRepository.getActiveUserCount(auctionId)
-                .flatMap(currentActive ->
-                        trafficRepository.getWaitingUserCount(auctionId)
-                                .map(totalWaiting ->
-                                        QueueStatusResponse.builder()
-                                                .auctionId(auctionId)
-                                                .totalWaiting(totalWaiting)
-                                                .currentActive(currentActive)
-                                                .status(QueueStatus.checkStatus(currentActive))
-                                                .build()
-                                )
+        return Mono.zip(trafficRepository.getActiveUserCount(auctionId).defaultIfEmpty(0L),
+                        trafficRepository.getWaitingUserCount(auctionId).defaultIfEmpty(0L))
+                .map(tuple ->
+                    QueueStatusResponse.builder()
+                            .auctionId(auctionId)
+                            .totalWaiting(tuple.getT2())
+                            .currentActive(tuple.getT1())
+                            .status(QueueStatus.checkStatus(tuple.getT1()))
+                            .build()
                 )
-                .switchIfEmpty(Mono.error(new QueueException(QueueErrorCode.REDIS_CONNECTION_ERROR)));
+                .switchIfEmpty(Mono.just(
+                        QueueStatusResponse.builder()
+                                .auctionId(auctionId)
+                                .totalWaiting(0L)
+                                .currentActive(0L)
+                                .status(QueueStatus.checkStatus(0L))
+                                .build()
+                ))
+                .onErrorMap(e -> new QueueException(QueueErrorCode.REDIS_CONNECTION_ERROR));
     }
 }
