@@ -25,9 +25,8 @@ public class QueueConfigAspect {
     @Around("@annotation(com.bidket.queue.global.annotation.CheckQueueConfig)")
     public Object checkQueueConfig(ProceedingJoinPoint joinPoint) {
         UUID auctionId = findAuctionId(joinPoint);
-        String configKey = "queue:auction:" + auctionId + ":config";
 
-        return managementRepository.getConfig(configKey)
+        return managementRepository.getConfig(auctionId)
                 .switchIfEmpty(Mono.error(new QueueException(QueueErrorCode.CONFIG_NOT_FOUND)))
                 .flatMap(config -> {
                     config.checkOpenStatus(Instant.now());

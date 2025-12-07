@@ -3,6 +3,7 @@ package com.bidket.queue.domain.model;
 import com.bidket.queue.domain.exception.QueueException;
 import com.bidket.queue.presentation.dto.request.QueueConfigUpdateRequest;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
+import com.bidket.queue.presentation.dto.response.QueueConfigUpdateResponse;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
 import lombok.Builder;
 import lombok.Getter;
@@ -35,6 +36,16 @@ public class QueueConfigModel {
 
     public QueueCreateResponse toCreateResponse() {
         return QueueCreateResponse.builder()
+                .auctionId(auctionId)
+                .maxActive(maxActive)
+                .permitsPerSec(permitsPerSec)
+                .openAt(openAt)
+                .closeAt(closeAt)
+                .build();
+    }
+
+    public QueueConfigUpdateResponse toUpdateResponse() {
+        return QueueConfigUpdateResponse.builder()
                 .auctionId(auctionId)
                 .maxActive(maxActive)
                 .permitsPerSec(permitsPerSec)

@@ -36,11 +36,10 @@ public class QueueScheduler {
     }
 
     private Mono<Void> processAuction(UUID auctionId) {
-        String configKey = "queue:auction:" + auctionId + ":config";
         String activeKey = "queue:auction:" + auctionId + ":active";
         String waitingKey = "queue:auction:" + auctionId + ":waiting";
 
-        return managementRepository.getConfig(configKey)
+        return managementRepository.getConfig(auctionId)
                 .flatMap(config ->
                         trafficRepository.getActiveUserCount(auctionId)
                                 .flatMap(currentActive -> {
