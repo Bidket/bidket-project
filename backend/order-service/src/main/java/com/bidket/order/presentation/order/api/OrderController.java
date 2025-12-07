@@ -49,14 +49,15 @@ public class OrderController {
     public ApiResponse<OrderCreateResponse> createOrder(
             @Valid @RequestBody OrderCreateRequest request
     ) {
-        UUID userId = UUID.fromString(request.getUserId());
+        // TODO: 인증 적용 예정
+        UUID userId = UUID.fromString(request.userId());
 
         OrderInfo orderInfo = orderFacade.createOrder(
                 userId,
-                UUID.fromString(request.getAuctionId()),
-                UUID.fromString(request.getShoeId()),
-                request.getAmount(),
-                request.getUsePointAmount()
+                UUID.fromString(request.auctionId()),
+                UUID.fromString(request.shoeId()),
+                request.amount(),
+                request.usePointAmount()
         );
 
         OrderCreateResponse response = OrderCreateResponse.from(orderInfo);

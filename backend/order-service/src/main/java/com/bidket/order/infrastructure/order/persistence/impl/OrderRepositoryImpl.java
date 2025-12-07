@@ -22,13 +22,13 @@ public class OrderRepositoryImpl implements OrderRepository {
 
     private OrderEntity toEntity(Order order) {
         return OrderEntity.create(
-                order.getUserId(),
-                order.getAuctionId(),
-                order.getShoeId(),
-                order.getStatus(),
-                order.getAmount(),
-                order.getUsedPointAmount(),
-                order.getPaymentExpiredAt()
+                order.userId(),
+                order.auctionId(),
+                order.shoeId(),
+                order.status(),
+                order.amount(),
+                order.usedPointAmount(),
+                order.paymentExpiredAt()
         );
     }
 

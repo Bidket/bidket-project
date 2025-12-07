@@ -2,52 +2,21 @@ package com.bidket.order.domain.order.model;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-import lombok.Getter;
 
-@Getter
-public class Order {
+public record Order(
+        UUID id,
+        UUID userId,
+        UUID auctionId,
+        UUID shoeId,
+        OrderStatus status,
+        Long amount,
+        Long usedPointAmount,
+        LocalDateTime paymentExpiredAt,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
+) {
 
-    private final UUID id;
-    private final UUID userId;
-    private final UUID auctionId;
-    private final UUID shoeId;
-    private final OrderStatus status;
-    private final Long amount;
-    private final Long usedPointAmount;
-    private final LocalDateTime paymentExpiredAt;
-    private final LocalDateTime createdAt;
-    private final LocalDateTime updatedAt;
-
-    private Order(UUID id,
-            UUID userId,
-            UUID auctionId,
-            UUID shoeId,
-            OrderStatus status,
-            Long amount,
-            Long usedPointAmount,
-            LocalDateTime paymentExpiredAt,
-            LocalDateTime createdAt,
-            LocalDateTime updatedAt) {
-        this.id = id;
-        this.userId = userId;
-        this.auctionId = auctionId;
-        this.shoeId = shoeId;
-        this.status = status;
-        this.amount = amount;
-        this.usedPointAmount = usedPointAmount;
-        this.paymentExpiredAt = paymentExpiredAt;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-    }
-
-    public static Order createForPayment(UUID userId,
-            UUID auctionId,
-            UUID shoeId,
-            Long amount,
-            Long usedPointAmount,
-            LocalDateTime paymentExpiredAt,
-            LocalDateTime now) {
-
+    public Order {
         Long safeUsedPoint = usedPointAmount == null ? 0L : usedPointAmount;
 
         if (amount == null || amount <= 0) {
@@ -60,6 +29,18 @@ public class Order {
             throw new IllegalArgumentException("usedPointAmount cannot be greater than amount");
         }
 
+        usedPointAmount = safeUsedPoint;
+    }
+
+    public static Order createForPayment(
+            UUID userId,
+            UUID auctionId,
+            UUID shoeId,
+            Long amount,
+            Long usedPointAmount,
+            LocalDateTime paymentExpiredAt,
+            LocalDateTime now
+    ) {
         return new Order(
                 null,
                 userId,
@@ -67,14 +48,15 @@ public class Order {
                 shoeId,
                 OrderStatus.PAYMENT,
                 amount,
-                safeUsedPoint,
+                usedPointAmount,
                 paymentExpiredAt,
                 now,
                 now
         );
     }
 
-    public static Order of(UUID id,
+    public static Order of(
+            UUID id,
             UUID userId,
             UUID auctionId,
             UUID shoeId,
@@ -83,8 +65,8 @@ public class Order {
             Long usedPointAmount,
             LocalDateTime paymentExpiredAt,
             LocalDateTime createdAt,
-            LocalDateTime updatedAt) {
-
+            LocalDateTime updatedAt
+    ) {
         return new Order(
                 id,
                 userId,

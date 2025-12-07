@@ -44,16 +44,16 @@ public class OrderInfo {
 
     public static OrderInfo from(Order order) {
         return new OrderInfo(
-                order.getId(),
-                order.getUserId(),
-                order.getAuctionId(),
-                order.getShoeId(),
-                order.getStatus(),
-                order.getAmount(),
-                order.getUsedPointAmount(),
-                order.getPaymentExpiredAt(),
-                order.getCreatedAt(),
-                order.getUpdatedAt()
+                order.id(),
+                order.userId(),
+                order.auctionId(),
+                order.shoeId(),
+                order.status(),
+                order.amount(),
+                order.usedPointAmount(),
+                order.paymentExpiredAt(),
+                order.createdAt(),
+                order.updatedAt()
         );
     }
 }
