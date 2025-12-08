@@ -2,6 +2,7 @@ package com.bidket.user.application.service;
 
 import com.bidket.user.domain.exception.UserErrorCode;
 import com.bidket.user.domain.exception.UserException;
+import com.bidket.user.global.security.AuthenticationHelper;
 import com.bidket.user.infrastructure.persistence.entity.PointAccount;
 import com.bidket.user.infrastructure.persistence.repository.PointAccountRepository;
 import com.bidket.user.presentation.dto.response.PointBalanceResponse;
@@ -35,7 +36,7 @@ public class PointBalanceService {
     @Transactional(readOnly = true)
     public PointBalanceResponse getPointBalance() {
         // SecurityContext에서 userId 추출
-        UUID userId = getCurrentUserId();
+        UUID userId = AuthenticationHelper.getCurrentUserId();
         
         // 포인트 계정 조회
         PointAccount pointAccount = pointAccountRepository.findByUserId(userId)
@@ -53,35 +54,6 @@ public class PointBalanceService {
                 .currency(DEFAULT_CURRENCY)
                 .updatedAt(updatedAt)
                 .build();
-    }
-
-    /**
-     * SecurityContext에서 현재 사용자 ID 추출
-     * 
-     * @return 사용자 ID
-     * @throws UserException 인증 정보가 없는 경우
-     */
-    private UUID getCurrentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        
-        if (authentication == null || authentication.getPrincipal() == null) {
-            throw new UserException(UserErrorCode.UNAUTHORIZED);
-        }
-        
-        try {
-            if (authentication.getPrincipal() instanceof UUID) {
-                return (UUID) authentication.getPrincipal();
-            } else if (authentication.getPrincipal() instanceof String) {
-                return UUID.fromString((String) authentication.getPrincipal());
-            } else {
-                throw new UserException(UserErrorCode.UNAUTHORIZED);
-            }
-        } catch (IllegalArgumentException e) {
-            // UUID 형식이 잘못된 경우
-            throw new UserException(UserErrorCode.INVALID_TOKEN);
-        } catch (Exception e) {
-            throw new UserException(UserErrorCode.UNAUTHORIZED);
-        }
     }
 }
 
