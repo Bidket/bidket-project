@@ -2,6 +2,7 @@ package com.bidket.queue.global.util.jwt;
 
 import com.bidket.queue.domain.exception.QueueException;
 import com.bidket.queue.domain.model.QueueErrorCode;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -11,6 +12,7 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 
 import javax.crypto.SecretKey;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.UUID;
 
@@ -25,7 +27,7 @@ public class TokenProvider {
         SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64URL.decode(secret));
         return Jwts.builder()
                 .claim("userId", userId)
-                .claim("acutionId", auctionId)
+                .claim("auctionId", auctionId)
                 .setIssuedAt(Date.from(Instant.now()))
                 .setExpiration(Date.from(Instant.now().plusSeconds(expiration)))
                 .signWith(key)
@@ -35,7 +37,7 @@ public class TokenProvider {
     public String extractToken(ServerRequest request) {
         String headerVal = request.headers().firstHeader("ACTIVE-TOKEN");
         assert headerVal != null;
-        if(!headerVal.startsWith("Bearer") || headerVal.isBlank())
+        if (!headerVal.startsWith("Bearer") || headerVal.isBlank())
             throw new QueueException(QueueErrorCode.INVALID_TOKEN);
 
         return headerVal;
@@ -43,20 +45,35 @@ public class TokenProvider {
 
     public boolean validateToken(String token, UUID userId, UUID auctionId) {
         SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64URL.decode(secret));
-        UUID userIdPayload = Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .get("userId", UUID.class);
 
-        UUID auctionIdPayload = Jwts.parserBuilder()
+        Claims claims = Jwts.parserBuilder()
                 .setSigningKey(key)
                 .build()
                 .parseClaimsJws(token)
-                .getBody()
-                .get("auctionId", UUID.class);
+                .getBody();
+
+        Date expired = claims
+                .getExpiration();
+
+        if(expired.before(Date.from(Instant.now())))
+            return false;
+
+        UUID userIdPayload = UUID.fromString(claims
+                .get("userId", String.class));
+
+        UUID auctionIdPayload = UUID.fromString(claims
+                .get("auctionId", String.class));
 
         return userId.equals(userIdPayload) && auctionId.equals(auctionIdPayload);
+    }
+
+    public Date getIssuedAt(String token) {
+        SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64URL.decode(secret));
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getIssuedAt();
     }
 }

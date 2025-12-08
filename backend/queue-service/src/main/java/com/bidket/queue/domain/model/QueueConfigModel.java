@@ -1,6 +1,9 @@
 package com.bidket.queue.domain.model;
 
 import com.bidket.queue.domain.exception.QueueException;
+import com.bidket.queue.presentation.dto.request.QueueConfigUpdateRequest;
+import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
+import com.bidket.queue.presentation.dto.response.QueueConfigUpdateResponse;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,6 +20,7 @@ public class QueueConfigModel {
     private Long maxActive;
     @Getter
     private Integer permitsPerSec;
+    private QueueConfigStatus status;
     private Instant openAt;
     @Getter
     private Instant closeAt;
@@ -25,6 +29,7 @@ public class QueueConfigModel {
         return Map.of("auctionId", auctionId.toString(),
                 "maxActive", maxActive.toString(),
                 "permitsPerSec", permitsPerSec.toString(),
+                "status", status.toString(),
                 "openAt", openAt.toString(),
                 "closeAt", closeAt.toString());
     }
@@ -39,10 +44,35 @@ public class QueueConfigModel {
                 .build();
     }
 
+    public QueueConfigUpdateResponse toUpdateResponse() {
+        return QueueConfigUpdateResponse.builder()
+                .auctionId(auctionId)
+                .maxActive(maxActive)
+                .permitsPerSec(permitsPerSec)
+                .openAt(openAt)
+                .closeAt(closeAt)
+                .build();
+    }
+
     public void checkOpenStatus(Instant now) {
         if(now.isBefore(openAt))
             throw new QueueException(QueueErrorCode.AUCTION_NOT_OPENED);
         if(now.isAfter(closeAt))
             throw new QueueException(QueueErrorCode.AUCTION_CLOSED);
+    }
+
+    public static QueueConfigModel from(QueueCreateRequest request) {
+        return QueueConfigModel.builder()
+                .auctionId(request.auctionId())
+                .maxActive(request.maxActive())
+                .permitsPerSec(request.permitsPerSec())
+                .status(QueueConfigStatus.ACTIVE)
+                .openAt(request.openAt())
+                .closeAt(request.closeAt())
+                .build();
+    }
+
+    public void update(QueueConfigUpdateRequest request) {
+
     }
 }
