@@ -9,6 +9,7 @@ version = '0.0.1-SNAPSHOT'
 
 ext {
     set('springCloudVersion', "2023.0.3")
+    set('lombokVersion', "1.18.34")
 }
 
 allprojects {
@@ -46,8 +47,8 @@ subprojects {
     }
 
     dependencies {
-        compileOnly 'org.projectlombok:lombok'
-        annotationProcessor 'org.projectlombok:lombok'
+        compileOnly "org.projectlombok:lombok:${lombokVersion}"
+        annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
         annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
