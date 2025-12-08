@@ -45,6 +45,9 @@ public class Notification extends BaseEntity {
     @Column(name = "message", nullable = false, columnDefinition = "TEXT")
     private String message;
 
+    @Column(name = "link_url", length = 500)
+    private String linkUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private NotificationStatus status;
@@ -57,12 +60,13 @@ public class Notification extends BaseEntity {
 
     @Builder
     public Notification(UUID userId, String type, NotificationChannel channel,
-                       String title, String message, NotificationStatus status) {
+                       String title, String message, String linkUrl, NotificationStatus status) {
         this.userId = userId;
         this.type = type;
         this.channel = channel != null ? channel : NotificationChannel.PUSH;
         this.title = title;
         this.message = message;
+        this.linkUrl = linkUrl;
         this.status = status != null ? status : NotificationStatus.PENDING;
     }
 
