@@ -5,7 +5,6 @@ import com.bidket.queue.application.service.QueueTrafficService;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
 import com.bidket.queue.presentation.dto.response.QueueEnterResponse;
-import com.bidket.queue.presentation.dto.response.QueueAccommodatableResponse;
 import com.bidket.queue.presentation.dto.response.QueueStatusResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
