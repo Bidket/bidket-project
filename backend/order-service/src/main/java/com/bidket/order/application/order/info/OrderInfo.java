@@ -1,7 +1,7 @@
-package com.bidket.order.application.info;
+package com.bidket.order.application.order.info;
 
-import com.bidket.order.domain.model.Order;
-import com.bidket.order.domain.model.OrderStatus;
+import com.bidket.order.domain.order.model.Order;
+import com.bidket.order.domain.order.model.OrderStatus;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.Getter;
@@ -44,16 +44,16 @@ public class OrderInfo {
 
     public static OrderInfo from(Order order) {
         return new OrderInfo(
-                order.getId(),
-                order.getUserId(),
-                order.getAuctionId(),
-                order.getShoeId(),
-                order.getStatus(),
-                order.getAmount(),
-                order.getUsedPointAmount(),
-                order.getPaymentExpiredAt(),
-                order.getCreatedAt(),
-                order.getUpdatedAt()
+                order.id(),
+                order.userId(),
+                order.auctionId(),
+                order.shoeId(),
+                order.status(),
+                order.amount(),
+                order.usedPointAmount(),
+                order.paymentExpiredAt(),
+                order.createdAt(),
+                order.updatedAt()
         );
     }
 }

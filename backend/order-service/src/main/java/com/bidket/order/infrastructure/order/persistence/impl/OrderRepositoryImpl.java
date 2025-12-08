@@ -1,10 +1,13 @@
-package com.bidket.order.infrastructure.persistence.impl;
+package com.bidket.order.infrastructure.order.persistence.impl;
 
-import com.bidket.order.domain.model.Order;
-import com.bidket.order.domain.repository.OrderRepository;
-import com.bidket.order.infrastructure.persistence.entity.OrderEntity;
-import com.bidket.order.infrastructure.persistence.repository.OrderJpaRepository;
+import com.bidket.order.domain.order.model.Order;
+import com.bidket.order.domain.order.repository.OrderRepository;
+import com.bidket.order.infrastructure.order.persistence.entity.OrderEntity;
+import com.bidket.order.infrastructure.order.persistence.repository.OrderJpaRepository;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -20,15 +23,22 @@ public class OrderRepositoryImpl implements OrderRepository {
         return toDomain(saved);
     }
 
+    @Override
+    public Page<Order> findByUserId(UUID userId, Pageable pageable) {
+        Page<OrderEntity> page = orderJpaRepository.findByUserIdOrderByCreatedAtDesc(userId,
+                pageable);
+        return page.map(this::toDomain);
+    }
+
     private OrderEntity toEntity(Order order) {
         return OrderEntity.create(
-                order.getUserId(),
-                order.getAuctionId(),
-                order.getShoeId(),
-                order.getStatus(),
-                order.getAmount(),
-                order.getUsedPointAmount(),
-                order.getPaymentExpiredAt()
+                order.userId(),
+                order.auctionId(),
+                order.shoeId(),
+                order.status(),
+                order.amount(),
+                order.usedPointAmount(),
+                order.paymentExpiredAt()
         );
     }
 

@@ -1,11 +1,14 @@
-package com.bidket.order.application.facade;
+package com.bidket.order.application.order.facade;
 
-import com.bidket.order.application.info.OrderInfo;
-import com.bidket.order.domain.model.Order;
-import com.bidket.order.domain.repository.OrderRepository;
+import com.bidket.order.application.order.info.OrderInfo;
+import com.bidket.order.application.order.info.OrderSummaryInfo;
+import com.bidket.order.domain.order.model.Order;
+import com.bidket.order.domain.order.repository.OrderRepository;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,5 +43,10 @@ public class OrderFacade {
         Order saved = orderRepository.save(order);
 
         return OrderInfo.from(saved);
+    }
+
+    public Page<OrderSummaryInfo> getOrders(UUID userId, Pageable pageable) {
+        Page<Order> page = orderRepository.findByUserId(userId, pageable);
+        return page.map(OrderSummaryInfo::from);
     }
 }
