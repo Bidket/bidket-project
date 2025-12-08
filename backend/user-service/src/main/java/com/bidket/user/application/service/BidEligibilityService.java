@@ -10,6 +10,8 @@ import com.bidket.user.infrastructure.persistence.repository.UserBlacklistReposi
 import com.bidket.user.infrastructure.persistence.repository.UserRepository;
 import com.bidket.user.presentation.dto.response.BidEligibilityResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +41,7 @@ public class BidEligibilityService {
     public BidEligibilityResponse checkBidEligibility() {
         // SecurityContext에서 userId 추출
         UUID userId = AuthenticationHelper.getCurrentUserId();
+       
         
         // 사용자 조회
         User user = userRepository.findById(userId)
@@ -71,5 +74,7 @@ public class BidEligibilityService {
                 .memberStatus(user.getStatus().name())
                 .build();
     }
+
+   
 }
 

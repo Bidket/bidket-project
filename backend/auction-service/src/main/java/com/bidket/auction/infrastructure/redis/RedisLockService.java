@@ -4,8 +4,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.UUID;
 
 @Slf4j
@@ -44,10 +46,10 @@ public class RedisLockService {
             "end";
         
         Long result = redisTemplate.execute(
-            new org.springframework.data.redis.core.script.DefaultRedisScript<>(
+            new DefaultRedisScript<>(
                 script, Long.class
             ),
-            java.util.Collections.singletonList(lockKey),
+            Collections.singletonList(lockKey),
             lockValue
         );
         

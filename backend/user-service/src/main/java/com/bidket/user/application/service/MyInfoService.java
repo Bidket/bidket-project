@@ -7,6 +7,8 @@ import com.bidket.user.infrastructure.persistence.entity.User;
 import com.bidket.user.infrastructure.persistence.repository.UserRepository;
 import com.bidket.user.presentation.dto.response.MyInfoResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
