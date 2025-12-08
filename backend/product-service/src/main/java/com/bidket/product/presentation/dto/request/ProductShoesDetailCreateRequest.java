@@ -22,7 +22,7 @@ public record ProductShoesDetailCreateRequest(
         @Size(max = 50, message = "메인 소재는 최대 50자입니다.")
         String mainMaterial,
 
-        @NotBlank(message = "실루엣은 필수입니다.")
+        @NotNull(message = "실루엣은 필수입니다.")
         Silhouette silhouette,
 
         @Size(max = 100, message = "스타일은 최대 100자입니다.")
