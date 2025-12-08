@@ -1,6 +1,6 @@
 package com.bidket.queue;
 
-import com.bidket.queue.application.service.QueueService;
+import com.bidket.queue.application.service.QueueTrafficService;
 import com.bidket.queue.domain.exception.QueueException;
 import com.bidket.queue.domain.model.QueueConfigModel;
 import com.bidket.queue.domain.model.QueueErrorCode;
@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 public class UnitTest {
     @InjectMocks
-    private QueueService queueService;
+    private QueueTrafficService queueTrafficService;
 
     @Mock
     private RedisRepositoryImpl redisRepository;
@@ -61,7 +61,7 @@ public class UnitTest {
                 .thenReturn(Mono.just(1L));
 
         // when
-        Mono<QueueCreateResponse> response = queueService.createConfigQueue(request);
+        Mono<QueueCreateResponse> response = queueTrafficService.createConfigQueue(request);
 
         StepVerifier.create(response)
                 .expectNextMatches(result ->
@@ -87,7 +87,7 @@ public class UnitTest {
                 .thenReturn(Mono.just(false));
 
 
-        Mono<QueueCreateResponse> response = queueService.createConfigQueue(request);
+        Mono<QueueCreateResponse> response = queueTrafficService.createConfigQueue(request);
 
         StepVerifier.create(response)
                 .expectErrorMatches(throwable ->
@@ -114,7 +114,7 @@ public class UnitTest {
         when(redisRepository.setExpiration(any(String.class), any(Instant.class)))
                 .thenReturn(Mono.just(false));
 
-        Mono<QueueCreateResponse> response = queueService.createConfigQueue(request);
+        Mono<QueueCreateResponse> response = queueTrafficService.createConfigQueue(request);
 
         StepVerifier.create(response)
                 .expectErrorMatches(throwable ->
@@ -147,7 +147,7 @@ public class UnitTest {
                 .thenReturn(Mono.just(100L));
 
         // when
-        Mono<QueueEnterResponse> response = queueService.enterQueue(userId, auctionId);
+        Mono<QueueEnterResponse> response = queueTrafficService.enterQueue(userId, auctionId);
 
         // then
         StepVerifier.create(response)
