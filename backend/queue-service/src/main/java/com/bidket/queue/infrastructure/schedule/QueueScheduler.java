@@ -36,11 +36,10 @@ public class QueueScheduler {
     }
 
     private Mono<Void> processAuction(UUID auctionId) {
-        String configKey = "queue:auction:" + auctionId + ":config";
         String activeKey = "queue:auction:" + auctionId + ":active";
         String waitingKey = "queue:auction:" + auctionId + ":waiting";
 
-        return managementRepository.getConfig(configKey)
+        return managementRepository.getConfig(auctionId)
                 .flatMap(config ->
                         trafficRepository.getActiveUserCount(auctionId)
                                 .flatMap(currentActive -> {
@@ -65,8 +64,8 @@ public class QueueScheduler {
                                                 log.info("경매[{}] {} 명 입장", auctionId, userIds.size());
                                                 return trafficRepository.addAllActiveUser(activeKey, userIds)
                                                         .flatMap(added -> {
-                                                            String tokenKey = "queue:token:" + auctionId;
-                                                            return trafficRepository.saveToken(tokenKey, userTokens);
+
+                                                            return trafficRepository.saveToken(auctionId, userTokens);
                                                         });
                                             });
 

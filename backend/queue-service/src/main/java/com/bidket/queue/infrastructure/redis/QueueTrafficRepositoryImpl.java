@@ -43,7 +43,14 @@ public class QueueTrafficRepositoryImpl implements QueueTrafficRepository {
     }
 
     @Override
-    public Mono<Boolean> addWaitingUser(String waitingKey, UUID userId) {
+    public Mono<Long> kickActiveUser(UUID auctionId, UUID userId) {
+        return redisOps.opsForZSet()
+                .remove(String.valueOf(auctionId), userId);
+    }
+
+    @Override
+    public Mono<Boolean> addWaitingUser(UUID auctionId, UUID userId) {
+        String waitingKey = "queue:auction:" + auctionId + ":waiting";
         long now = System.currentTimeMillis();
         // TODO waiting queue 용량 제한
         return redisOps.opsForZSet().add(waitingKey, userId, now);
@@ -73,18 +80,21 @@ public class QueueTrafficRepositoryImpl implements QueueTrafficRepository {
     }
 
     @Override
-    public Mono<Long> getRank(String waitingKey, UUID userId) {
+    public Mono<Long> getRank(UUID auctionId, UUID userId) {
+        String waitingKey = "queue:auction:" + auctionId + ":waiting";
         return redisOps.opsForZSet().rank(waitingKey, userId);
     }
 
     @Override
-    public Mono<Boolean> saveToken(String tokenKey, Map<UUID, String> tokens) {
+    public Mono<Boolean> saveToken(UUID auctionId, Map<UUID, String> tokens) {
+        String tokenKey = "queue:token:" + auctionId;
         return redisOps.opsForHash()
                 .putAll(tokenKey, tokens);
     }
 
     @Override
-    public Mono<String> getToken(String tokenKey, UUID userId) {
+    public Mono<String> getToken(UUID userId, UUID auctionId) {
+        String tokenKey = "queue:token:" + auctionId;
         return redisOps.opsForHash()
                 .get(tokenKey, userId)
                 .map(String::valueOf);
