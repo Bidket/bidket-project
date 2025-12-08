@@ -10,9 +10,11 @@ public interface QueueTrafficRepository {
 
     Mono<Long> addAllActiveUser(String activeKey, List<UUID> userIds);
 
-    Mono<Long> getActiveUserCount(String activeKey);
+    Mono<Long> getActiveUserCount(UUID auctionId);
 
     Mono<Boolean> addWaitingUser(String waitingKey, UUID userId);
+
+    Mono<Long> getWaitingUserCount(UUID auctionId);
 
     Mono<Long> removeWaitingUser(String waitingKey, UUID userId);
 

@@ -3,9 +3,11 @@ package com.bidket.queue.application.service;
 import com.bidket.queue.domain.exception.QueueException;
 import com.bidket.queue.domain.model.QueueErrorCode;
 import com.bidket.queue.domain.model.QueueStatus;
+import com.bidket.queue.domain.model.UserStatus;
 import com.bidket.queue.domain.repository.QueueTrafficRepository;
 import com.bidket.queue.global.annotation.CheckQueueConfig;
 import com.bidket.queue.global.util.jwt.TokenProvider;
+import com.bidket.queue.presentation.dto.response.QueueAccommodatableResponse;
 import com.bidket.queue.presentation.dto.response.QueueEnterResponse;
 import com.bidket.queue.presentation.dto.response.QueueStatusResponse;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +40,7 @@ public class QueueTrafficService {
     }
 
     @CheckQueueConfig
-    public Mono<QueueStatusResponse> getQueueStatus(UUID userId, UUID auctionId) {
+    public Mono<QueueAccommodatableResponse> isAccommodatable(UUID userId, UUID auctionId) {
         String tokenKey = "queue:token:" + auctionId;
         String waitingKey = "queue:auction:" + auctionId + ":waiting";
 
@@ -47,10 +49,10 @@ public class QueueTrafficService {
                     if (!tokenProvider.validateToken(token, userId, auctionId))
                         return Mono.error(new QueueException(QueueErrorCode.INVALID_TOKEN));
 
-                    return Mono.just(QueueStatusResponse.builder()
+                    return Mono.just(QueueAccommodatableResponse.builder()
                             .auctionId(auctionId)
                             .userId(userId)
-                            .status(QueueStatus.ACTIVE)
+                            .status(UserStatus.ACTIVE)
                             .rank(0L)
                             .retryAfter(3)
                             .token(token)
@@ -58,10 +60,10 @@ public class QueueTrafficService {
                             .build());
                 })
                 .switchIfEmpty(trafficRepository.getRank(waitingKey, userId)
-                        .map(rank -> QueueStatusResponse.builder()
+                        .map(rank -> QueueAccommodatableResponse.builder()
                                 .auctionId(auctionId)
                                 .userId(userId)
-                                .status(QueueStatus.WAITING)
+                                .status(UserStatus.WAITING)
                                 .rank(rank)
                                 .retryAfter(0)
                                 .token(null)
@@ -78,5 +80,29 @@ public class QueueTrafficService {
 
         return trafficRepository.removeWaitingUser(waitingKey, userId)
                 .then();
+    }
+
+    @CheckQueueConfig
+    public Mono<QueueStatusResponse> getQueueStatus(UUID auctionId) {
+
+        return Mono.zip(trafficRepository.getActiveUserCount(auctionId).defaultIfEmpty(0L),
+                        trafficRepository.getWaitingUserCount(auctionId).defaultIfEmpty(0L))
+                .map(tuple ->
+                    QueueStatusResponse.builder()
+                            .auctionId(auctionId)
+                            .totalWaiting(tuple.getT2())
+                            .currentActive(tuple.getT1())
+                            .status(QueueStatus.checkStatus(tuple.getT1()))
+                            .build()
+                )
+                .switchIfEmpty(Mono.just(
+                        QueueStatusResponse.builder()
+                                .auctionId(auctionId)
+                                .totalWaiting(0L)
+                                .currentActive(0L)
+                                .status(QueueStatus.checkStatus(0L))
+                                .build()
+                ))
+                .onErrorMap(e -> new QueueException(QueueErrorCode.REDIS_CONNECTION_ERROR));
     }
 }

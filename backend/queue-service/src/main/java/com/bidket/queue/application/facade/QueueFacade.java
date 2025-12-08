@@ -26,11 +26,15 @@ public class QueueFacade {
         return queueTrafficService.enterQueue(userId, auctionId);
     }
 
-    public Mono<QueueStatusResponse> getQueueStatus(UUID userId, UUID auctionId) {
-        return queueTrafficService.getQueueStatus(userId, auctionId);
+    public Mono<QueueAccommodatableResponse> isAccommodatable(UUID userId, UUID auctionId) {
+        return queueTrafficService.isAccommodatable(userId, auctionId);
     }
 
     public Mono<Void> cancelWaiting(UUID userId, UUID auctionId) {
         return queueTrafficService.cancelWaiting(userId, auctionId);
+    }
+
+    public Mono<QueueStatusResponse> getQueueStatus(UUID auctionId) {
+        return queueTrafficService.getQueueStatus(auctionId);
     }
 }
