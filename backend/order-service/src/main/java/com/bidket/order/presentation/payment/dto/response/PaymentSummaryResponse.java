@@ -20,8 +20,8 @@ public record PaymentSummaryResponse(
                 info.getOrderId(),
                 info.getAmount(),
                 info.getUsedPointAmount(),
-                info.getStatus(),
-                info.getMethod(),
+                info.getStatus().name(),
+                info.getMethod().name(),
                 info.getUpdatedAt()
         );
     }
