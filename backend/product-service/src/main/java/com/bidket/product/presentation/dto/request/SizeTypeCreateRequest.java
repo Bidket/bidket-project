@@ -12,7 +12,9 @@ public record SizeTypeCreateRequest(
         UUID productTypeId,
 
         @NotBlank(message = "사이즈 타입 코드 값은 필수입니다.")
-        @Pattern(regexp = "[A-Z_]+$+", message = "영어 대문자와 특수 문자 '_'만 입력가능합니다.")
+        @Pattern(
+                regexp = "[A-Z0-9_-]+$",
+                message = "영어 대문자와 숫자 특수문자 '-','_' 만 입력가능합니다.")
         @Size(max = 50, message = "코드는 최대 50자입니다.")
         String code,
 

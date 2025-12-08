@@ -19,7 +19,7 @@ public record CategoryCreateRequest(
         String name,
 
         @NotBlank(message = "카테고리 코드는 필수입니다.")
-        @Pattern(regexp = "[A-Z_]+", message = "영어 대문자와 특수 문자 '_'만 입력가능합니다.")
+        @Pattern(regexp = "[A-Z_-]+", message = "영어 대문자와 특수 문자 '-', '_'만 입력가능합니다.")
         @Size(max = 100, message = "카테고리 코드는 최대 100자입니다.")
         String code,
 
