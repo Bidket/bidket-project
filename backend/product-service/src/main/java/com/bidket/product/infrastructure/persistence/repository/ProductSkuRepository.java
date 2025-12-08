@@ -6,4 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ProductSkuRepository extends JpaRepository<ProductSku, UUID> {
 
+    boolean existsBySkuCode(String skuCode);
 }

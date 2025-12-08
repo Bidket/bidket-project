@@ -1,5 +1,7 @@
 package com.bidket.product.application.service;
 
+import com.bidket.product.domain.exception.ProductErrorCode;
+import com.bidket.product.domain.exception.ProductException;
 import com.bidket.product.infrastructure.persistence.entity.Brand;
 import com.bidket.product.infrastructure.persistence.repository.BrandRepository;
 import com.bidket.product.presentation.dto.request.BrandCreateRequest;
@@ -16,6 +18,10 @@ public class BrandService {
     private final BrandRepository brandRepository;
 
     public BrandCreateResponse createBrand(BrandCreateRequest req) {
+
+        if (brandRepository.findByName(req.name()).isPresent()) {
+            throw new ProductException(ProductErrorCode.BRAND_ALREADY_EXISTS);
+        }
 
         Brand brand = Brand.create(
                 req.name(),

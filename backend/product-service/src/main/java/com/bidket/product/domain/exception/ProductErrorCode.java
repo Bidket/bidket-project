@@ -12,7 +12,10 @@ public enum ProductErrorCode implements BaseErrorCode {
     SIZE_TYPE_NOT_FOUND(HttpStatus.NOT_FOUND, "사이즈타입을 찾을 수 없습니다."),
     BRAND_NOT_FOUND(HttpStatus.NOT_FOUND, "브랜드를 찾을 수 없습니다."),
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "상품을 찾을 수 없습니다."),
-    SIZE_NOT_FOUND(HttpStatus.NOT_FOUND, "사이즈를 찾을 수 없습니다.")
+    SIZE_NOT_FOUND(HttpStatus.NOT_FOUND, "사이즈를 찾을 수 없습니다."),
+
+    BRAND_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 브랜드입니다."),
+    SKU_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 SKU code입니다.")
     ;
 
     private final HttpStatus status;

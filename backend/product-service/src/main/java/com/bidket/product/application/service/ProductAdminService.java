@@ -113,6 +113,10 @@ public class ProductAdminService {
         Size size = sizeRepository.findById(req.sizeId())
                 .orElseThrow(() -> new ProductException(ProductErrorCode.SIZE_NOT_FOUND));
 
+        if (productSkuRepository.existsBySkuCode(req.skuCode())) {
+            throw new ProductException(ProductErrorCode.SKU_CODE_ALREADY_EXISTS);
+        }
+
         ProductSku sku = ProductSku.create(
                 product,
                 size,
