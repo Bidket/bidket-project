@@ -7,6 +7,7 @@ import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.apache.kafka.shaded.com.google.protobuf.Api;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -81,6 +82,14 @@ public class QueueController {
     @PatchMapping("/admin/queues/{auctionId}")
     public Mono<ResponseEntity<ApiResponse<QueueConfigUpdateResponse>>> updateConfig(@PathVariable UUID auctionId, @RequestBody QueueConfigUpdateRequest request) {
         return queueFacade.updateConfig(auctionId, request)
+                .map(response ->
+                        ResponseEntity.ok(ApiResponse.success(response))
+                );
+    }
+
+    @GetMapping("/admin/queues/{auctionId}/metrics")
+    public Mono<ResponseEntity<ApiResponse<QueueMetricsResponse>>> getMetrics(@PathVariable UUID auctionId) {
+        return queueFacade.getMetrics(auctionId)
                 .map(response ->
                         ResponseEntity.ok(ApiResponse.success(response))
                 );

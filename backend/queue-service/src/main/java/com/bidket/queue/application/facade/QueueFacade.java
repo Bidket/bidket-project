@@ -44,4 +44,8 @@ public class QueueFacade {
     public Mono<QueueConfigUpdateResponse> updateConfig(UUID auctionId, QueueConfigUpdateRequest request) {
         return queueManagementService.updateConfig(auctionId, request);
     }
+
+    public Mono<QueueMetricsResponse> getMetrics(UUID auctionId) {
+        return queueManagementService.getQueueMetrics(auctionId);
+    }
 }

@@ -80,7 +80,7 @@ public class QueueManagementService {
     }
 
     @CheckQueueConfig
-    public Mono<QueueMetricsResponse> getQueueMetrics(UUID auctionId, UUID userId) {
+    public Mono<QueueMetricsResponse> getQueueMetrics(UUID auctionId) {
         return Mono.zip(
                         managementRepository.getConfig(auctionId),
                         trafficRepository.getWaitingUserCount(auctionId).defaultIfEmpty(0L),
