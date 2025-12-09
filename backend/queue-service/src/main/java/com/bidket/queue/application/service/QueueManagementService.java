@@ -83,8 +83,8 @@ public class QueueManagementService {
     public Mono<QueueMetricsResponse> getQueueMetrics(UUID auctionId, UUID userId) {
         return Mono.zip(
                         managementRepository.getConfig(auctionId),
-                        trafficRepository.getWaitingUserCount(auctionId),
-                        trafficRepository.getActiveUserCount(auctionId))
+                        trafficRepository.getWaitingUserCount(auctionId).defaultIfEmpty(0L),
+                        trafficRepository.getActiveUserCount(auctionId).defaultIfEmpty(0L))
                 .map(tuple -> {
                     QueueConfigModel config = tuple.getT1();
 
@@ -103,6 +103,5 @@ public class QueueManagementService {
                             .lastUpdatedBy(config.lastUpdatedBy())
                             .build();
                 });
-
     }
 }
