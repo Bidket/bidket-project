@@ -91,5 +91,15 @@ public class AuthenticationHelper {
         }
         return "ROLE_USER"; // 기본값
     }
+
+    /**
+     * 현재 사용자가 ADMIN 권한을 가지고 있는지 확인
+     */
+    public static void requireAdminRole() {
+        String role = getCurrentUserRole();
+        if (!"ROLE_ADMIN".equals(role)) {
+            throw new NotificationException(NotificationErrorCode.FORBIDDEN);
+        }
+    }
 }
 

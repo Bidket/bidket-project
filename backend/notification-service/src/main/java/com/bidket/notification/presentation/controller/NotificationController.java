@@ -2,7 +2,10 @@ package com.bidket.notification.presentation.controller;
 
 import com.bidket.notification.application.service.NotificationService;
 import com.bidket.notification.global.security.AuthenticationHelper;
+import com.bidket.notification.presentation.dto.request.SendNotificationRequest;
 import com.bidket.notification.presentation.dto.response.InAppNotificationListResponse;
+import com.bidket.notification.presentation.dto.response.SendNotificationResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -45,6 +48,26 @@ public class NotificationController {
                 category
         );
 
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 알림 단건 발송 API
+     * 특정 사용자에게 알림을 바로 보내는 API
+     * - 관리자 콘솔에서 직접 알림 발송 또는 내부 배치 프로세스에서 사용
+     * - 모든 사용자 사용 가능 (권한 체크 주석처리)
+     *
+     * @param request 알림 발송 요청
+     * @return 알림 발송 응답
+     */
+    @PostMapping("/send")
+    public ResponseEntity<SendNotificationResponse> sendNotification(
+            @Valid @RequestBody SendNotificationRequest request
+    ) {
+        // ROLE_ADMIN 권한 체크 (주석처리 - 모든 사용자 사용 가능, 추후변경예정)
+        // AuthenticationHelper.requireAdminRole();
+
+        SendNotificationResponse response = notificationService.sendNotification(request);
         return ResponseEntity.ok(response);
     }
 }
