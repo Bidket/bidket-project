@@ -135,7 +135,7 @@ class BidControllerIntegrationTest {
         // When & Then
         mockMvc.perform(delete("/api/v1/bids/" + highestBid.getId())
                         .header("X-User-Id", bidderId.toString()))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isForbidden());
     }
 
     @Test

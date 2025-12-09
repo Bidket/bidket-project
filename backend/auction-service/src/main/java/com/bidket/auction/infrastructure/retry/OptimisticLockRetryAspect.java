@@ -8,6 +8,8 @@ import org.aspectj.lang.annotation.Aspect;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Component;
 
+import com.bidket.auction.global.exception.AuctionDomainException;
+import com.bidket.auction.global.exception.AuctionErrorCode;
 
 @Slf4j
 @Aspect
@@ -48,7 +50,7 @@ public class OptimisticLockRetryAspect {
             }
         }
 
-        throw new IllegalStateException("재시도 로직 실행 중 예상치 못한 오류 발생");
+        throw new AuctionDomainException(AuctionErrorCode.UNEXPECTED_ERROR);
     }
 }
 

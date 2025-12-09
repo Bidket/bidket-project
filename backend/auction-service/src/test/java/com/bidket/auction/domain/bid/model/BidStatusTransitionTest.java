@@ -1,5 +1,7 @@
 package com.bidket.auction.domain.bid.model;
 
+import com.bidket.auction.global.exception.BidDomainException;
+import com.bidket.auction.global.exception.BidErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -85,8 +87,9 @@ class BidStatusTransitionTest {
 
         // When & Then
         assertThatThrownBy(outbidBid::markAsWon)
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("ACTIVE 상태에서만 낙찰될 수 있습니다");
+                .isInstanceOf(BidDomainException.class)
+                .extracting(e -> ((BidDomainException) e).getErrorCode())
+                .isEqualTo(BidErrorCode.BID_CONFLICT);
     }
 
     @Test
@@ -120,8 +123,9 @@ class BidStatusTransitionTest {
 
         // When & Then
         assertThatThrownBy(highestBid::cancel)
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("최고가 입찰은 취소할 수 없습니다");
+                .isInstanceOf(BidDomainException.class)
+                .extracting(e -> ((BidDomainException) e).getErrorCode())
+                .isEqualTo(BidErrorCode.CANNOT_CANCEL_HIGHEST_BID);
     }
 
     @Test

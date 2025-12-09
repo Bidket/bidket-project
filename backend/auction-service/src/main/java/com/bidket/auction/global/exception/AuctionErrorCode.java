@@ -34,7 +34,9 @@ public enum AuctionErrorCode implements BaseErrorCode {
     NOT_AUCTION_OWNER(HttpStatus.FORBIDDEN, "경매 소유자만 수정/취소할 수 있습니다."),
     
     OPTIMISTIC_LOCK_FAILURE(HttpStatus.CONFLICT, "다른 사용자가 이미 입찰했습니다. 다시 시도해주세요."),
-    
+            
+    UNEXPECTED_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "재시도 로직 실행 중 예상치 못한 오류 발생"),
+
     AUCTION_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "경매 생성에 실패했습니다."),
     AUCTION_UPDATE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "경매 수정에 실패했습니다.")
     ;

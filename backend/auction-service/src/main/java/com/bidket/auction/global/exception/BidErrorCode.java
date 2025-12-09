@@ -1,12 +1,13 @@
 package com.bidket.auction.global.exception;
 
+import com.bidket.common.presentation.error.BaseErrorCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 
 @Getter
 @RequiredArgsConstructor
-public enum BidErrorCode {
+public enum BidErrorCode implements BaseErrorCode {
     
     // 400 Bad Request
     INVALID_BID_AMOUNT(HttpStatus.BAD_REQUEST, "BID_001", "유효하지 않은 입찰 금액입니다"),

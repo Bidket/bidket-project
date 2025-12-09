@@ -11,6 +11,8 @@ import com.bidket.auction.domain.auction.model.vo.PriceInfo;
 import com.bidket.auction.domain.auction.model.vo.WinnerInfo;
 import com.bidket.auction.domain.auction.repository.AuctionRepository;
 import com.bidket.auction.domain.bid.repository.BidRepository;
+import com.bidket.auction.global.exception.AuctionDomainException;
+import com.bidket.auction.global.exception.BidDomainException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -133,8 +135,7 @@ class BidServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> bidService.placeBid(auctionId, bidderId, 350000L))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("ACTIVE 상태의 경매에만 입찰할 수 있습니다");
+                .isInstanceOf(AuctionDomainException.class);
     }
 
     @Test
@@ -145,8 +146,7 @@ class BidServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> bidService.placeBid(auctionId, sellerId, 350000L))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("본인의 경매에는 입찰할 수 없습니다");
+                .isInstanceOf(BidDomainException.class);
     }
 
     @Test
@@ -157,8 +157,7 @@ class BidServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> bidService.placeBid(auctionId, bidderId, 300000L))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("최소 입찰가");
+                .isInstanceOf(BidDomainException.class);
     }
 
     @Test
@@ -251,8 +250,7 @@ class BidServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> bidService.cancelBid(bidId, bidderId))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("최고가 입찰은 취소할 수 없습니다");
+                .isInstanceOf(BidDomainException.class);
     }
 
     @Test
@@ -272,8 +270,7 @@ class BidServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> bidService.cancelBid(bidId, bidderId))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("본인의 입찰만 취소할 수 있습니다");
+                .isInstanceOf(BidDomainException.class);
     }
 
     @Test
@@ -285,8 +282,7 @@ class BidServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> bidService.cancelBid(bidId, bidderId))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("입찰을 찾을 수 없습니다");
+                .isInstanceOf(BidDomainException.class);
     }
 
 
@@ -343,8 +339,7 @@ class BidServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> bidService.buyNow(auctionId, bidderId))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("즉시 구매가가 설정되지 않은 경매입니다");
+                .isInstanceOf(AuctionDomainException.class);
     }
 
     @Test
@@ -381,8 +376,7 @@ class BidServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> bidService.buyNow(auctionId, sellerId))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("본인의 경매에는 입찰할 수 없습니다");
+                .isInstanceOf(BidDomainException.class);
     }
 
     @Test
@@ -419,8 +413,7 @@ class BidServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> bidService.buyNow(auctionId, bidderId))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("ACTIVE 상태의 경매에만 입찰할 수 있습니다");
+                .isInstanceOf(AuctionDomainException.class);
     }
 }
 

@@ -1,5 +1,7 @@
 package com.bidket.auction.presentation.advice;
 
+import com.bidket.auction.global.exception.DomainException;
+import com.bidket.common.presentation.error.BaseErrorCode;
 import com.bidket.common.presentation.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -11,13 +13,15 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice(basePackages = "com.bidket.auction.presentation")
 public class AuctionExceptionHandler {
 
-    @ExceptionHandler({IllegalStateException.class, IllegalArgumentException.class})
-    public ResponseEntity<ApiResponse<?>> handleBadRequest(RuntimeException e) {
-        log.warn("잘못된 요청: {}", e.getMessage(), e);
+    @ExceptionHandler(DomainException.class)
+    public ResponseEntity<ApiResponse<?>> handleDomainException(DomainException e) {
+        BaseErrorCode errorCode = e.getErrorCode();
+        log.warn("도메인 예외: {}", errorCode.getMessage(), e);
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(e.getMessage()));
+                .status(errorCode.getStatus().value())
+                .body(ApiResponse.error(errorCode.getMessage()));
     }
+
 }
 
 
