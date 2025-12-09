@@ -1,4 +1,4 @@
-package com.bidket.product.presentation.dto.request;
+package com.bidket.product.presentation.dto.request.size;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

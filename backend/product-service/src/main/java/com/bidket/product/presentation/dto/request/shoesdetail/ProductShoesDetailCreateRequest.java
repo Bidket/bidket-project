@@ -1,4 +1,4 @@
-package com.bidket.product.presentation.dto.request;
+package com.bidket.product.presentation.dto.request.shoesdetail;
 
 import com.bidket.product.domain.model.Silhouette;
 import jakarta.validation.constraints.DecimalMin;

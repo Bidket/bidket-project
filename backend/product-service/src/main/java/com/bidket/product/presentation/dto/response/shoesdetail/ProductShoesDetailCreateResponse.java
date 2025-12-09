@@ -1,4 +1,4 @@
-package com.bidket.product.presentation.dto.response;
+package com.bidket.product.presentation.dto.response.shoesdetail;
 
 import com.bidket.product.domain.model.Silhouette;
 import com.bidket.product.infrastructure.persistence.entity.ProductShoesDetail;

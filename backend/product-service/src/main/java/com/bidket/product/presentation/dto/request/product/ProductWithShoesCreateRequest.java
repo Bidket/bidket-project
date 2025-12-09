@@ -1,5 +1,6 @@
-package com.bidket.product.presentation.dto.request;
+package com.bidket.product.presentation.dto.request.product;
 
+import com.bidket.product.presentation.dto.request.shoesdetail.ProductShoesDetailCreateRequest;
 import jakarta.validation.constraints.NotNull;
 
 public record ProductWithShoesCreateRequest(

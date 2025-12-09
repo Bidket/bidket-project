@@ -1,4 +1,4 @@
-package com.bidket.product.presentation.dto.response;
+package com.bidket.product.presentation.dto.response.size;
 
 import com.bidket.product.infrastructure.persistence.entity.Size;
 import java.util.UUID;
