@@ -81,6 +81,21 @@ public class BidController {
 
         return ResponseEntity.ok(ApiResponse.success("입찰이 취소되었습니다", null));
     }
+
+    @PostMapping("/auction/{auctionId}/buy-now")
+    public ResponseEntity<ApiResponse<BidResponse>> buyNow(
+            @RequestHeader("X-User-Id") UUID userId,
+            @PathVariable UUID auctionId
+    ) {
+        log.info("즉시 구매 요청 - 사용자: {}, 경매: {}", userId, auctionId);
+
+        var bid = bidService.buyNow(auctionId, userId);
+        BidResponse response = BidResponse.from(bid);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success("즉시 구매가 완료되었습니다", response));
+    }
 }
 
 

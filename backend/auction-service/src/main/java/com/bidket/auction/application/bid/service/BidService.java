@@ -8,6 +8,7 @@ import com.bidket.auction.domain.auction.model.AuctionStatus;
 import com.bidket.auction.domain.auction.repository.AuctionRepository;
 import com.bidket.auction.domain.bid.model.Bid;
 import com.bidket.auction.domain.bid.repository.BidRepository;
+import com.bidket.auction.infrastructure.retry.RetryOnOptimisticLock;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ public class BidService {
     private final AuctionRepository auctionRepository;
 
     @Transactional
+    @RetryOnOptimisticLock
     public Bid placeBid(UUID auctionId, UUID bidderId, Long amount) {
         Auction auction = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new IllegalArgumentException("경매를 찾을 수 없습니다: " + auctionId));
@@ -116,6 +118,50 @@ public class BidService {
         bidRepository.save(bid);
 
         log.info("입찰 취소 완료 - 입찰 ID: {}, 입찰자: {}", bidId, bidderId);
+    }
+
+    @Transactional
+    @RetryOnOptimisticLock
+    public Bid buyNow(UUID auctionId, UUID bidderId) {
+        Auction auction = auctionRepository.findById(auctionId)
+                .orElseThrow(() -> new IllegalArgumentException("경매를 찾을 수 없습니다: " + auctionId));
+
+        if (auction.getStatus() != AuctionStatus.ACTIVE) {
+            throw new IllegalStateException("ACTIVE 상태의 경매에만 입찰할 수 있습니다");
+        }
+
+        if (auction.getSellerId().equals(bidderId)) {
+            throw new IllegalArgumentException("본인의 경매에는 입찰할 수 없습니다");
+        }
+
+        Long buyNowPrice = auction.getPriceInfo().getBuyNowPrice();
+        if (buyNowPrice == null) {
+            throw new IllegalStateException("즉시 구매가가 설정되지 않은 경매입니다");
+        }
+
+        Optional<Bid> previousHighestBid = bidRepository.findHighestBidByAuctionId(auctionId);
+        if (previousHighestBid.isPresent()) {
+            Bid prevBid = previousHighestBid.get();
+            prevBid.markAsOutbid();
+            bidRepository.save(prevBid);
+        }
+
+        Bid buyNowBid = Bid.builder()
+                .auctionId(auctionId)
+                .bidderId(bidderId)
+                .amount(buyNowPrice)
+                .build();
+        buyNowBid.markAsHighest();
+
+        Bid savedBid = bidRepository.save(buyNowBid);
+
+        auction.updateCurrentPrice(buyNowPrice);
+        auction.end(true);
+        auctionRepository.save(auction);
+
+        log.info("즉시 구매 완료 - 경매 ID: {}, 구매자: {}, 금액: {}", auctionId, bidderId, buyNowPrice);
+
+        return savedBid;
     }
 }
 
