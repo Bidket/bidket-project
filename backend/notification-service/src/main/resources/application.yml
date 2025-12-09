@@ -2,6 +2,9 @@ server:
   port: 8600
 
 spring:
+  cloud:
+    discovery:
+      enabled: false
   application:
     name: notification-service
   config:
@@ -28,5 +31,9 @@ spring:
 
 eureka:
   client:
+    enabled: false
     service-url:
       defaultZone: ${EUREKA_SERVER_URL}
+
+jwt:
+  secret: ${JWT_SECRET}
