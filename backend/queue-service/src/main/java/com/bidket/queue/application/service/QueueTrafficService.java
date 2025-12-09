@@ -3,7 +3,7 @@ package com.bidket.queue.application.service;
 import com.bidket.queue.domain.exception.QueueException;
 import com.bidket.queue.domain.model.HeartbeatStatus;
 import com.bidket.queue.domain.model.QueueErrorCode;
-import com.bidket.queue.domain.model.QueueStatus;
+import com.bidket.queue.domain.model.QueueTrafficStatus;
 import com.bidket.queue.domain.model.UserStatus;
 import com.bidket.queue.domain.repository.QueueManagementRepository;
 import com.bidket.queue.domain.repository.QueueTrafficRepository;
@@ -21,7 +21,6 @@ import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -100,7 +99,7 @@ public class QueueTrafficService {
                                 .auctionId(auctionId)
                                 .totalWaiting(tuple.getT2())
                                 .currentActive(tuple.getT1())
-                                .status(QueueStatus.checkStatus(tuple.getT1(), tuple.getT3().maxActive()))
+                                .status(QueueTrafficStatus.checkStatus(tuple.getT1(), tuple.getT3().maxActive()))
                                 .build()
                 )
                 .switchIfEmpty(Mono.just(
@@ -108,7 +107,7 @@ public class QueueTrafficService {
                                 .auctionId(auctionId)
                                 .totalWaiting(0L)
                                 .currentActive(0L)
-                                .status(QueueStatus.SMOOTH)
+                                .status(QueueTrafficStatus.SMOOTH)
                                 .build()
                 ))
                 .onErrorMap(e -> new QueueException(QueueErrorCode.REDIS_CONNECTION_ERROR));
