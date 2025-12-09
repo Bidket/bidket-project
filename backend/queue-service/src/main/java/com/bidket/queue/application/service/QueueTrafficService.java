@@ -36,10 +36,11 @@ public class QueueTrafficService {
 
     @CheckQueueConfig
     public Mono<QueueEnterResponse> enterQueue(UUID userId, UUID auctionId) {
+        String waitingKey = "queue:auction:" + auctionId + ":waiting";
         return trafficRepository.addWaitingUser(auctionId, userId)
                 .flatMap(isAdded -> trafficRepository.getRank(auctionId, userId))
                 .flatMap(rank ->
-                    managementRepository.setExpiration("123", Instant.now().plus(1, ChronoUnit.HOURS))
+                    managementRepository.setExpiration(waitingKey, Instant.now().plus(1, ChronoUnit.HOURS))
                             .thenReturn(QueueEnterResponse.builder()
                                     .auctionId(auctionId)
                                     .userId(userId)

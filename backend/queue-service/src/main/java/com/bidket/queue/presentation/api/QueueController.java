@@ -116,7 +116,7 @@ public class QueueController {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "200",
-                    description = "대기열 설정 생성 성공",
+                    description = "대기열 상태 조회 성공",
                     content = @Content(schemaProperties = {
                             @SchemaProperty(name = "success", schema = @Schema(example = "true")),
                             @SchemaProperty(name = "message", schema = @Schema(example = "OK")),
@@ -136,7 +136,7 @@ public class QueueController {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "200",
-                    description = "대기열 설정 생성 성공",
+                    description = "사용자 활동 상태 확인 성공",
                     content = @Content(schemaProperties = {
                             @SchemaProperty(name = "success", schema = @Schema(example = "true")),
                             @SchemaProperty(name = "message", schema = @Schema(example = "OK")),
@@ -158,7 +158,7 @@ public class QueueController {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "200",
-                    description = "대기열 설정 생성 성공",
+                    description = "대기열 정책 변경 성공",
                     content = @Content(schemaProperties = {
                             @SchemaProperty(name = "success", schema = @Schema(example = "true")),
                             @SchemaProperty(name = "message", schema = @Schema(example = "OK")),
@@ -179,7 +179,7 @@ public class QueueController {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "200",
-                    description = "대기열 설정 생성 성공",
+                    description = "대기열 현상 상세 조회 성공",
                     content = @Content(schemaProperties = {
                             @SchemaProperty(name = "success", schema = @Schema(example = "true")),
                             @SchemaProperty(name = "message", schema = @Schema(example = "OK")),
@@ -190,6 +190,26 @@ public class QueueController {
     @GetMapping("/admin/queues/{auctionId}/metrics")
     public Mono<ResponseEntity<ApiResponse<QueueMetricsResponse>>> getMetrics(@PathVariable UUID auctionId) {
         return queueFacade.getMetrics(auctionId)
+                .map(response ->
+                        ResponseEntity.ok(ApiResponse.success(response))
+                );
+    }
+
+    @Operation(summary = "대기열 폐쇄", description = "경매 종료시 대기열 폐쇄")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "대기열 폐쇄 성공",
+                    content = @Content(schemaProperties = {
+                            @SchemaProperty(name = "success", schema = @Schema(example = "true")),
+                            @SchemaProperty(name = "message", schema = @Schema(example = "OK")),
+                            @SchemaProperty(name = "data", schema = @Schema(implementation = QueueCloseResponse.class))
+                    })
+            )
+    })
+    @DeleteMapping("/internal/queues/{auctionId}/close")
+    public Mono<ResponseEntity<ApiResponse<QueueCloseResponse>>> closeQueue(@PathVariable UUID auctionId) {
+        return queueFacade.closeQueue(auctionId)
                 .map(response ->
                         ResponseEntity.ok(ApiResponse.success(response))
                 );

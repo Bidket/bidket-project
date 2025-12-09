@@ -48,4 +48,8 @@ public class QueueFacade {
     public Mono<QueueMetricsResponse> getMetrics(UUID auctionId) {
         return queueManagementService.getQueueMetrics(auctionId);
     }
+
+    public Mono<QueueCloseResponse> closeQueue(UUID auctionId) {
+        return queueManagementService.closeQueue(auctionId);
+    }
 }
