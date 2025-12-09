@@ -29,11 +29,14 @@ public class Notification extends BaseEntity {
     @Column(name = "id", columnDefinition = "UUID")
     private UUID id;
 
-    @Column(name = "user_id", nullable = false, columnDefinition = "UUID")
+    @Column(name = "user_id", nullable = true, columnDefinition = "UUID")
     private UUID userId;
 
     @Column(name = "type", nullable = false, length = 50)
-    private String type; // QUEUE_CALL, BID_SUCCESS, PAYMENT_DONE 등
+    private String type; // QUEUE_CALL, BID_SUCCESS, PAYMENT_DONE 등 (기존 호환성 유지용)
+
+    @Column(name = "category", nullable = true, length = 50)
+    private String category; // AUCTION_START, BID_SUCCESS, PAYMENT_EXPIRE 등
 
     @Enumerated(EnumType.STRING)
     @Column(name = "channel", nullable = false, length = 20)
@@ -48,6 +51,9 @@ public class Notification extends BaseEntity {
     @Column(name = "link_url", length = 500)
     private String linkUrl;
 
+    @Column(name = "payload", columnDefinition = "TEXT")
+    private String payload; // JSON 문자열로 저장
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private NotificationStatus status;
@@ -59,14 +65,16 @@ public class Notification extends BaseEntity {
     private LocalDateTime readAt;
 
     @Builder
-    public Notification(UUID userId, String type, NotificationChannel channel,
-                       String title, String message, String linkUrl, NotificationStatus status) {
+    public Notification(UUID userId, String type, String category, NotificationChannel channel,
+                       String title, String message, String linkUrl, String payload, NotificationStatus status) {
         this.userId = userId;
-        this.type = type;
+        this.type = type != null ? type : (category != null ? category : "SYSTEM"); // type이 없으면 category 사용, 둘 다 없으면 SYSTEM
+        this.category = category;
         this.channel = channel != null ? channel : NotificationChannel.PUSH;
         this.title = title;
         this.message = message;
         this.linkUrl = linkUrl;
+        this.payload = payload;
         this.status = status != null ? status : NotificationStatus.PENDING;
     }
 
