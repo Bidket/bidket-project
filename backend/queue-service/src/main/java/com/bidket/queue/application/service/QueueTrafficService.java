@@ -38,13 +38,16 @@ public class QueueTrafficService {
     public Mono<QueueEnterResponse> enterQueue(UUID userId, UUID auctionId) {
         return trafficRepository.addWaitingUser(auctionId, userId)
                 .flatMap(isAdded -> trafficRepository.getRank(auctionId, userId))
-                .map(rank -> QueueEnterResponse.builder()
-                        .auctionId(auctionId)
-                        .userId(userId)
-                        .rank(rank)
-                        .retryAfter(3)
-                        .message("대기 중")
-                        .build());
+                .flatMap(rank ->
+                    managementRepository.setExpiration("123", Instant.now().plus(1, ChronoUnit.HOURS))
+                            .thenReturn(QueueEnterResponse.builder()
+                                    .auctionId(auctionId)
+                                    .userId(userId)
+                                    .rank(rank)
+                                    .retryAfter(3)
+                                    .message("대기 중")
+                                    .build())
+                );
     }
 
     @CheckQueueConfig
