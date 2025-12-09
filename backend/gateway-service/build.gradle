@@ -13,5 +13,13 @@ dependencies {
 
     implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.6.0'
 
+    // Apache Commons Lang3 (보안 취약점 해결을 위해 최신 버전 명시)
+    implementation 'org.apache.commons:commons-lang3:3.17.0'
+
+    // JWT 라이브러리
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
+
     implementation 'com.github.Bidket:bidket-common-repo:main-SNAPSHOT'
 }
