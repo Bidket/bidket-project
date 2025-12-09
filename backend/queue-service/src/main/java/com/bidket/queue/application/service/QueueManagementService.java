@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
@@ -61,7 +62,7 @@ public class QueueManagementService {
     }
 
     @CheckQueueConfig
-    public Mono<QueueConfigUpdateResponse> updateConfig(UUID auctionId, QueueConfigUpdateRequest request) {
+    public Mono<QueueConfigUpdateResponse> updateConfig(UUID userId, UUID auctionId, QueueConfigUpdateRequest request) {
         Map<String, String> updateFields = new HashMap<>();
         if (request.maxActive() != null)
             updateFields.put("maxActive", request.maxActive().toString());
@@ -71,6 +72,8 @@ public class QueueManagementService {
             updateFields.put("status", request.status().toString());
 
         if (!updateFields.isEmpty()) {
+            updateFields.put("lastUpdatedAt", String.valueOf(LocalDateTime.now()));
+            updateFields.put("lastUpdatedBy", userId.toString());
             return managementRepository.updateConfig(auctionId, updateFields)
                     .flatMap(isSuccess -> managementRepository.getConfig(auctionId)
                             .map(QueueConfigModel::toUpdateResponse));

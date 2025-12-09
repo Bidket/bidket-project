@@ -168,7 +168,8 @@ public class QueueController {
     })
     @PatchMapping("/admin/queues/{auctionId}")
     public Mono<ResponseEntity<ApiResponse<QueueConfigUpdateResponse>>> updateConfig(@PathVariable UUID auctionId, @RequestBody QueueConfigUpdateRequest request) {
-        return queueFacade.updateConfig(auctionId, request)
+        UUID userId = UUID.randomUUID();
+        return queueFacade.updateConfig(userId, auctionId, request)
                 .map(response ->
                         ResponseEntity.ok(ApiResponse.success(response))
                 );

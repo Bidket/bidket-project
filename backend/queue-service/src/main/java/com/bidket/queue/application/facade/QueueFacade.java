@@ -41,8 +41,8 @@ public class QueueFacade {
         return queueTrafficService.heartbeat(userId, auctionId, token);
     }
 
-    public Mono<QueueConfigUpdateResponse> updateConfig(UUID auctionId, QueueConfigUpdateRequest request) {
-        return queueManagementService.updateConfig(auctionId, request);
+    public Mono<QueueConfigUpdateResponse> updateConfig(UUID userId, UUID auctionId, QueueConfigUpdateRequest request) {
+        return queueManagementService.updateConfig(userId, auctionId, request);
     }
 
     public Mono<QueueMetricsResponse> getMetrics(UUID auctionId) {
