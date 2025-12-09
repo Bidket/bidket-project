@@ -2,6 +2,7 @@ package com.bidket.auction.application.auction.scheduler;
 
 import com.bidket.auction.domain.auction.model.Auction;
 import com.bidket.auction.domain.auction.repository.AuctionRepository;
+import com.bidket.auction.domain.auction.model.AuctionStatus;
 import com.bidket.auction.infrastructure.redis.ViewCountCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +12,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toSet;
 
 @Component
 @RequiredArgsConstructor
@@ -24,7 +31,8 @@ public class AuctionScheduler {
     @Transactional
     public void startPendingAuctions() {
         LocalDateTime now = LocalDateTime.now();
-        
+
+        // 시작 가능한 PENDING 경매 조회
         List<Auction> pendingAuctions = auctionRepository
                 .findPendingAuctionsStartingBefore(now);
 
@@ -32,21 +40,49 @@ public class AuctionScheduler {
             return;
         }
 
-        log.info("경매 자동 시작 실행: {} 건", pendingAuctions.size());
+        List<Auction> activeAuctions = auctionRepository.findByStatus(AuctionStatus.ACTIVE);
+        Set<UUID> productSizeIdsWithActive = activeAuctions.stream()
+                .map(Auction::getProductSizeId)
+                .collect(toSet());
 
-        for (Auction auction : pendingAuctions) {
+        Map<UUID, List<Auction>> pendingByProductSize = pendingAuctions.stream()
+                .collect(groupingBy(Auction::getProductSizeId));
+
+        int startedCount = 0;
+
+        for (Map.Entry<UUID, List<Auction>> entry : pendingByProductSize.entrySet()) {
+            UUID productSizeId = entry.getKey();
+
+            if (productSizeIdsWithActive.contains(productSizeId)) {
+                log.debug("productSizeId={} 에 대해 이미 ACTIVE 경매가 있어 시작하지 않음", productSizeId);
+                continue;
+            }
+
+            List<Auction> auctionsForSize = entry.getValue();
+            if (auctionsForSize.isEmpty()) {
+                continue;
+            }
+
+            Auction auctionToStart = auctionsForSize.get(0);
+
             try {
-                auction.start();
-                auctionRepository.save(auction);
-                
-                log.info("경매 시작: {} ({})", auction.getId(), auction.getAuctionTitle());
-                
+                auctionToStart.start();
+                auctionRepository.save(auctionToStart);
+                startedCount++;
+
+                log.info("경매 시작: {} ({}) - productSizeId={}",
+                        auctionToStart.getId(),
+                        auctionToStart.getAuctionTitle(),
+                        productSizeId);
+
             } catch (Exception e) {
-                log.error("경매 시작 실패: {}", auction.getId(), e);
+                log.error("경매 시작 실패: {}", auctionToStart.getId(), e);
             }
         }
 
-        log.info("경매 자동 시작 완료: {} 건", pendingAuctions.size());
+        if (startedCount > 0) {
+            log.info("경매 자동 시작 완료: {} 건", startedCount);
+        }
     }
 
     @Scheduled(fixedDelay = 30000)
