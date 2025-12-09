@@ -108,5 +108,27 @@ public class JwtTokenProvider {
             return false;
         }
     }
+
+    /**
+     * 토큰 검증 및 예외 타입 반환
+     * 
+     * @param token 검증할 JWT 토큰
+     * @return 토큰이 유효하면 null, 그렇지 않으면 예외
+     */
+    public Exception validateTokenWithException(String token) {
+        try {
+            Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token);
+            return null;
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            return e; // 만료된 토큰
+        } catch (io.jsonwebtoken.security.SignatureException | io.jsonwebtoken.MalformedJwtException e) {
+            return e; // 잘못된 서명 또는 형식
+        } catch (Exception e) {
+            return e; // 기타 예외
+        }
+    }
 }
 

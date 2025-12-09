@@ -32,3 +32,6 @@ eureka:
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION}
+
+heartbeat:
+  frequency: 5
