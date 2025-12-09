@@ -39,6 +39,27 @@ services:
     networks:
       - bidket-net
 
+  product-service:
+    build:
+      context: ./backend/product-service
+      dockerfile: Dockerfile
+    container_name: product-service
+    ports:
+      - "8200:8200"
+    depends_on:
+      - eureka-server
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=bidket
+      - POSTGRES_PASSWORD=bidket
+      - PRODUCT_DB=bidket_product
+    networks:
+      - bidket-net
+
   auction-service:
     build:
       context: ./backend/auction-service
