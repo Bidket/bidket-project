@@ -11,7 +11,7 @@ public enum BidErrorCode implements BaseErrorCode {
     
     // 400 Bad Request
     INVALID_BID_AMOUNT(HttpStatus.BAD_REQUEST, "BID_001", "유효하지 않은 입찰 금액입니다"),
-    BID_AMOUNT_TOO_LOW(HttpStatus.BAD_REQUEST, "BID_002", "입찰 금액이 최소 입찰가보다 낮습니다"),
+    BID_AMOUNT_TOO_LOW(HttpStatus.BAD_REQUEST, "BID_002", "입찰 금액이 최소 입찰 가능 금액(현재가 + 최소 호가)보다 낮습니다"),
     SELF_BID_NOT_ALLOWED(HttpStatus.FORBIDDEN, "BID_003", "본인의 경매에는 입찰할 수 없습니다"),
     
     // 404 Not Found

@@ -22,6 +22,7 @@ public enum AuctionErrorCode implements BaseErrorCode {
     AUCTION_ALREADY_STARTED(HttpStatus.CONFLICT, "이미 시작된 경매는 수정할 수 없습니다."),
     AUCTION_ALREADY_ENDED(HttpStatus.CONFLICT, "이미 종료된 경매입니다."),
     CANNOT_CANCEL_WITH_BIDS(HttpStatus.CONFLICT, "입찰이 있는 경매는 취소할 수 없습니다."),
+    BUY_NOW_NOT_AVAILABLE(HttpStatus.CONFLICT, "현재 입찰가가 즉시구매가 이상이어서 즉시구매를 할 수 없습니다."),
     
     BID_AMOUNT_TOO_LOW(HttpStatus.BAD_REQUEST, "입찰 금액이 최소 입찰가보다 낮습니다."),
     SELF_BID_NOT_ALLOWED(HttpStatus.FORBIDDEN, "본인의 경매에는 입찰할 수 없습니다."),

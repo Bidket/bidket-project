@@ -141,6 +141,11 @@ public class BidService {
             throw new AuctionDomainException(AuctionErrorCode.INVALID_BUY_NOW_PRICE);
         }
 
+        Long currentPrice = auction.getPriceInfo().getCurrentPrice();
+        if (currentPrice >= buyNowPrice) {
+            throw new AuctionDomainException(AuctionErrorCode.BUY_NOW_NOT_AVAILABLE);
+        }
+
         Optional<Bid> previousHighestBid = bidRepository.findHighestBidByAuctionId(auctionId);
         if (previousHighestBid.isPresent()) {
             Bid prevBid = previousHighestBid.get();

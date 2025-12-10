@@ -32,7 +32,6 @@ public class AuctionScheduler {
     public void startPendingAuctions() {
         LocalDateTime now = LocalDateTime.now();
 
-        // 시작 가능한 PENDING 경매 조회
         List<Auction> pendingAuctions = auctionRepository
                 .findPendingAuctionsStartingBefore(now);
 
