@@ -29,9 +29,9 @@ eureka:
     service-url:
       defaultZone: ${EUREKA_SERVER_URL}
 
-jwt:
-  secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION}
+active_token:
+  secret: ${ACTIVE_TOKEN_SECRET}
+  expired_at: ${ACTIVE_TOKEN_EXPIRATION}
 
 heartbeat:
   frequency: 5

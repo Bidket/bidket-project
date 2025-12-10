@@ -114,8 +114,8 @@ services:
       - QUEUE_DB=${QUEUE_DB}
       - ORDER_DB=bidket_order
       - NOTIFICATION_DB=bidket_notification
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRED_AT=${JWT_EXPIRED_AT}
+      - ACTIVE_TOKEN_SECRET=${ACTIVE_TOKEN_SECRET}
+      - ACTIVE_TOKEN_EXPIRATION=${ACTIVE_TOKEN_EXPIRATION}
 
     networks:
       - bidket-net
