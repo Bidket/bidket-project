@@ -45,7 +45,6 @@ public class QueueTrafficService {
                                     .auctionId(auctionId)
                                     .userId(userId)
                                     .rank(rank)
-                                    .retryAfter(3)
                                     .message("대기 중")
                                     .build())
                 );
@@ -64,7 +63,7 @@ public class QueueTrafficService {
                             .userId(userId)
                             .status(UserStatus.ACTIVE)
                             .rank(0L)
-                            .retryAfter(3)
+                            .retryAfter(0)
                             .token(token)
                             .message("입장이 가능합니다. 입찰 페이지로 이동합니다.")
                             .build());
@@ -75,7 +74,7 @@ public class QueueTrafficService {
                                 .userId(userId)
                                 .status(UserStatus.WAITING)
                                 .rank(rank)
-                                .retryAfter(0)
+                                .retryAfter(3)
                                 .token(null)
                                 .message("현재 대기 인원 " + rank + "명 남았습니다.")
                                 .build())

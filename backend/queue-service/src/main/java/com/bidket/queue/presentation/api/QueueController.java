@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.SchemaProperty;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -19,6 +20,7 @@ import reactor.core.publisher.Mono;
 import java.net.URI;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/v1")
 @RequiredArgsConstructor
@@ -81,8 +83,9 @@ public class QueueController {
             )
     })
     @GetMapping("/queues/{auctionId}/status")
-    public Mono<ResponseEntity<ApiResponse<QueueAccommodatableResponse>>> isAccommodatable(@PathVariable UUID auctionId) {
-        UUID userId = UUID.fromString("3cd28e63-55fc-47f9-b0a7-f3ccaabb78b9");
+    public Mono<ResponseEntity<ApiResponse<QueueAccommodatableResponse>>> isAccommodatable(@PathVariable UUID auctionId,
+                                                                                           @RequestHeader(name = "X-USER-ID") UUID userId) {
+        log.info("X-USER-ID: {}", userId);
         return queueFacade.isAccommodatable(userId, auctionId)
                 .map(response ->
                         ResponseEntity
@@ -145,9 +148,9 @@ public class QueueController {
             )
     })
     @PostMapping("/queues/{auctionId}/heartbeat")
-    public Mono<ResponseEntity<ApiResponse<QueueHeartbeatResponse>>> heartbeat(@PathVariable UUID auctionId) {
-        UUID userId = UUID.fromString("983c3afb-14b4-4a30-b4fe-80168202fc7e");
-        String token = "eyJhbGciOiJIUzM4NCJ9.eyJ1c2VySWQiOiI5ODNjM2FmYi0xNGI0LTRhMzAtYjRmZS04MDE2ODIwMmZjN2UiLCJhdWN0aW9uSWQiOiIzZmE4NWY2NC01NzE3LTQ1NjItYjNmYy0yYzk2M2Y2NmFmYTkiLCJpYXQiOjE3NjUxMTU0NDMsImV4cCI6MTc3MjMxNTQ0M30.eOY4IU7Pb-zqv3_TCKZb3WLpXFhFfMPY1Z_Nas8WZpZEvqJzWzuoq_XF-66jsSst";
+    public Mono<ResponseEntity<ApiResponse<QueueHeartbeatResponse>>> heartbeat(@PathVariable UUID auctionId,
+                                                                               @RequestHeader(name = "X-USER-ID") UUID userId,
+                                                                               @RequestHeader(name = "X-ACTIVE-TOKEN") String token) {
         return queueFacade.heartbeat(userId, auctionId, token)
                 .map(response ->
                         ResponseEntity.ok(ApiResponse.success(response))
@@ -167,7 +170,8 @@ public class QueueController {
             )
     })
     @PatchMapping("/admin/queues/{auctionId}")
-    public Mono<ResponseEntity<ApiResponse<QueueConfigUpdateResponse>>> updateConfig(@PathVariable UUID auctionId, @RequestBody QueueConfigUpdateRequest request) {
+    public Mono<ResponseEntity<ApiResponse<QueueConfigUpdateResponse>>> updateConfig(@PathVariable UUID auctionId,
+                                                                                     @RequestBody QueueConfigUpdateRequest request) {
         UUID userId = UUID.randomUUID();
         return queueFacade.updateConfig(userId, auctionId, request)
                 .map(response ->
