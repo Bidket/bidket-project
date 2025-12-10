@@ -20,7 +20,7 @@ import java.util.UUID;
 
 @Slf4j
 @RestController
-@RequestMapping("/v1/internal/queues")
+@RequestMapping("/v1/admin/queues")
 @RequiredArgsConstructor
 public class QueueAdminController {
     private final QueueFacade queueFacade;
