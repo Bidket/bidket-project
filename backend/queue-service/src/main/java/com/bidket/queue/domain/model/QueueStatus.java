@@ -10,10 +10,10 @@ public enum QueueStatus {
     CROWDED,
     FULL;
 
-    public static QueueStatus checkStatus(Long count) {
-        if(count == 5000)
+    public static QueueStatus checkStatus(long count, long maxUser) {
+        if(count == maxUser)
             return FULL;
-        if(count < 2500)
+        if(count < maxUser / 2)
             return SMOOTH;
         else
             return CROWDED;
