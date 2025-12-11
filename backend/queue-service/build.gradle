@@ -19,7 +19,9 @@ dependencies {
 
     runtimeOnly 'org.postgresql:postgresql'
 
-    implementation 'com.github.Bidket:bidket-common-repo:main-SNAPSHOT'
+    implementation ('com.github.Bidket:bidket-common-repo:main-SNAPSHOT') {
+        exclude group: 'org.springdoc', module: 'springdoc-openapi-starter-webmvc-ui'
+    }
 
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
     implementation 'io.jsonwebtoken:jjwt-impl:0.11.5'
@@ -27,4 +29,6 @@ dependencies {
     runtimeOnly 'com.h2database:h2'
 
     implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+    implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.6.0'
 }
