@@ -37,8 +37,8 @@ public class ResponseHeaderFilter implements GlobalFilter, Ordered {
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
-    private static final String X_MEMBER_ID_HEADER = "X-Member-Id";
-    private static final String X_MEMBER_ROLE_HEADER = "X-Member-Role";
+    private static final String X_USER_ID_HEADER = "X-User-Id";
+    private static final String X_USER_ROLE_HEADER = "X-User-Role";
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
@@ -47,14 +47,14 @@ public class ResponseHeaderFilter implements GlobalFilter, Ordered {
 
         // 요청에서 JWT 토큰 추출
         String token = extractToken(request);
-        final UUID memberIdFromToken;
+        final UUID userIdFromToken;
         final String roleFromToken;
         
         if (token != null && jwtTokenProvider.validateToken(token)) {
-            memberIdFromToken = jwtTokenProvider.getUserIdFromToken(token);
+            userIdFromToken = jwtTokenProvider.getUserIdFromToken(token);
             roleFromToken = jwtTokenProvider.getRoleFromToken(token);
         } else {
-            memberIdFromToken = null;
+            userIdFromToken = null;
             roleFromToken = null;
         }
 
@@ -78,7 +78,7 @@ public class ResponseHeaderFilter implements GlobalFilter, Ordered {
                                     // 응답 본문에서 memberId와 role 추출 시도
                                     JsonNode jsonNode = objectMapper.readTree(bodyStr);
                                     
-                                    UUID memberId = null;
+                                    UUID userId = null;
                                     String role = null;
                                     
                                     // 응답 본문에서 data 필드 확인 (ApiResponse 구조)
@@ -88,7 +88,7 @@ public class ResponseHeaderFilter implements GlobalFilter, Ordered {
                                         JsonNode roleNode = dataNode.get("role");
                                         
                                         if (memberIdNode != null && !memberIdNode.isNull()) {
-                                            memberId = UUID.fromString(memberIdNode.asText());
+                                            userId = UUID.fromString(memberIdNode.asText());
                                         }
                                         if (roleNode != null && !roleNode.isNull()) {
                                             role = roleNode.asText();
@@ -96,8 +96,8 @@ public class ResponseHeaderFilter implements GlobalFilter, Ordered {
                                     }
                                     
                                     // 응답 본문에서 찾지 못한 경우 JWT 토큰에서 추출
-                                    if (memberId == null && memberIdFromToken != null) {
-                                        memberId = memberIdFromToken;
+                                    if (userId == null && userIdFromToken != null) {
+                                        userId = userIdFromToken;
                                     }
                                     if (role == null && roleFromToken != null) {
                                         role = roleFromToken;
@@ -108,20 +108,20 @@ public class ResponseHeaderFilter implements GlobalFilter, Ordered {
                                     }
                                     
                                     // 헤더 추가 (role은 이미 기본값이 설정되어 null이 될 수 없음)
-                                    if (memberId != null) {
-                                        getHeaders().add(X_MEMBER_ID_HEADER, memberId.toString());
+                                    if (userId != null) {
+                                        getHeaders().add(X_USER_ID_HEADER, userId.toString());
                                     }
-                                    getHeaders().add(X_MEMBER_ROLE_HEADER, role);
+                                    getHeaders().add(X_USER_ROLE_HEADER, role);
                                     
                                 } catch (Exception e) {
                                     // JSON 파싱 실패 시 JWT 토큰에서만 추출
-                                    if (memberIdFromToken != null) {
-                                        getHeaders().add(X_MEMBER_ID_HEADER, memberIdFromToken.toString());
+                                    if (userIdFromToken != null) {
+                                        getHeaders().add(X_USER_ID_HEADER, userIdFromToken.toString());
                                     }
                                     if (roleFromToken != null && !roleFromToken.isEmpty()) {
-                                        getHeaders().add(X_MEMBER_ROLE_HEADER, roleFromToken);
+                                        getHeaders().add(X_USER_ROLE_HEADER, roleFromToken);
                                     } else {
-                                        getHeaders().add(X_MEMBER_ROLE_HEADER, "ROLE_USER");
+                                        getHeaders().add(X_USER_ROLE_HEADER, "ROLE_USER");
                                     }
                                 }
                                 
