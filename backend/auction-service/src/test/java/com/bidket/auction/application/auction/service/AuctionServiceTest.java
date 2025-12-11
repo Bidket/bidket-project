@@ -12,6 +12,8 @@ import com.bidket.auction.domain.auction.model.vo.PriceInfo;
 import com.bidket.auction.domain.auction.model.vo.WinnerInfo;
 import com.bidket.auction.domain.auction.repository.AuctionRepository;
 import com.bidket.auction.domain.auction.service.AuctionValidator;
+import com.bidket.auction.global.exception.AuctionDomainException;
+import com.bidket.auction.global.exception.AuctionErrorCode;
 import com.bidket.auction.infrastructure.redis.ViewCountCacheService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -29,7 +31,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.*;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AuctionService 단위 테스트")
@@ -141,13 +144,12 @@ class AuctionServiceTest {
                     LocalDateTime.now().plusDays(2)
             );
 
-            willThrow(new IllegalArgumentException("경매 제목은 5자 이상이어야 합니다"))
-                    .given(auctionValidator).validateCreate(request);
+            doThrow(new AuctionDomainException(AuctionErrorCode.INVALID_AUCTION_STATUS))
+                    .when(auctionValidator).validateCreate(request);
 
             // When & Then
             assertThatThrownBy(() -> auctionService.createAuction(request))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("경매 제목은 5자 이상이어야 합니다");
+                    .isInstanceOf(AuctionDomainException.class);
 
             verify(auctionValidator).validateCreate(request);
             verify(auctionRepository, never()).save(any());
@@ -187,8 +189,7 @@ class AuctionServiceTest {
 
             // When & Then
             assertThatThrownBy(() -> auctionService.getAuction(testAuctionId))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("경매를 찾을 수 없습니다");
+                    .isInstanceOf(AuctionDomainException.class);
 
             verify(auctionRepository).findById(testAuctionId);
         }
@@ -285,12 +286,12 @@ class AuctionServiceTest {
                     null
             );
 
-            willThrow(new IllegalArgumentException("경매를 찾을 수 없습니다"))
-                    .given(auctionValidator).validateUpdate(testAuctionId, request);
+            doThrow(new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_FOUND))
+                    .when(auctionValidator).validateUpdate(testAuctionId, request);
 
             // When & Then
             assertThatThrownBy(() -> auctionService.updateAuction(testAuctionId, request))
-                    .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOf(AuctionDomainException.class);
 
             verify(auctionValidator).validateUpdate(testAuctionId, request);
         }
@@ -324,13 +325,12 @@ class AuctionServiceTest {
         @DisplayName("실패: 입찰이 있는 경매 취소 시도")
         void cancelAuction_WithBids_Fail() {
             // Given
-            willThrow(new IllegalStateException("입찰이 있는 경매는 취소할 수 없습니다"))
-                    .given(auctionValidator).validateCancel(testAuctionId);
+            doThrow(new AuctionDomainException(AuctionErrorCode.CANNOT_CANCEL_WITH_BIDS))
+                    .when(auctionValidator).validateCancel(testAuctionId);
 
             // When & Then
             assertThatThrownBy(() -> auctionService.cancelAuction(testAuctionId))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("입찰이 있는 경매는 취소할 수 없습니다");
+                    .isInstanceOf(AuctionDomainException.class);
 
             verify(auctionValidator).validateCancel(testAuctionId);
         }
@@ -368,8 +368,9 @@ class AuctionServiceTest {
 
             // When & Then
             assertThatThrownBy(() -> auctionService.confirmAuctionCreation(testAuctionId))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("CREATING 상태에서만");
+                    .isInstanceOf(AuctionDomainException.class)
+                    .extracting(e -> ((AuctionDomainException) e).getErrorCode())
+                    .isEqualTo(AuctionErrorCode.INVALID_AUCTION_STATUS);
 
             verify(auctionRepository).findById(testAuctionId);
         }

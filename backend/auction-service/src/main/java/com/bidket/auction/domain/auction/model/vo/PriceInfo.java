@@ -1,5 +1,9 @@
 package com.bidket.auction.domain.auction.model.vo;
 
+import com.bidket.auction.global.exception.AuctionDomainException;
+import com.bidket.auction.global.exception.AuctionErrorCode;
+import com.bidket.auction.global.exception.BidDomainException;
+import com.bidket.auction.global.exception.BidErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.AccessLevel;
@@ -38,19 +42,19 @@ public class PriceInfo {
 
     public void validate() {
         if (startPrice == null || startPrice <= 0) {
-            throw new IllegalArgumentException("시작가는 0보다 커야 합니다");
+            throw new AuctionDomainException(AuctionErrorCode.INVALID_START_PRICE);
         }
         if (bidIncrement == null || bidIncrement <= 0) {
-            throw new IllegalArgumentException("입찰 단위는 0보다 커야 합니다");
+            throw new AuctionDomainException(AuctionErrorCode.INVALID_BID_INCREMENT);
         }
         if (buyNowPrice != null && buyNowPrice <= startPrice) {
-            throw new IllegalArgumentException("즉시구매가는 시작가보다 커야 합니다");
+            throw new AuctionDomainException(AuctionErrorCode.INVALID_BUY_NOW_PRICE);
         }
     }
 
     public PriceInfo withUpdatedCurrentPrice(Long newPrice) {
         if (newPrice <= this.currentPrice) {
-            throw new IllegalArgumentException("새 가격은 현재가보다 커야 합니다");
+            throw new BidDomainException(BidErrorCode.BID_AMOUNT_TOO_LOW);
         }
         return PriceInfo.builder()
                 .startPrice(this.startPrice)
