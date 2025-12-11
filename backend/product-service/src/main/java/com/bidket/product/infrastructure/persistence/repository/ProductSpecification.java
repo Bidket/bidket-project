@@ -5,7 +5,6 @@ import com.bidket.product.domain.model.ProductStatus;
 import com.bidket.product.infrastructure.persistence.entity.Brand;
 import com.bidket.product.infrastructure.persistence.entity.Product;
 import com.bidket.product.infrastructure.persistence.entity.ProductCategory;
-import com.bidket.product.infrastructure.persistence.entity.ProductShoesDetail;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import java.math.BigDecimal;
@@ -38,7 +37,7 @@ public class ProductSpecification {
     public static Specification<Product> distinct() {
         return (root, query, cb) -> {
             query.distinct(true);
-            return null;
+            return cb.conjunction();
         };
     }
 
