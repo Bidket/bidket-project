@@ -41,4 +41,9 @@ public class ShoesDetailService {
         ProductShoesDetail saved = productShoesDetailRepository.save(productShoesDetail);
         return ProductShoesDetailCreateResponse.from(saved);
     }
+
+    public ProductShoesDetail getShoesDetail(Product product) {
+        return productShoesDetailRepository.findByProduct(product)
+                .orElseThrow(() -> new ProductException(ProductErrorCode.SHOES_DETAIL_NOT_FOUND));
+    }
 }
