@@ -43,9 +43,9 @@ public class QueueScheduler {
                 .flatMap(config ->
                         trafficRepository.getActiveUserCount(auctionId)
                                 .flatMap(currentActive -> {
-                                    long maxUser = config.getMaxActive();
+                                    long maxUser = config.maxActive();
                                     long availableSlots = maxUser - currentActive;
-                                    long limit = Math.min(availableSlots, config.getPermitsPerSec());
+                                    long limit = Math.min(availableSlots, config.permitsPerSec());
 
                                     if (limit <= 0)
                                         return Mono.just(0L);

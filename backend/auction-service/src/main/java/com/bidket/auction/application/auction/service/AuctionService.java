@@ -7,6 +7,8 @@ import com.bidket.auction.domain.auction.model.Auction;
 import com.bidket.auction.domain.auction.model.AuctionStatus;
 import com.bidket.auction.domain.auction.repository.AuctionRepository;
 import com.bidket.auction.domain.auction.service.AuctionValidator;
+import com.bidket.auction.global.exception.AuctionDomainException;
+import com.bidket.auction.global.exception.AuctionErrorCode;
 import com.bidket.auction.infrastructure.redis.ViewCountCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,7 +51,7 @@ public class AuctionService {
         log.info("경매 조회: {}", auctionId);
 
         Auction auction = auctionRepository.findById(auctionId)
-                .orElseThrow(() -> new IllegalArgumentException("경매를 찾을 수 없습니다: " + auctionId));
+                .orElseThrow(() -> new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
         viewCountCacheService.incrementViewCountAsync(auctionId);
 
@@ -85,7 +87,7 @@ public class AuctionService {
         auctionValidator.validateUpdate(auctionId, request);
 
         Auction auction = auctionRepository.findById(auctionId)
-                .orElseThrow(() -> new IllegalArgumentException("경매를 찾을 수 없습니다: " + auctionId));
+                .orElseThrow(() -> new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
         updateAuctionFields(auction, request);
 
@@ -104,7 +106,7 @@ public class AuctionService {
         auctionValidator.validateCancel(auctionId);
 
         Auction auction = auctionRepository.findById(auctionId)
-                .orElseThrow(() -> new IllegalArgumentException("경매를 찾을 수 없습니다: " + auctionId));
+                .orElseThrow(() -> new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
         auction.cancel();
         auctionRepository.save(auction);
@@ -118,7 +120,7 @@ public class AuctionService {
         log.info("경매 생성 확정: {}", auctionId);
 
         Auction auction = auctionRepository.findById(auctionId)
-                .orElseThrow(() -> new IllegalArgumentException("경매를 찾을 수 없습니다: " + auctionId));
+                .orElseThrow(() -> new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
         auction.confirmCreation();
         auctionRepository.save(auction);

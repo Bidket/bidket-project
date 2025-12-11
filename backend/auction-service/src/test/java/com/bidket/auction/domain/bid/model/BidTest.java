@@ -1,5 +1,7 @@
 package com.bidket.auction.domain.bid.model;
 
+import com.bidket.auction.global.exception.BidDomainException;
+import com.bidket.auction.global.exception.BidErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -48,8 +50,9 @@ class BidTest {
                 .bidderId(bidderId)
                 .amount(0L)
                 .build()
-        ).isInstanceOf(IllegalArgumentException.class)
-          .hasMessageContaining("입찰 금액은 0보다 커야 합니다");
+        ).isInstanceOf(BidDomainException.class)
+          .extracting(e -> ((BidDomainException) e).getErrorCode())
+          .isEqualTo(BidErrorCode.INVALID_BID_AMOUNT);
     }
 
     @Test
@@ -137,8 +140,9 @@ class BidTest {
 
         // When & Then
         assertThatThrownBy(() -> bid.cancel())
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("최고가 입찰은 취소할 수 없습니다");
+                .isInstanceOf(BidDomainException.class)
+                .extracting(e -> ((BidDomainException) e).getErrorCode())
+                .isEqualTo(BidErrorCode.CANNOT_CANCEL_HIGHEST_BID);
     }
 }
 

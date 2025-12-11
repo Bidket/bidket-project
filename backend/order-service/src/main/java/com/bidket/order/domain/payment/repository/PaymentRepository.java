@@ -1,0 +1,13 @@
+package com.bidket.order.domain.payment.repository;
+
+import com.bidket.order.domain.payment.model.Payment;
+import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+public interface PaymentRepository {
+
+    Payment save(Payment payment);
+
+    Page<Payment> findByUserId(UUID userId, Pageable pageable);
+}
