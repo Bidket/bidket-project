@@ -8,6 +8,11 @@ import com.bidket.auction.domain.auction.model.AuctionStatus;
 import com.bidket.auction.domain.auction.repository.AuctionRepository;
 import com.bidket.auction.domain.bid.model.Bid;
 import com.bidket.auction.domain.bid.repository.BidRepository;
+import com.bidket.auction.global.exception.AuctionDomainException;
+import com.bidket.auction.global.exception.AuctionErrorCode;
+import com.bidket.auction.global.exception.BidDomainException;
+import com.bidket.auction.global.exception.BidErrorCode;
+import com.bidket.auction.infrastructure.retry.RetryOnOptimisticLock;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,26 +32,22 @@ public class BidService {
     private final AuctionRepository auctionRepository;
 
     @Transactional
+    @RetryOnOptimisticLock
     public Bid placeBid(UUID auctionId, UUID bidderId, Long amount) {
         Auction auction = auctionRepository.findById(auctionId)
-                .orElseThrow(() -> new IllegalArgumentException("경매를 찾을 수 없습니다: " + auctionId));
+                .orElseThrow(() -> new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
         if (auction.getStatus() != AuctionStatus.ACTIVE) {
-            throw new IllegalStateException("ACTIVE 상태의 경매에만 입찰할 수 있습니다");
+            throw new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_ACTIVE);
         }
 
         if (auction.getSellerId().equals(bidderId)) {
-            throw new IllegalArgumentException("본인의 경매에는 입찰할 수 없습니다");
+            throw new BidDomainException(BidErrorCode.SELF_BID_NOT_ALLOWED);
         }
 
         Long minimumBid = auction.getPriceInfo().getCurrentPrice() + auction.getPriceInfo().getBidIncrement();
         if (amount < minimumBid) {
-            throw new IllegalArgumentException(
-                String.format("최소 입찰가는 %d원입니다 (현재가: %d원 + 입찰 단위: %d원)",
-                    minimumBid,
-                    auction.getPriceInfo().getCurrentPrice(),
-                    auction.getPriceInfo().getBidIncrement())
-            );
+            throw new BidDomainException(BidErrorCode.BID_AMOUNT_TOO_LOW);
         }
 
         Optional<Bid> previousHighestBid = bidRepository.findHighestBidByAuctionId(auctionId);
@@ -99,23 +100,75 @@ public class BidService {
 
     public BidResponse getBidById(UUID bidId) {
         Bid bid = bidRepository.findById(bidId)
-                .orElseThrow(() -> new IllegalArgumentException("입찰을 찾을 수 없습니다: " + bidId));
+                .orElseThrow(() -> new BidDomainException(BidErrorCode.BID_NOT_FOUND));
         return BidResponse.from(bid);
     }
 
     @Transactional
     public void cancelBid(UUID bidId, UUID bidderId) {
         Bid bid = bidRepository.findById(bidId)
-                .orElseThrow(() -> new IllegalArgumentException("입찰을 찾을 수 없습니다: " + bidId));
+                .orElseThrow(() -> new BidDomainException(BidErrorCode.BID_NOT_FOUND));
 
         if (!bid.getBidderId().equals(bidderId)) {
-            throw new IllegalArgumentException("본인의 입찰만 취소할 수 있습니다");
+            throw new BidDomainException(BidErrorCode.NOT_BID_OWNER);
         }
 
+        if (bid.isHighest()) {
+            throw new BidDomainException(BidErrorCode.CANNOT_CANCEL_HIGHEST_BID);
+        }
         bid.cancel();
         bidRepository.save(bid);
 
         log.info("입찰 취소 완료 - 입찰 ID: {}, 입찰자: {}", bidId, bidderId);
+    }
+
+    @Transactional
+    @RetryOnOptimisticLock
+    public Bid buyNow(UUID auctionId, UUID bidderId) {
+        Auction auction = auctionRepository.findById(auctionId)
+                .orElseThrow(() -> new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_FOUND));
+
+        if (auction.getStatus() != AuctionStatus.ACTIVE) {
+            throw new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_ACTIVE);
+        }
+
+        if (auction.getSellerId().equals(bidderId)) {
+            throw new BidDomainException(BidErrorCode.SELF_BID_NOT_ALLOWED);
+        }
+
+        Long buyNowPrice = auction.getPriceInfo().getBuyNowPrice();
+        if (buyNowPrice == null) {
+            throw new AuctionDomainException(AuctionErrorCode.INVALID_BUY_NOW_PRICE);
+        }
+
+        Long currentPrice = auction.getPriceInfo().getCurrentPrice();
+        if (currentPrice >= buyNowPrice) {
+            throw new AuctionDomainException(AuctionErrorCode.BUY_NOW_NOT_AVAILABLE);
+        }
+
+        Optional<Bid> previousHighestBid = bidRepository.findHighestBidByAuctionId(auctionId);
+        if (previousHighestBid.isPresent()) {
+            Bid prevBid = previousHighestBid.get();
+            prevBid.markAsOutbid();
+            bidRepository.save(prevBid);
+        }
+
+        Bid buyNowBid = Bid.builder()
+                .auctionId(auctionId)
+                .bidderId(bidderId)
+                .amount(buyNowPrice)
+                .build();
+        buyNowBid.markAsHighest();
+
+        Bid savedBid = bidRepository.save(buyNowBid);
+
+        auction.updateCurrentPrice(buyNowPrice);
+        auction.end(true);
+        auctionRepository.save(auction);
+
+        log.info("즉시 구매 완료 - 경매 ID: {}, 구매자: {}, 금액: {}", auctionId, bidderId, buyNowPrice);
+
+        return savedBid;
     }
 }
 

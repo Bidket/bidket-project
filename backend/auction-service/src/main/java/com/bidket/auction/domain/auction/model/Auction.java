@@ -4,6 +4,8 @@ import com.bidket.auction.domain.auction.model.vo.AuctionPeriod;
 import com.bidket.auction.domain.auction.model.vo.AuctionStats;
 import com.bidket.auction.domain.auction.model.vo.PriceInfo;
 import com.bidket.auction.domain.auction.model.vo.WinnerInfo;
+import com.bidket.auction.global.exception.AuctionDomainException;
+import com.bidket.auction.global.exception.AuctionErrorCode;
 import com.bidket.common.infra.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
@@ -333,14 +335,14 @@ public class Auction extends BaseEntity {
     // ===== 도메인 비즈니스 메서드 =====
     public void confirmCreation() {
         if (this.status != AuctionStatus.CREATING) {
-            throw new IllegalStateException("CREATING 상태에서만 생성을 확정할 수 있습니다");
+            throw new AuctionDomainException(AuctionErrorCode.INVALID_AUCTION_STATUS);
         }
         this.status = AuctionStatus.PENDING;
     }
 
     public void start() {
         if (this.status != AuctionStatus.PENDING) {
-            throw new IllegalStateException("PENDING 상태에서만 시작할 수 있습니다");
+            throw new AuctionDomainException(AuctionErrorCode.INVALID_AUCTION_STATUS);
         }
         this.status = AuctionStatus.ACTIVE;
     }
@@ -353,18 +355,18 @@ public class Auction extends BaseEntity {
 
         if (this.status == AuctionStatus.ACTIVE) {
             if (this.stats.getTotalBidsCount() > 0) {
-                throw new IllegalStateException("입찰이 있는 경매는 취소할 수 없습니다");
+                throw new AuctionDomainException(AuctionErrorCode.CANNOT_CANCEL_WITH_BIDS);
             }
             this.status = AuctionStatus.CANCELLED;
             return;
         }
 
-        throw new IllegalStateException("취소할 수 없는 상태입니다: " + this.status);
+        throw new AuctionDomainException(AuctionErrorCode.INVALID_AUCTION_STATUS);
     }
 
     public void end(boolean hasBids) {
         if (this.status != AuctionStatus.ACTIVE) {
-            throw new IllegalStateException("ACTIVE 상태에서만 종료할 수 있습니다");
+            throw new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_ACTIVE);
         }
 
         this.status = hasBids ? AuctionStatus.SUCCESS : AuctionStatus.EXPIRED;
@@ -372,21 +374,21 @@ public class Auction extends BaseEntity {
 
     public void extend() {
         if (this.status != AuctionStatus.ACTIVE) {
-            throw new IllegalStateException("ACTIVE 상태에서만 연장할 수 있습니다");
+            throw new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_ACTIVE);
         }
         this.period = this.period.extend();
     }
 
     public void setWinner(UUID winnerId, UUID winningBidId, Long finalPrice) {
         if (this.status != AuctionStatus.SUCCESS) {
-            throw new IllegalStateException("SUCCESS 상태에서만 낙찰자를 설정할 수 있습니다");
+            throw new AuctionDomainException(AuctionErrorCode.INVALID_AUCTION_STATUS);
         }
         this.winnerInfo = WinnerInfo.of(winnerId, winningBidId, finalPrice);
     }
 
     public void reopen() {
         if (this.status != AuctionStatus.SUCCESS) {
-            throw new IllegalStateException("SUCCESS 상태에서만 재오픈할 수 있습니다");
+            throw new AuctionDomainException(AuctionErrorCode.INVALID_AUCTION_STATUS);
         }
 
         this.winnerInfo = WinnerInfo.empty();
@@ -396,7 +398,7 @@ public class Auction extends BaseEntity {
 
     public void updateCurrentPrice(Long newPrice) {
         if (this.status != AuctionStatus.ACTIVE) {
-            throw new IllegalStateException("ACTIVE 상태에서만 가격을 업데이트할 수 있습니다");
+            throw new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_ACTIVE);
         }
         this.priceInfo = this.priceInfo.withUpdatedCurrentPrice(newPrice);
         this.stats = this.stats.incrementBidCount();
@@ -405,7 +407,7 @@ public class Auction extends BaseEntity {
     public void update(String auctionTitle, String description,
                       LocalDateTime startTime, LocalDateTime endTime, Long buyNowPrice) {
         if (this.status != AuctionStatus.PENDING) {
-            throw new IllegalStateException("PENDING 상태에서만 수정할 수 있습니다");
+            throw new AuctionDomainException(AuctionErrorCode.INVALID_AUCTION_STATUS);
         }
 
         if (auctionTitle != null) {

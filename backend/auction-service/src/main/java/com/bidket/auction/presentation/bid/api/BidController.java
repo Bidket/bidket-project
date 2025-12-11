@@ -24,7 +24,7 @@ public class BidController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<BidResponse>> createBid(
-            @RequestHeader("X-User-Id") UUID userId,
+            @RequestHeader("X-Member-Id") UUID userId,
             @Valid @RequestBody CreateBidRequest request
     ) {
         log.info("입찰 등록 요청 - 사용자: {}, 경매: {}, 금액: {}",
@@ -50,7 +50,7 @@ public class BidController {
 
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<BidListResponse>> getMyBids(
-            @RequestHeader("X-User-Id") UUID userId
+            @RequestHeader("X-Member-Id") UUID userId
     ) {
         log.info("내 입찰 목록 조회 - 사용자: {}", userId);
         
@@ -72,7 +72,7 @@ public class BidController {
     
     @DeleteMapping("/{bidId}")
     public ResponseEntity<ApiResponse<Void>> cancelBid(
-            @RequestHeader("X-User-Id") UUID userId,
+            @RequestHeader("X-Member-Id") UUID userId,
             @PathVariable UUID bidId
     ) {
         log.info("입찰 취소 요청 - 사용자: {}, 입찰 ID: {}", userId, bidId);
@@ -80,6 +80,21 @@ public class BidController {
         bidService.cancelBid(bidId, userId);
 
         return ResponseEntity.ok(ApiResponse.success("입찰이 취소되었습니다", null));
+    }
+
+    @PostMapping("/auction/{auctionId}/buy-now")
+    public ResponseEntity<ApiResponse<BidResponse>> buyNow(
+            @RequestHeader("X-Member-Id") UUID userId,
+            @PathVariable UUID auctionId
+    ) {
+        log.info("즉시 구매 요청 - 사용자: {}, 경매: {}", userId, auctionId);
+
+        var bid = bidService.buyNow(auctionId, userId);
+        BidResponse response = BidResponse.from(bid);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success("즉시 구매가 완료되었습니다", response));
     }
 }
 

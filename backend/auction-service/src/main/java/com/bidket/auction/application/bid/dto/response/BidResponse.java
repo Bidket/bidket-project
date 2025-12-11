@@ -12,7 +12,7 @@ public record BidResponse(
         UUID auctionId,
         UUID bidderId,
         Long amount,
-        boolean isHighest,
+        boolean highest,
         BidStatus status,
         Integer rank,
         UUID orderId,
