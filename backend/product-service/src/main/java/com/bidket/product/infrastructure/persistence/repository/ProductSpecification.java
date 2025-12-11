@@ -22,7 +22,6 @@ public class ProductSpecification {
 
             // 조인
             Join<Product, Brand> brand = root.join("brand", JoinType.LEFT);
-            Join<Product, ProductShoesDetail> detail = root.join("shoesDetail", JoinType.LEFT);
 
             String like = "%" + keyword.trim().toLowerCase() + "%";
 
@@ -31,9 +30,7 @@ public class ProductSpecification {
                     cb.like(cb.lower(root.get("nameKr")), like),
                     cb.like(cb.lower(root.get("modelCode")), like),
                     cb.like(cb.lower(brand.get("name")), like),
-                    cb.like(cb.lower(brand.get("nameKr")), like),
-                    cb.like(cb.lower(detail.get("colorway")), like),
-                    cb.like(cb.lower(detail.get("silhouette")), like)
+                    cb.like(cb.lower(brand.get("nameKr")), like)
             );
         };
     }
