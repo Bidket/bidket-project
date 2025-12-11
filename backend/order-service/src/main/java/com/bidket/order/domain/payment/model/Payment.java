@@ -5,6 +5,7 @@ import java.util.UUID;
 
 public record Payment(
         UUID id,
+        UUID userId,
         UUID orderId,
         PaymentMethod method,
         Long amount,
@@ -14,7 +15,6 @@ public record Payment(
         LocalDateTime updatedAt
 ) {
 
-    // TODO: Payple 연동 후 상태 업데이트 처리 추가 예정
     public Payment {
         if (amount == null || amount <= 0) {
             throw new IllegalArgumentException("amount must be positive");
@@ -25,6 +25,7 @@ public record Payment(
     }
 
     public static Payment create(
+            UUID userId,
             UUID orderId,
             PaymentMethod method,
             Long amount,
@@ -32,7 +33,8 @@ public record Payment(
             LocalDateTime now
     ) {
         return new Payment(
-                null,
+                UUID.randomUUID(),
+                userId,
                 orderId,
                 method,
                 amount,
@@ -41,5 +43,37 @@ public record Payment(
                 now,
                 now
         );
+    }
+
+    public Payment approve(LocalDateTime approvedAt) {
+        return new Payment(
+                this.id,
+                this.userId,
+                this.orderId,
+                this.method,
+                this.amount,
+                this.usedPointAmount,
+                PaymentStatus.SUCCESS,
+                this.createdAt,
+                approvedAt
+        );
+    }
+
+    public Payment fail(LocalDateTime failedAt) {
+        return new Payment(
+                this.id,
+                this.userId,
+                this.orderId,
+                this.method,
+                this.amount,
+                this.usedPointAmount,
+                PaymentStatus.FAILED,
+                this.createdAt,
+                failedAt
+        );
+    }
+
+    public LocalDateTime approvedAt() {
+        return this.status == PaymentStatus.SUCCESS ? this.updatedAt : null;
     }
 }

@@ -60,12 +60,10 @@ public class OrderController {
             @Valid @RequestBody OrderCreateRequest request
     ) {
         // TODO: 인증 적용 예정
-        UUID userId = UUID.fromString(request.userId());
-
         OrderInfo orderInfo = orderFacade.createOrder(
-                userId,
-                UUID.fromString(request.auctionId()),
-                UUID.fromString(request.shoeId()),
+                request.userId(),
+                request.auctionId(),
+                request.shoeId(),
                 request.amount(),
                 request.usePointAmount()
         );
@@ -79,13 +77,11 @@ public class OrderController {
     public ApiResponse<PageResponse<OrderSummaryResponse>> getOrders(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam String userId // TODO: 인증 적용 예정 (토큰에서 userId 추출)
+            @RequestParam UUID userId // TODO: 인증 적용 예정 (토큰에서 userId 추출)
     ) {
-        // TODO: 인증 적용 예정
-        UUID userUuid = UUID.fromString(userId);
         Pageable pageable = PageRequest.of(page, size);
 
-        Page<OrderSummaryInfo> orderPage = orderFacade.getOrders(userUuid, pageable);
+        Page<OrderSummaryInfo> orderPage = orderFacade.getOrders(userId, pageable);
 
         List<OrderSummaryResponse> content = orderPage.getContent()
                 .stream()
