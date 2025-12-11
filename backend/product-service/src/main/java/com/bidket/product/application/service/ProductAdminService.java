@@ -44,7 +44,7 @@ public class ProductAdminService {
 
     public ProductTypeCreateResponse createProductType(ProductTypeCreateRequest req) {
 
-        ProductType productType = ProductType.create(
+        ProductType productType = ProductType.of(
                 req.code(),
                 req.name(),
                 req.description()
@@ -62,7 +62,7 @@ public class ProductAdminService {
         Brand brand = brandRepository.findById(req.brandId())
                 .orElseThrow(() -> new ProductException(ProductErrorCode.BRAND_NOT_FOUND));
 
-        Product product = Product.create(
+        Product product = Product.of(
                 productType,
                 brand,
                 req.name(),
@@ -117,7 +117,7 @@ public class ProductAdminService {
             throw new ProductException(ProductErrorCode.SKU_CODE_ALREADY_EXISTS);
         }
 
-        ProductSku sku = ProductSku.create(
+        ProductSku sku = ProductSku.of(
                 product,
                 size,
                 req.skuCode(),

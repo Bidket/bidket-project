@@ -40,7 +40,7 @@ public class SizeService {
             sizeTypeRepository.resetDefault(productType.getId());
         }
 
-        SizeType sizeType = SizeType.create(
+        SizeType sizeType = SizeType.of(
                 productType,
                 req.code(),
                 req.regionCode(),
@@ -57,7 +57,7 @@ public class SizeService {
         SizeType sizeType = sizeTypeRepository.findById(req.sizeTypeId())
                 .orElseThrow(() -> new ProductException(ProductErrorCode.SIZE_TYPE_NOT_FOUND));
 
-        Size size = Size.create(
+        Size size = Size.of(
                 sizeType,
                 req.code(),
                 req.displayLabel(),

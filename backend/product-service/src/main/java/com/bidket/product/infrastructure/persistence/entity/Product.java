@@ -80,7 +80,7 @@ public class Product extends BaseEntity {
     @Column(nullable = false, length = 20)
     private ProductStatus status;
 
-    public static Product create(
+    public static Product of(
             ProductType productType,
             Brand brand,
             String name,

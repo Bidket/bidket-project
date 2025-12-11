@@ -28,7 +28,7 @@ public class ShoesDetailService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND));
 
-        ProductShoesDetail productShoesDetail = ProductShoesDetail.create(
+        ProductShoesDetail productShoesDetail = ProductShoesDetail.of(
                 product,
                 req.colorway(),
                 req.mainMaterial(),

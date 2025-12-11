@@ -60,7 +60,7 @@ public class ProductAdminFacadeIntegrationTest {
     @BeforeEach
     void setup() {
         // 1. 상품타입 생성
-        ProductType pt = ProductType.create(
+        ProductType pt = ProductType.of(
                 "SNEAKERS",
                 "스니커즈",
                 "신발 유형"
@@ -69,7 +69,7 @@ public class ProductAdminFacadeIntegrationTest {
         savedProductTypeId = pt.getId();
 
         // 2. 브랜드 생성
-        Brand brand = Brand.create(
+        Brand brand = Brand.of(
                 "Nike",
                 "나이키",
                 "US",

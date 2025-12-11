@@ -31,7 +31,7 @@ public class TestFixture {
     private final ProductRepository productRepository;
 
     public ProductType createProductType() {
-        ProductType type = ProductType.create(
+        ProductType type = ProductType.of(
                 "SHOES",
                 "신발",
                 "신발 상품 타입"
@@ -40,7 +40,7 @@ public class TestFixture {
     }
 
     public Brand createBrand() {
-        Brand brand = Brand.create(
+        Brand brand = Brand.of(
                 "Nike",
                 "나이키",
                 "US",
@@ -62,7 +62,7 @@ public class TestFixture {
     }
 
     public SizeType createSizeType(ProductType pt) {
-        SizeType st = SizeType.create(
+        SizeType st = SizeType.of(
                 pt,
                 "SHOES_KR_MM",
                 "KR",
@@ -73,7 +73,7 @@ public class TestFixture {
     }
 
     public Size createSize(SizeType st) {
-        Size size = Size.create(
+        Size size = Size.of(
                 st,
                 "260",
                 "260mm",
@@ -83,7 +83,7 @@ public class TestFixture {
     }
 
     public Product createProduct(ProductType pt, Brand brand) {
-        Product p = Product.create(
+        Product p = Product.of(
                 pt,
                 brand,
                 "Nike Dunk Low Retro Panda",

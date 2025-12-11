@@ -23,7 +23,7 @@ public class BrandService {
             throw new ProductException(ProductErrorCode.BRAND_ALREADY_EXISTS);
         }
 
-        Brand brand = Brand.create(
+        Brand brand = Brand.of(
                 req.name(),
                 req.nameKr(),
                 req.originCountry(),
