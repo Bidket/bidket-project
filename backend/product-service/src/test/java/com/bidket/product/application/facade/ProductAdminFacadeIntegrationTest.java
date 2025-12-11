@@ -100,7 +100,6 @@ public class ProductAdminFacadeIntegrationTest {
         // 2. shoesDetail req 생성
         ProductShoesDetailCreateRequest shoesReq =
                 new ProductShoesDetailCreateRequest(
-                        null,
                         "Triple White",
                         "Leather",
                         Silhouette.LOW,
@@ -145,7 +144,6 @@ public class ProductAdminFacadeIntegrationTest {
 
         ProductShoesDetailCreateRequest req =
                 new ProductShoesDetailCreateRequest(
-                        invalidProductId,
                         "Triple White",
                         "Leather",
                         Silhouette.LOW,

@@ -64,7 +64,6 @@ class ProductAdminFacadeTest {
         // 2. shoesDetail req 생성
         ProductShoesDetailCreateRequest shoesReq =
                 new ProductShoesDetailCreateRequest(
-                        null, // facade에서 생성
                         "Triple White",
                         "Leather",
                         Silhouette.LOW,
@@ -148,7 +147,6 @@ class ProductAdminFacadeTest {
 
         ProductShoesDetailCreateRequest shoesReq =
                 new ProductShoesDetailCreateRequest(
-                        null,
                         "Triple White",
                         "Leather",
                         Silhouette.LOW,

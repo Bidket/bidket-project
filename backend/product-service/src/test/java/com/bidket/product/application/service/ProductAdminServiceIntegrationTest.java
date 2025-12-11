@@ -128,7 +128,6 @@ public class ProductAdminServiceIntegrationTest {
         Size size = fixture.createSize(st);
 
         SkuCreateRequest req = new SkuCreateRequest(
-                product.getId(),
                 size.getId(),
                 "DD1391-100-KR",
                 SkuStatus.ACTIVE
@@ -151,7 +150,6 @@ public class ProductAdminServiceIntegrationTest {
         Size size = fixture.createSize(st);
 
         SkuCreateRequest req = new SkuCreateRequest(
-                product.getId(),
                 size.getId(),
                 "AM97-US10",
                 SkuStatus.ACTIVE

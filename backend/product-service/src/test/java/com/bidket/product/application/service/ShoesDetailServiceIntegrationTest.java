@@ -44,7 +44,6 @@ public class ShoesDetailServiceIntegrationTest {
 
         ProductShoesDetailCreateRequest req =
                 new ProductShoesDetailCreateRequest(
-                        product.getId(),
                         "Black",
                         "Leather",
                         Silhouette.HIGH,
@@ -64,7 +63,6 @@ public class ShoesDetailServiceIntegrationTest {
 
         ProductShoesDetailCreateRequest req =
                 new ProductShoesDetailCreateRequest(
-                        UUID.randomUUID(),
                         "Black",
                         "Leather",
                         Silhouette.HIGH,
