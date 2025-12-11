@@ -12,6 +12,7 @@ import org.springframework.data.domain.Sort;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "상품 서비스 페이징 요청")
 public class PageRequestDto {
 
     @Schema(description = "페이지 번호(0부터 시작)", example = "0")
