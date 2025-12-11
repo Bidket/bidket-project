@@ -2,6 +2,8 @@ package com.bidket.notification.presentation.dto.response;
 
 import lombok.Builder;
 
+import java.time.LocalDateTime;
+
 /**
  * 인앱 알림 응답 DTO
  */
@@ -13,8 +15,8 @@ public record InAppNotificationResponse(
         String category,
         String linkUrl,
         boolean read,
-        String createdAt,
-        String readAt
+        LocalDateTime createdAt,
+        LocalDateTime readAt
 ) {
 }
 

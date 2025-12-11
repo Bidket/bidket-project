@@ -39,3 +39,7 @@ eureka:
 
 jwt:
   secret: ${JWT_SECRET}
+
+slack:
+  webhook:
+    url: ${SLACK_WEBHOOK_URL}
