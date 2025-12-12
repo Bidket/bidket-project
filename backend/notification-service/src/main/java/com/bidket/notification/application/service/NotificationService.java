@@ -8,7 +8,9 @@ import com.bidket.notification.infrastructure.external.EmailSender;
 import com.bidket.notification.infrastructure.external.SlackSender;
 import com.bidket.notification.infrastructure.persistence.entity.Notification;
 import com.bidket.notification.infrastructure.persistence.repository.NotificationRepository;
+import com.bidket.notification.global.security.AuthenticationHelper;
 import com.bidket.notification.presentation.dto.request.SendNotificationRequest;
+import com.bidket.notification.presentation.dto.response.ReadNotificationResponse;
 import com.bidket.notification.presentation.dto.response.SendNotificationResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,6 +18,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 /**
  * 알림 발송 서비스
@@ -37,12 +41,6 @@ public class NotificationService {
      */
     @Transactional
     public SendNotificationResponse sendNotification(SendNotificationRequest request) {
-        // 알림 타입 검증
-        if (request.type() == null) {
-            throw new NotificationException(NotificationErrorCode.INVALID_NOTIFICATION_TYPE,
-                    "알림 타입은 필수입니다.");
-        }
-
         String notificationType = request.type().toUpperCase();
         NotificationChannel channel;
 
@@ -60,7 +58,7 @@ public class NotificationService {
                 }
                 break;
             case "IN_APP":
-                channel = NotificationChannel.SYSTEM;
+                channel = NotificationChannel.IN_APP;
                 // In-App 알림의 경우 userId가 필수
                 if (request.userId() == null) {
                     throw new NotificationException(NotificationErrorCode.INVALID_NOTIFICATION_TYPE,
@@ -152,6 +150,44 @@ public class NotificationService {
                 .status(finalStatus.name())
                 .type(request.type())
                 .message(resultMessage)
+                .build();
+    }
+
+    /**
+     * 인앱 알림 읽음 처리
+     * @param notificationId 알림 ID
+     * @return 읽음 처리 응답
+     */
+    @Transactional
+    public ReadNotificationResponse markNotificationAsRead(UUID notificationId) {
+        // 현재 사용자 ID 추출
+        UUID currentUserId = AuthenticationHelper.getCurrentUserId();
+
+        // 알림 조회
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new NotificationException(NotificationErrorCode.NOTIFICATION_NOT_FOUND,
+                        "알림을 찾을 수 없습니다."));
+
+        // In-App 알림인지 확인
+        if (notification.getChannel() != NotificationChannel.IN_APP) {
+            throw new NotificationException(NotificationErrorCode.NOTIFICATION_CHANNEL_NOT_SUPPORTED,
+                    "In-App 알림만 읽음 처리가 가능합니다.");
+        }
+
+        // 본인 소유 알림인지 확인
+        if (!currentUserId.equals(notification.getUserId())) {
+            throw new NotificationException(NotificationErrorCode.FORBIDDEN,
+                    "본인 소유 알림에 대해서만 읽음 처리가 가능합니다.");
+        }
+
+        // 읽음 처리
+        notification.markAsRead();
+        notification = notificationRepository.save(notification);
+
+        return ReadNotificationResponse.builder()
+                .notificationId(notification.getId().toString())
+                .read(true)
+                .readAt(notification.getReadAt())
                 .build();
     }
 }

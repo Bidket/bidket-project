@@ -23,7 +23,7 @@ public record CreateNotificationRequest(
         @NotBlank(message = "알림 내용은 필수입니다.")
         String message,
 
-        String channel // PUSH, EMAIL, SMS, SLACK, SYSTEM (선택사항, 기본값: PUSH)
+        String channel // PUSH, EMAIL, SMS, SLACK, IN_APP (선택사항, 기본값: PUSH)
 ) {
 }
 

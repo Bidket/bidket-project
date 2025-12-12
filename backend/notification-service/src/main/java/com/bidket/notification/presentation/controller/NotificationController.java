@@ -3,6 +3,7 @@ package com.bidket.notification.presentation.controller;
 import com.bidket.notification.application.service.NotificationService;
 // import com.bidket.notification.global.security.AuthenticationHelper;
 import com.bidket.notification.presentation.dto.request.SendNotificationRequest;
+import com.bidket.notification.presentation.dto.response.ReadNotificationResponse;
 import com.bidket.notification.presentation.dto.response.SendNotificationResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -13,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 /**
  * 알림 컨트롤러
@@ -64,6 +67,48 @@ public class NotificationController {
         // AuthenticationHelper.requireAdminRole();
         
         SendNotificationResponse response = notificationService.sendNotification(request);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    /**
+     * 인앱 알림 읽음 처리 API
+     * In-App 알림만 사용 가능하며, 본인 소유 알림에 대해서만 읽음 처리가 허용됩니다.
+     *
+     * @param notificationId 읽음 처리할 인앱 알림 ID
+     * @return 읽음 처리 응답
+     */
+    @Operation(
+            summary = "인앱 알림 읽음 처리",
+            description = "In-App 알림을 읽음 처리하는 API. ROLE_USER 이상 권한 필요. 본인 소유 알림에 대해서만 처리 가능.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "읽음 처리 성공"
+                    ),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "인증 실패"
+                    ),
+                    @ApiResponse(
+                            responseCode = "403",
+                            description = "권한 없음 (본인 소유 알림이 아님)"
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "알림을 찾을 수 없음"
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "In-App 알림이 아님"
+                    )
+            }
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    @PatchMapping("/{notificationId}/read")
+    public ResponseEntity<ReadNotificationResponse> markNotificationAsRead(
+            @PathVariable UUID notificationId
+    ) {
+        ReadNotificationResponse response = notificationService.markNotificationAsRead(notificationId);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 }
