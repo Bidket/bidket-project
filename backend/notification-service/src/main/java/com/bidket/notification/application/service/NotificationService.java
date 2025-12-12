@@ -10,6 +10,7 @@ import com.bidket.notification.infrastructure.persistence.entity.Notification;
 import com.bidket.notification.infrastructure.persistence.repository.NotificationRepository;
 import com.bidket.notification.global.security.AuthenticationHelper;
 import com.bidket.notification.presentation.dto.request.SendNotificationRequest;
+import com.bidket.notification.presentation.dto.response.DeleteNotificationResponse;
 import com.bidket.notification.presentation.dto.response.ReadNotificationResponse;
 import com.bidket.notification.presentation.dto.response.SendNotificationResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -188,6 +189,50 @@ public class NotificationService {
                 .notificationId(notification.getId().toString())
                 .read(true)
                 .readAt(notification.getReadAt())
+                .build();
+    }
+
+    /**
+     * 인앱 알림 삭제 처리
+     * @param notificationId 알림 ID
+     * @return 삭제 처리 응답
+     */
+    @Transactional
+    public DeleteNotificationResponse deleteNotification(UUID notificationId) {
+        // 현재 사용자 ID 추출
+        UUID currentUserId = AuthenticationHelper.getCurrentUserId();
+
+        // 알림 조회
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new NotificationException(NotificationErrorCode.NOTIFICATION_NOT_FOUND,
+                        "알림을 찾을 수 없습니다."));
+
+        // In-App 알림인지 확인
+        if (notification.getChannel() != NotificationChannel.IN_APP) {
+            throw new NotificationException(NotificationErrorCode.NOTIFICATION_CHANNEL_NOT_SUPPORTED,
+                    "In-App 알림만 삭제가 가능합니다.");
+        }
+
+        // 본인 소유 알림인지 확인
+        if (!currentUserId.equals(notification.getUserId())) {
+            throw new NotificationException(NotificationErrorCode.FORBIDDEN,
+                    "본인 소유 알림에 대해서만 삭제가 가능합니다.");
+        }
+
+        // 이미 삭제된 알림인지 확인
+        if (notification.isDeleted()) {
+            throw new NotificationException(NotificationErrorCode.NOTIFICATION_NOT_FOUND,
+                    "이미 삭제된 알림입니다.");
+        }
+
+        // 삭제 처리 (soft delete)
+        // BaseEntity의 markDeleted() 메서드 사용 (deletedBy는 null로 설정)
+        notification.markDeleted(null);
+        notificationRepository.save(notification);
+
+        return DeleteNotificationResponse.builder()
+                .success(true)
+                .message("알림이 삭제되었습니다.")
                 .build();
     }
 }
