@@ -2,6 +2,7 @@ package com.bidket.user.application.service;
 
 import com.bidket.user.domain.exception.UserErrorCode;
 import com.bidket.user.domain.exception.UserException;
+import com.bidket.user.global.security.AuthenticationHelper;
 import com.bidket.user.infrastructure.persistence.entity.User;
 import com.bidket.user.infrastructure.persistence.entity.UserBlacklist;
 import com.bidket.user.infrastructure.persistence.repository.UserBlacklistRepository;
@@ -16,7 +17,7 @@ import java.util.UUID;
 
 /**
  * 블랙리스트 상태 조회 서비스
- * 관리자가 특정 회원의 블랙리스트 여부를 조회합니다.
+ * 현재 로그인한 회원의 블랙리스트 여부를 조회합니다.
  * 입찰 가능 여부 판단 등에 활용됩니다.
  */
 @Service
@@ -27,15 +28,17 @@ public class BlacklistStatusService {
     private final UserBlacklistRepository userBlacklistRepository;
 
     /**
-     * 특정 회원의 블랙리스트 상태 조회
-     * @param memberId 조회할 회원 ID
+     * 현재 로그인한 회원의 블랙리스트 상태 조회
      * @return 블랙리스트 상태 조회 응답 (memberId, isBlacklisted, reason, expireAt)
      * @throws UserException 사용자를 찾을 수 없는 경우
      */
     @Transactional(readOnly = true)
-    public BlacklistStatusResponse getBlacklistStatus(UUID memberId) {
+    public BlacklistStatusResponse getBlacklistStatus() {
+        // SecurityContext에서 userId 추출
+        UUID userId = AuthenticationHelper.getCurrentUserId();
+        
         // 사용자 조회
-        User user = userRepository.findById(memberId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
         
         // 활성화된 블랙리스트 조회

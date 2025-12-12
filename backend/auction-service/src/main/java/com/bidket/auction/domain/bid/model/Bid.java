@@ -9,6 +9,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import com.bidket.auction.global.exception.BidDomainException;
+import com.bidket.auction.global.exception.BidErrorCode;
 import java.util.UUID;
 
 @Entity
@@ -188,13 +190,13 @@ public class Bid extends BaseEntity {
 
     private void validate() {
         if (this.bidAmount == null || this.bidAmount.getAmount() == null || this.bidAmount.getAmount() <= 0) {
-            throw new IllegalArgumentException("입찰 금액은 0보다 커야 합니다");
+            throw new BidDomainException(BidErrorCode.INVALID_BID_AMOUNT);
         }
         if (this.auctionId == null) {
-            throw new IllegalArgumentException("경매 ID는 필수입니다");
+            throw new BidDomainException(BidErrorCode.BID_CONFLICT);
         }
         if (this.bidderId == null) {
-            throw new IllegalArgumentException("입찰자 ID는 필수입니다");
+            throw new BidDomainException(BidErrorCode.BID_CONFLICT);
         }
     }
 
@@ -212,14 +214,14 @@ public class Bid extends BaseEntity {
 
     public void markAsWon() {
         if (this.status != BidStatus.ACTIVE) {
-            throw new IllegalStateException("ACTIVE 상태에서만 낙찰될 수 있습니다");
+            throw new BidDomainException(BidErrorCode.BID_CONFLICT);
         }
         this.status = BidStatus.WON;
     }
 
     public void cancel() {
         if (this.isHighest()) {
-            throw new IllegalStateException("최고가 입찰은 취소할 수 없습니다");
+            throw new BidDomainException(BidErrorCode.CANNOT_CANCEL_HIGHEST_BID);
         }
         this.status = BidStatus.CANCELLED;
     }
