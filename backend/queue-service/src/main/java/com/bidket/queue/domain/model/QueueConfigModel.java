@@ -7,23 +7,22 @@ import com.bidket.queue.presentation.dto.response.QueueConfigUpdateResponse;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
 import lombok.Builder;
 import lombok.Getter;
-import reactor.core.publisher.Mono;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
 @Builder
-public class QueueConfigModel {
-    private UUID auctionId;
-    @Getter
-    private Long maxActive;
-    @Getter
-    private Integer permitsPerSec;
-    private QueueConfigStatus status;
-    private Instant openAt;
-    @Getter
-    private Instant closeAt;
+public record QueueConfigModel(
+        UUID auctionId,
+        Long maxActive,
+        Integer permitsPerSec,
+        QueueConfigStatus status,
+        Instant openAt,
+        Instant closeAt,
+        LocalDateTime lastUpdatedAt,
+        UUID lastUpdatedBy) {
 
     public Map<String, String> toMap() {
         return Map.of("auctionId", auctionId.toString(),
@@ -55,9 +54,9 @@ public class QueueConfigModel {
     }
 
     public void checkOpenStatus(Instant now) {
-        if(now.isBefore(openAt))
+        if (now.isBefore(openAt))
             throw new QueueException(QueueErrorCode.AUCTION_NOT_OPENED);
-        if(now.isAfter(closeAt))
+        if (now.isAfter(closeAt))
             throw new QueueException(QueueErrorCode.AUCTION_CLOSED);
     }
 
@@ -66,13 +65,9 @@ public class QueueConfigModel {
                 .auctionId(request.auctionId())
                 .maxActive(request.maxActive())
                 .permitsPerSec(request.permitsPerSec())
-                .status(QueueConfigStatus.ACTIVE)
+                .status(QueueConfigStatus.RUNNING)
                 .openAt(request.openAt())
                 .closeAt(request.closeAt())
                 .build();
-    }
-
-    public void update(QueueConfigUpdateRequest request) {
-
     }
 }

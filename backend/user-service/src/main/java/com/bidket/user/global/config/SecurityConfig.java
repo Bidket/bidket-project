@@ -13,7 +13,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 /**
  * Spring Security 설정
- * 
  * 회원가입, 로그인 엔드포인트는 인증 없이 접근 가능하도록 설정합니다.
  * 내 정보 조회 등 인증이 필요한 엔드포인트는 JWT 토큰 검증이 필요합니다.
  */
@@ -27,7 +26,6 @@ public class SecurityConfig {
 
     /**
      * Security 필터 체인 설정
-     *
      * - CSRF 비활성화
      * - Stateless 세션 정책 (JWT 사용)
      * - JWT 인증 필터 추가
@@ -46,6 +44,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/v1/members/signup", "/v1/members/login", "/v1/members/check-email").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         .anyRequest().authenticated()  // 인증이 필요한 엔드포인트
                 );
 

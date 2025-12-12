@@ -3,10 +3,13 @@ package com.bidket.auction.application.auction.dto.response;
 import com.bidket.auction.domain.auction.model.Auction;
 import com.bidket.auction.domain.auction.model.AuctionCondition;
 import com.bidket.auction.domain.auction.model.AuctionStatus;
+import com.bidket.auction.domain.auction.model.vo.WinnerInfo;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY)
 public record AuctionResponse(
         UUID id,
         UUID productSizeId,
@@ -32,6 +35,8 @@ public record AuctionResponse(
         LocalDateTime updatedAt
 ) {
     public static AuctionResponse from(Auction auction) {
+        WinnerInfo winnerInfo = auction.getWinnerInfo() != null ? auction.getWinnerInfo() : WinnerInfo.empty();
+
         return new AuctionResponse(
                 auction.getId(),
                 auction.getProductSizeId(),
@@ -48,9 +53,9 @@ public record AuctionResponse(
                 auction.getPeriod().getEndTime(),
                 auction.getPeriod().getOriginalEndTime(),
                 auction.getPeriod().getExtensionCount(),
-                auction.getWinnerInfo().getWinnerId(),
-                auction.getWinnerInfo().getWinningBidId(),
-                auction.getWinnerInfo().getFinalPrice(),
+                winnerInfo.getWinnerId(),
+                winnerInfo.getWinningBidId(),
+                winnerInfo.getFinalPrice(),
                 auction.getStats().getTotalBidsCount(),
                 auction.getStats().getViewCount(),
                 auction.getCreatedAt(),
@@ -59,6 +64,8 @@ public record AuctionResponse(
     }
 
     public static AuctionResponse fromSummary(Auction auction) {
+        WinnerInfo winnerInfo = auction.getWinnerInfo() != null ? auction.getWinnerInfo() : WinnerInfo.empty();
+        
         return new AuctionResponse(
                 auction.getId(),
                 auction.getProductSizeId(),
@@ -77,7 +84,7 @@ public record AuctionResponse(
                 auction.getPeriod().getExtensionCount(),
                 null,
                 null,
-                auction.getWinnerInfo().getFinalPrice(),
+                winnerInfo.getFinalPrice(),
                 auction.getStats().getTotalBidsCount(),
                 auction.getStats().getViewCount(),
                 auction.getCreatedAt(),

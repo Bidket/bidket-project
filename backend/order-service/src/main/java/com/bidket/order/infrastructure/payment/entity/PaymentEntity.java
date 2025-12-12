@@ -6,8 +6,6 @@ import com.bidket.order.domain.payment.model.PaymentStatus;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
@@ -16,47 +14,70 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Entity
 @Getter
+@Entity
 @Table(name = "payments")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PaymentEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    private UUID userId;
     private UUID orderId;
 
     @Enumerated(EnumType.STRING)
     private PaymentMethod method;
 
     private Long amount;
-
     private Long usedPointAmount;
 
     @Enumerated(EnumType.STRING)
     private PaymentStatus status;
 
     private LocalDateTime createdAt;
-
     private LocalDateTime updatedAt;
 
+    private PaymentEntity(
+            UUID id,
+            UUID userId,
+            UUID orderId,
+            PaymentMethod method,
+            Long amount,
+            Long usedPointAmount,
+            PaymentStatus status,
+            LocalDateTime createdAt,
+            LocalDateTime updatedAt
+    ) {
+        this.id = id;
+        this.userId = userId;
+        this.orderId = orderId;
+        this.method = method;
+        this.amount = amount;
+        this.usedPointAmount = usedPointAmount;
+        this.status = status;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
+
     public static PaymentEntity from(Payment payment) {
-        PaymentEntity entity = new PaymentEntity();
-        entity.orderId = payment.orderId();
-        entity.method = payment.method();
-        entity.amount = payment.amount();
-        entity.usedPointAmount = payment.usedPointAmount();
-        entity.status = payment.status();
-        entity.createdAt = payment.createdAt();
-        entity.updatedAt = payment.updatedAt();
-        return entity;
+        return new PaymentEntity(
+                payment.id(),
+                payment.userId(),
+                payment.orderId(),
+                payment.method(),
+                payment.amount(),
+                payment.usedPointAmount(),
+                payment.status(),
+                payment.createdAt(),
+                payment.updatedAt()
+        );
     }
 
     public Payment toModel() {
         return new Payment(
                 id,
+                userId,
                 orderId,
                 method,
                 amount,

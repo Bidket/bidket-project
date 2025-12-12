@@ -1,5 +1,7 @@
 package com.bidket.auction.domain.auction.model;
 
+import com.bidket.auction.global.exception.AuctionDomainException;
+import com.bidket.auction.global.exception.AuctionErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -66,8 +68,9 @@ class AuctionTest {
                 .startTime(startTime)
                 .endTime(endTime)
                 .build())
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("시작가는 0보다 커야 합니다");
+                .isInstanceOf(AuctionDomainException.class)
+                .extracting(e -> ((AuctionDomainException) e).getErrorCode())
+                .isEqualTo(AuctionErrorCode.INVALID_START_PRICE);
     }
 
     @Test
@@ -89,8 +92,9 @@ class AuctionTest {
                 .startTime(startTime)
                 .endTime(endTime)
                 .build())
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("즉시구매가는 시작가보다 커야 합니다");
+                .isInstanceOf(AuctionDomainException.class)
+                .extracting(e -> ((AuctionDomainException) e).getErrorCode())
+                .isEqualTo(AuctionErrorCode.INVALID_BUY_NOW_PRICE);
     }
 
     @Test
@@ -111,8 +115,9 @@ class AuctionTest {
                 .startTime(startTime)
                 .endTime(endTime)
                 .build())
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("종료시간은 시작시간보다 이후여야 합니다");
+                .isInstanceOf(AuctionDomainException.class)
+                .extracting(e -> ((AuctionDomainException) e).getErrorCode())
+                .isEqualTo(AuctionErrorCode.INVALID_TIME_RANGE);
     }
 
     @Test
@@ -138,8 +143,9 @@ class AuctionTest {
 
         // When & Then
         assertThatThrownBy(auction::start)
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("PENDING 상태에서만 시작할 수 있습니다");
+                .isInstanceOf(AuctionDomainException.class)
+                .extracting(e -> ((AuctionDomainException) e).getErrorCode())
+                .isEqualTo(AuctionErrorCode.INVALID_AUCTION_STATUS);
     }
 
     @Test
@@ -231,8 +237,9 @@ class AuctionTest {
 
         // When & Then
         assertThatThrownBy(auction::extend)
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("최대 연장 횟수를 초과했습니다");
+                .isInstanceOf(AuctionDomainException.class)
+                .extracting(e -> ((AuctionDomainException) e).getErrorCode())
+                .isEqualTo(AuctionErrorCode.MAX_EXTENSIONS_REACHED);
     }
 
     // Helper 메서드

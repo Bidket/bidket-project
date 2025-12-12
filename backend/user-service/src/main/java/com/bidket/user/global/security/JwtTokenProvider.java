@@ -13,7 +13,6 @@ import java.util.UUID;
 
 /**
  * JWT 토큰 생성 및 검증 제공자
- * 
  * AccessToken과 RefreshToken을 생성하고 검증합니다.
  */
 @Component
@@ -46,11 +45,23 @@ public class JwtTokenProvider {
      * @return 생성된 AccessToken
      */
     public String generateAccessToken(UUID userId) {
+        return generateAccessToken(userId, "ROLE_USER");
+    }
+
+    /**
+     * AccessToken 생성 (role 포함)
+     * 
+     * @param userId 사용자 ID
+     * @param role 사용자 권한
+     * @return 생성된 AccessToken
+     */
+    public String generateAccessToken(UUID userId, String role) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + accessTokenExpiration);
 
         return Jwts.builder()
                 .subject(userId.toString())
+                .claim("role", role)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(secretKey)
