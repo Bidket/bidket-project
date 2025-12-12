@@ -13,6 +13,7 @@ import com.bidket.product.presentation.dto.request.product.ProductSearchRequest;
 import com.bidket.product.presentation.dto.request.product.SkuGetRequest;
 import com.bidket.product.presentation.dto.response.product.ProductPageGetResponse;
 import com.bidket.product.presentation.dto.response.product.ProductSearchResponse;
+import com.bidket.product.presentation.dto.response.product.SkuGetDetailResponse;
 import com.bidket.product.presentation.dto.response.product.SkuGetResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +50,7 @@ class ProductQueryServiceIntegrationTest {
         Product product = setupProduct();
         ProductSku sku = skuRepository.findAll().get(0);
 
-        SkuGetResponse result = productQueryService.getSku(sku.getId());
+        SkuGetDetailResponse result = productQueryService.getSku(sku.getId());
 
         assertThat(result.skuCode()).isEqualTo("DD1391-100-260");
     }

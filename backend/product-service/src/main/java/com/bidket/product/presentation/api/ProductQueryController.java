@@ -10,6 +10,7 @@ import com.bidket.product.presentation.dto.request.product.ProductSearchRequest;
 import com.bidket.product.presentation.dto.request.product.SkuGetRequest;
 import com.bidket.product.presentation.dto.response.product.ProductPageGetResponse;
 import com.bidket.product.presentation.dto.response.product.ProductSearchResponse;
+import com.bidket.product.presentation.dto.response.product.SkuGetDetailResponse;
 import com.bidket.product.presentation.dto.response.product.SkuGetResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,7 +36,7 @@ public class ProductQueryController {
             description = "활성(ACTIVE) 상태인 sku를 조회합니다."
     )
     @GetMapping("/products/skus/{skuId}")
-    public ApiResponse<SkuGetResponse> getSku(
+    public ApiResponse<SkuGetDetailResponse> getSku(
             @PathVariable UUID skuId
     ) {
         return ApiResponse.success(productQueryService.getSku(skuId));

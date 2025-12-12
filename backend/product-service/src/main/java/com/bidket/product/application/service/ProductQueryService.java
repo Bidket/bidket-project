@@ -17,6 +17,7 @@ import com.bidket.product.infrastructure.persistence.repository.ProductSpecifica
 import com.bidket.product.presentation.dto.request.PageRequestDto;
 import com.bidket.product.presentation.dto.request.product.SkuGetRequest;
 import com.bidket.product.presentation.dto.response.category.CategoryGetResponse;
+import com.bidket.product.presentation.dto.response.product.SkuGetDetailResponse;
 import com.bidket.product.presentation.dto.response.product.SkuGetResponse;
 import java.util.List;
 import java.util.UUID;
@@ -67,14 +68,20 @@ public class ProductQueryService {
     }
 
     /** SKU 단건 조회 */
-    public SkuGetResponse getSku(UUID skuId) {
+    public SkuGetDetailResponse getSku(UUID skuId) {
 
+        // Sku 존재 여부 확인
         ProductSku sku = skuRepository.findByIdAndStatusAndDeletedAtIsNull(
                 skuId,
                 SkuStatus.ACTIVE
         ).orElseThrow(() -> new ProductException(ProductErrorCode.SKU_NOT_FOUND));
 
-        return skuMapper.toGetResponse(sku);
+        // Sku 사용 가능 여부 확인
+        if (sku.getStatus() != SkuStatus.ACTIVE || sku.getDeletedAt() != null) {
+            throw new ProductException(ProductErrorCode.SKU_NOT_AVAILABLE);
+        }
+
+        return skuMapper.toDetailResponse(sku);
     }
 
     /** SKU 목록 조회 */
@@ -94,7 +101,7 @@ public class ProductQueryService {
                 );
 
         List<SkuGetResponse> resList = page.getContent().stream()
-                .map(skuMapper::toGetResponse)
+                .map(skuMapper::toSimpleResponse)
                 .toList();
 
         return PageResponse.of(
@@ -112,7 +119,7 @@ public class ProductQueryService {
 
         return skuRepository.findByProductIdAndStatusAndDeletedAtIsNull(productId, SkuStatus.ACTIVE)
                 .stream()
-                .map(skuMapper::toGetResponse)
+                .map(skuMapper::toSimpleResponse)
                 .toList();
     }
 }
