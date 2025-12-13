@@ -2,6 +2,8 @@ package com.bidket.product.infrastructure.persistence.repository;
 
 import com.bidket.product.infrastructure.persistence.entity.SizeType;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -12,4 +14,6 @@ public interface SizeTypeRepository extends JpaRepository<SizeType, UUID> {
     @Query("UPDATE SizeType st SET st.isDefault = false WHERE st.productType.id = :productTypeId")
     void resetDefault(UUID productTypeId);
 
+    Page<SizeType> findAll(Pageable pageable);
+    Page<SizeType> findAllByProductType_Id(UUID productTypeId, Pageable pageable);
 }
