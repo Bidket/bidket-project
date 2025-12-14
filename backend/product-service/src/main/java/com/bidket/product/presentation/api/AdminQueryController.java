@@ -2,9 +2,11 @@ package com.bidket.product.presentation.api;
 
 import com.bidket.common.presentation.response.ApiResponse;
 import com.bidket.common.presentation.response.PageResponse;
+import com.bidket.product.application.facade.AdminProductDetailFacade;
 import com.bidket.product.application.service.AdminQueryService;
 import com.bidket.product.domain.model.ProductStatus;
 import com.bidket.product.presentation.dto.request.PageRequestDto;
+import com.bidket.product.presentation.dto.response.product.ProductGetAdminDetailResponse;
 import com.bidket.product.presentation.dto.response.product.ProductGetAdminResponse;
 import com.bidket.product.presentation.dto.response.product.ProductGetAdminSimpleResponse;
 import com.bidket.product.presentation.dto.response.product.SkuGetAdminResponse;
@@ -29,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminQueryController {
 
     private final AdminQueryService adminQueryService;
+    private final AdminProductDetailFacade detailFacade;
 
     @Operation(
             summary = "어드민 사이즈 타입 목록 조회",
@@ -109,6 +112,21 @@ public class AdminQueryController {
         //adminRoleValidator.validator(role);
         return ApiResponse.success(
                 adminQueryService.getProductSkus(productId, pageRequest)
+        );
+    }
+
+    @Operation(
+            summary = "어드민 상품 상세 페이지 조회",
+            description = "어드민이 특정 상품의 모든 상세 정보를 조회합니다. "
+    )
+    @GetMapping("/products/{productId}/detail")
+    public ApiResponse<ProductGetAdminDetailResponse> getProductDetail(
+            //@RequestHeader("X-User-Role") String role,
+            @PathVariable UUID productId
+    ) {
+        //adminRoleValidator.validator(role);
+        return ApiResponse.success(
+                detailFacade.getProductDetail(productId)
         );
     }
 }
