@@ -18,9 +18,9 @@ import java.util.UUID;
 
 @Component
 public class TokenProvider {
-    @Value("${jwt.secret}")
+    @Value("${active_token.secret}")
     private String secret;
-    @Value("${jwt.expiration}")
+    @Value("${active_token.expired_at}")
     private long expiration;
 
     public String generateToken(UUID userId, UUID auctionId) {

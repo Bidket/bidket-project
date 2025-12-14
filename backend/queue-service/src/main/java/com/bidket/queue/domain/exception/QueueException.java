@@ -11,4 +11,9 @@ public class QueueException extends RuntimeException {
         super(errorCode.getMessage());
         this.errorCode = errorCode;
     }
+
+    public QueueException(BaseErrorCode errorCode, String message) {
+        super(message);
+        this.errorCode = errorCode;
+    }
 }

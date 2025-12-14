@@ -1,6 +1,6 @@
 package com.bidket.queue.presentation.dto.response;
 
-import com.bidket.queue.domain.model.QueueStatus;
+import com.bidket.queue.domain.model.QueueTrafficStatus;
 import lombok.Builder;
 
 import java.util.UUID;
@@ -10,6 +10,6 @@ public record QueueStatusResponse(
         UUID auctionId,
         Long totalWaiting,
         Long currentActive,
-        QueueStatus status
+        QueueTrafficStatus status
 ) {
 }

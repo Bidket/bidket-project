@@ -10,7 +10,6 @@ public record QueueEnterResponse(
         UUID auctionId,
         UUID userId,
         Long rank,
-        Integer retryAfter,
         String message,
         @JsonIgnore
         String token

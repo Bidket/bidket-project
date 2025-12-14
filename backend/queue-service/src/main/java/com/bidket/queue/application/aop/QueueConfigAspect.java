@@ -27,7 +27,6 @@ public class QueueConfigAspect {
         UUID auctionId = findAuctionId(joinPoint);
 
         return managementRepository.getConfig(auctionId)
-                .switchIfEmpty(Mono.error(new QueueException(QueueErrorCode.CONFIG_NOT_FOUND)))
                 .flatMap(config -> {
                     config.checkOpenStatus(Instant.now());
                     log.info("경매[{}]: 경매 대기열 상태 확인", auctionId);
@@ -36,7 +35,8 @@ public class QueueConfigAspect {
                     } catch (Throwable e) {
                         return Mono.error(e);
                     }
-                });
+                })
+                .switchIfEmpty(Mono.error(new QueueException(QueueErrorCode.CONFIG_NOT_FOUND)));
     }
 
     private UUID findAuctionId(ProceedingJoinPoint joinPoint) {
