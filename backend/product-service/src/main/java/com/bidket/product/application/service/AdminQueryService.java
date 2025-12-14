@@ -3,19 +3,23 @@ package com.bidket.product.application.service;
 import com.bidket.common.presentation.response.PageResponse;
 import com.bidket.product.application.mapper.AdminProductMapper;
 import com.bidket.product.application.mapper.AdminSizeMapper;
+import com.bidket.product.application.mapper.AdminSkuMapper;
 import com.bidket.product.domain.exception.ProductErrorCode;
 import com.bidket.product.domain.exception.ProductException;
 import com.bidket.product.domain.model.ProductStatus;
 import com.bidket.product.infrastructure.persistence.entity.Product;
+import com.bidket.product.infrastructure.persistence.entity.ProductSku;
 import com.bidket.product.infrastructure.persistence.entity.Size;
 import com.bidket.product.infrastructure.persistence.entity.SizeType;
 import com.bidket.product.infrastructure.persistence.repository.ProductAdminSpecification;
 import com.bidket.product.infrastructure.persistence.repository.ProductRepository;
+import com.bidket.product.infrastructure.persistence.repository.ProductSkuRepository;
 import com.bidket.product.infrastructure.persistence.repository.SizeRepository;
 import com.bidket.product.infrastructure.persistence.repository.SizeTypeRepository;
 import com.bidket.product.presentation.dto.request.PageRequestDto;
 import com.bidket.product.presentation.dto.response.product.ProductGetAdminResponse;
 import com.bidket.product.presentation.dto.response.product.ProductGetAdminSimpleResponse;
+import com.bidket.product.presentation.dto.response.product.SkuGetAdminResponse;
 import com.bidket.product.presentation.dto.response.size.SizeGetAdminResponse;
 import com.bidket.product.presentation.dto.response.size.SizeTypeGetAdminResponse;
 import java.util.List;
@@ -37,9 +41,11 @@ public class AdminQueryService {
     private final SizeTypeRepository sizeTypeRepository;
     private final SizeRepository sizeRepository;
     private final ProductRepository productRepository;
+    private final ProductSkuRepository productSkuRepository;
 
     private final AdminSizeMapper adminSizeMapper;
     private final AdminProductMapper adminProductMapper;
+    private final AdminSkuMapper adminSkuMapper;
 
     /** 사이즈 타입 목록 조회 */
     public PageResponse<SizeTypeGetAdminResponse> getSizeTypes(
@@ -126,5 +132,28 @@ public class AdminQueryService {
                 .orElseThrow(() -> new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND));
 
         return adminProductMapper.toSimpleDto(product);
+    }
+
+    /** sku 목록 조회 */
+    public PageResponse<SkuGetAdminResponse> getProductSkus(
+            UUID productId,
+            PageRequestDto pageRequest
+    ) {
+        Pageable pageable = pageRequest.toPageable(
+                Sort.by(Direction.ASC, "createdAt")
+        );
+
+        Page<ProductSku> page = productSkuRepository.findAllByProduct_Id(productId, pageable);
+
+        List<SkuGetAdminResponse> resList = page.getContent().stream()
+                .map(adminSkuMapper::toDto)
+                .toList();
+
+        return PageResponse.of(
+                resList,
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements()
+        );
     }
 }

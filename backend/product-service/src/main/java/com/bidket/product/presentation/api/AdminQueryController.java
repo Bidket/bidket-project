@@ -7,6 +7,7 @@ import com.bidket.product.domain.model.ProductStatus;
 import com.bidket.product.presentation.dto.request.PageRequestDto;
 import com.bidket.product.presentation.dto.response.product.ProductGetAdminResponse;
 import com.bidket.product.presentation.dto.response.product.ProductGetAdminSimpleResponse;
+import com.bidket.product.presentation.dto.response.product.SkuGetAdminResponse;
 import com.bidket.product.presentation.dto.response.size.SizeGetAdminResponse;
 import com.bidket.product.presentation.dto.response.size.SizeTypeGetAdminResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -93,5 +94,21 @@ public class AdminQueryController {
     ) {
         //adminRoleValidator.validator(role);
         return ApiResponse.success(adminQueryService.getProduct(productId));
+    }
+
+    @Operation(
+            summary = "어드민 sku 목록 조회",
+            description = "어드민이 특정 상품에 속한 sku 목록을 조회합니다. "
+    )
+    @GetMapping("/products/{productId}/skus")
+    public ApiResponse<PageResponse<SkuGetAdminResponse>> getProductSkus(
+            //@RequestHeader("X-User-Role") String role,
+            @PathVariable UUID productId,
+            PageRequestDto pageRequest
+    ) {
+        //adminRoleValidator.validator(role);
+        return ApiResponse.success(
+                adminQueryService.getProductSkus(productId, pageRequest)
+        );
     }
 }
