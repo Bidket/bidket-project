@@ -5,6 +5,8 @@ import com.bidket.auction.application.auction.dto.request.UpdateAuctionRequest;
 import com.bidket.auction.domain.auction.model.Auction;
 import com.bidket.auction.domain.auction.model.AuctionCondition;
 import com.bidket.auction.domain.auction.repository.AuctionRepository;
+import com.bidket.auction.global.exception.AuctionDomainException;
+import com.bidket.auction.global.exception.AuctionErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -93,7 +95,7 @@ class AuctionValidatorTest {
 
             // When & Then
             assertThatThrownBy(() -> auctionValidator.validateCreate(request))
-                    .isInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOf(AuctionDomainException.class)
                     .hasMessageContaining("즉시구매가는 시작가보다 커야 합니다");
         }
 
@@ -119,8 +121,9 @@ class AuctionValidatorTest {
 
             // When & Then
             assertThatThrownBy(() -> auctionValidator.validateCreate(request))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("시작 시간은 현재 시간 + 1시간 이후여야 합니다");
+                    .isInstanceOf(AuctionDomainException.class)
+                    .extracting(e -> ((AuctionDomainException) e).getErrorCode())
+                    .isEqualTo(AuctionErrorCode.INVALID_TIME_RANGE);
         }
 
         @Test
@@ -145,8 +148,9 @@ class AuctionValidatorTest {
 
             // When & Then
             assertThatThrownBy(() -> auctionValidator.validateCreate(request))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("종료 시간은 시작 시간 + 1시간 이후여야 합니다");
+                    .isInstanceOf(AuctionDomainException.class)
+                    .extracting(e -> ((AuctionDomainException) e).getErrorCode())
+                    .isEqualTo(AuctionErrorCode.INVALID_TIME_RANGE);
         }
 
         @Test
@@ -171,8 +175,9 @@ class AuctionValidatorTest {
 
             // When & Then
             assertThatThrownBy(() -> auctionValidator.validateCreate(request))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("경매 기간은 최대 7일까지 가능합니다");
+                    .isInstanceOf(AuctionDomainException.class)
+                    .extracting(e -> ((AuctionDomainException) e).getErrorCode())
+                    .isEqualTo(AuctionErrorCode.INVALID_AUCTION_PERIOD);
         }
     }
 
@@ -238,8 +243,9 @@ class AuctionValidatorTest {
 
             // When & Then
             assertThatThrownBy(() -> auctionValidator.validateUpdate(testAuctionId, request))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("PENDING 상태에서만 수정할 수 있습니다");
+                    .isInstanceOf(AuctionDomainException.class)
+                    .extracting(e -> ((AuctionDomainException) e).getErrorCode())
+                    .isEqualTo(AuctionErrorCode.INVALID_AUCTION_STATUS);
         }
 
         @Test
@@ -259,8 +265,9 @@ class AuctionValidatorTest {
 
             // When & Then
             assertThatThrownBy(() -> auctionValidator.validateUpdate(testAuctionId, request))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("경매를 찾을 수 없습니다");
+                    .isInstanceOf(AuctionDomainException.class)
+                    .extracting(e -> ((AuctionDomainException) e).getErrorCode())
+                    .isEqualTo(AuctionErrorCode.AUCTION_NOT_FOUND);
         }
     }
 
@@ -327,8 +334,9 @@ class AuctionValidatorTest {
 
             // When & Then
             assertThatThrownBy(() -> auctionValidator.validateCancel(testAuctionId))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("입찰이 있는 경매는 취소할 수 없습니다");
+                    .isInstanceOf(AuctionDomainException.class)
+                    .extracting(e -> ((AuctionDomainException) e).getErrorCode())
+                    .isEqualTo(AuctionErrorCode.CANNOT_CANCEL_WITH_BIDS);
         }
 
         @Test
@@ -344,8 +352,9 @@ class AuctionValidatorTest {
 
             // When & Then
             assertThatThrownBy(() -> auctionValidator.validateCancel(testAuctionId))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("취소할 수 없는 상태입니다");
+                    .isInstanceOf(AuctionDomainException.class)
+                    .extracting(e -> ((AuctionDomainException) e).getErrorCode())
+                    .isEqualTo(AuctionErrorCode.INVALID_AUCTION_STATUS);
         }
     }
 }
