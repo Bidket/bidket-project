@@ -1,5 +1,6 @@
 package com.bidket.queue.application.service;
 
+import com.bidket.common.presentation.error.BaseErrorCode;
 import com.bidket.queue.domain.exception.QueueException;
 import com.bidket.queue.domain.model.HeartbeatStatus;
 import com.bidket.queue.domain.model.QueueErrorCode;
@@ -47,7 +48,8 @@ public class QueueTrafficService {
                                     .rank(rank)
                                     .message("대기 중")
                                     .build())
-                );
+                )
+                .onErrorMap(e -> new QueueException(QueueErrorCode.REDIS_CONNECTION_ERROR, e.getMessage()));
     }
 
     @CheckQueueConfig
