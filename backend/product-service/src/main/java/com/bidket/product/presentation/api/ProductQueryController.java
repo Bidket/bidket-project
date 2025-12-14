@@ -8,6 +8,7 @@ import com.bidket.product.application.service.ProductSearchService;
 import com.bidket.product.presentation.dto.request.PageRequestDto;
 import com.bidket.product.presentation.dto.request.product.ProductSearchRequest;
 import com.bidket.product.presentation.dto.request.product.SkuGetRequest;
+import com.bidket.product.presentation.dto.response.product.ProductCardGetResponse;
 import com.bidket.product.presentation.dto.response.product.ProductPageGetResponse;
 import com.bidket.product.presentation.dto.response.product.ProductSearchResponse;
 import com.bidket.product.presentation.dto.response.product.SkuGetDetailResponse;
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -79,5 +81,24 @@ public class ProductQueryController {
             PageRequestDto pageRequest
     ) {
         return ApiResponse.success(productSearchService.search(req, pageRequest));
+    }
+
+    @Operation(
+            summary = "상품 카드 목록 조회",
+            description = "카드정보를 위한 상품 목록 조회합니다."
+    )
+    @GetMapping("/products")
+    public ApiResponse<PageResponse<ProductCardGetResponse>> getProducts(
+            @RequestParam(required = false) UUID brandId,
+            @RequestParam(required = false) UUID categoryId,
+            PageRequestDto pageRequest
+    ) {
+        return ApiResponse.success(
+                productQueryService.getActiveProducts(
+                        brandId,
+                        categoryId,
+                        pageRequest
+                )
+        );
     }
 }
