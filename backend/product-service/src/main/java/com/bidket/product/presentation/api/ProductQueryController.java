@@ -3,11 +3,13 @@ package com.bidket.product.presentation.api;
 import com.bidket.common.presentation.response.ApiResponse;
 import com.bidket.common.presentation.response.PageResponse;
 import com.bidket.product.application.facade.ProductPageQueryFacade;
+import com.bidket.product.application.service.BrandService;
 import com.bidket.product.application.service.ProductQueryService;
 import com.bidket.product.application.service.ProductSearchService;
 import com.bidket.product.presentation.dto.request.PageRequestDto;
 import com.bidket.product.presentation.dto.request.product.ProductSearchRequest;
 import com.bidket.product.presentation.dto.request.product.SkuGetRequest;
+import com.bidket.product.presentation.dto.response.brand.BrandGetResponse;
 import com.bidket.product.presentation.dto.response.product.ProductCardGetResponse;
 import com.bidket.product.presentation.dto.response.product.ProductPageGetResponse;
 import com.bidket.product.presentation.dto.response.product.ProductSearchResponse;
@@ -15,6 +17,7 @@ import com.bidket.product.presentation.dto.response.product.SkuGetDetailResponse
 import com.bidket.product.presentation.dto.response.product.SkuGetResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,6 +34,8 @@ public class ProductQueryController {
 
     private final ProductQueryService productQueryService;
     private final ProductSearchService productSearchService;
+    private final BrandService brandService;
+
     private final ProductPageQueryFacade productPageQueryFacade;
 
     @Operation(
@@ -99,6 +104,18 @@ public class ProductQueryController {
                         categoryId,
                         pageRequest
                 )
+        );
+    }
+
+    @Operation(
+            summary = "브랜드 목록 조회",
+            description = "활성(ACTIVE) 상태인 브랜드 목록을 조회합니다.."
+    )
+    /** 브랜드 목록 조회 */
+    @GetMapping("/brands")
+    public ApiResponse<List<BrandGetResponse>> getBrands() {
+        return ApiResponse.success(
+                brandService.getBrands()
         );
     }
 }

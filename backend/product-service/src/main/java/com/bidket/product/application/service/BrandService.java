@@ -1,11 +1,15 @@
 package com.bidket.product.application.service;
 
+import com.bidket.product.application.mapper.BrandMapper;
 import com.bidket.product.domain.exception.ProductErrorCode;
 import com.bidket.product.domain.exception.ProductException;
+import com.bidket.product.domain.model.BrandStatus;
 import com.bidket.product.infrastructure.persistence.entity.Brand;
 import com.bidket.product.infrastructure.persistence.repository.BrandRepository;
 import com.bidket.product.presentation.dto.request.brand.BrandCreateRequest;
 import com.bidket.product.presentation.dto.response.brand.BrandCreateResponse;
+import com.bidket.product.presentation.dto.response.brand.BrandGetResponse;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,7 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class BrandService {
 
     private final BrandRepository brandRepository;
+    private final BrandMapper brandMapper;
 
+    @Transactional
     public BrandCreateResponse createBrand(BrandCreateRequest req) {
 
         if (brandRepository.findByName(req.name()).isPresent()) {
@@ -32,5 +38,12 @@ public class BrandService {
 
         Brand saved = brandRepository.save(brand);
         return BrandCreateResponse.from(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public List<BrandGetResponse> getBrands() {
+        return brandRepository.findAllByStatus(BrandStatus.ACTIVE).stream()
+                .map(brandMapper::toDto)
+                .toList();
     }
 }
