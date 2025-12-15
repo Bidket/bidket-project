@@ -13,5 +13,7 @@ public interface CategoryRepository extends JpaRepository<Category, UUID> {
 
     List<Category> findAllByDepth(int depth);
 
-    List<Category> findAll();
+    @EntityGraph(attributePaths = "parent")
+    @Query("select c from Category c")
+    List<Category> findAllWithParent();
 }

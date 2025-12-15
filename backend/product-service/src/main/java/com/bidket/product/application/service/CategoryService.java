@@ -81,7 +81,7 @@ public class CategoryService {
     @Transactional(readOnly = true)
     public List<CategoryTreeResponse> getCategoryTree() {
 
-        List<Category> categories = categoryRepository.findAll();
+        List<Category> categories = categoryRepository.findAllWithParent();
 
         // id → DTO 맵 생성
         Map<UUID, CategoryTreeResponse> map = new HashMap<>();
