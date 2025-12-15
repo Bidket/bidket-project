@@ -2,6 +2,8 @@ server:
   port: 8400
 
 spring:
+  profiles:
+    active: local
   application:
     name: queue-service
   config:
@@ -27,12 +29,12 @@ spring:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SEVER:localhost:9092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.JsonSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
     consumer:
       group-id: queue-service-group
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.JsonDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
 
 
 eureka:
@@ -46,6 +48,15 @@ active_token:
 
 heartbeat:
   frequency: 5
+
+kafka:
+  queue:
+    enter:
+      notification:
+        topic: queue.enter.notification
+        partition: 3
+        replicas: 1
+        retention: 86400
 
 springdoc:
   default-consumes-media-type: application/json;charset=UTF-8

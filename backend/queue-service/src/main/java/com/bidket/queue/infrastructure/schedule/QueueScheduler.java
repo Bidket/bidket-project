@@ -1,16 +1,23 @@
 package com.bidket.queue.infrastructure.schedule;
 
+import com.bidket.queue.domain.event.NotificationEvent;
 import com.bidket.queue.domain.repository.QueueManagementRepository;
 import com.bidket.queue.domain.repository.QueueTrafficRepository;
 import com.bidket.queue.global.util.jwt.TokenProvider;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.reactive.ReactiveKafkaProducerTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,6 +30,21 @@ public class QueueScheduler {
     private final QueueManagementRepository managementRepository;
     private final QueueTrafficRepository trafficRepository;
     private final TokenProvider tokenProvider;
+    private final ReactiveKafkaProducerTemplate<String, NotificationEvent> kafkaTemplate;
+    private final Sinks.Many<NotificationEvent> eventSink = Sinks.many().multicast().onBackpressureBuffer();
+
+    @Value("${kafka.queue.enter.notification.topic}")
+    private String topic;
+
+    @PostConstruct
+    public void init() {
+        eventSink.asFlux()
+                .flatMap(event -> kafkaTemplate.send(topic, event.userId().toString(), event))
+                .doOnComplete(() -> log.info("complete"))
+                .doOnError(e -> log.error("알림 이벤트 발행 실패: {}", e.getMessage(), e))
+                .onErrorResume(e -> Mono.empty())
+                .subscribe();
+    }
 
     @Scheduled(fixedDelay = 1000)
     public void entranceSchedule() {
@@ -66,7 +88,19 @@ public class QueueScheduler {
                                                 log.info("경매[{}] {} 명 입장", auctionId, userIds.size());
                                                 return trafficRepository.addAllActiveUser(activeKey, userIds)
                                                         .then(trafficRepository.saveToken(auctionId, userTokens))
-                                                        .then(managementRepository.setExpiration(activeKey, Instant.now().plus(1, ChronoUnit.HOURS)));
+                                                        .then(managementRepository.setExpiration(activeKey, Instant.now().plus(1, ChronoUnit.HOURS)))
+                                                        .doOnSuccess(isSuccess -> {
+                                                            userIds.forEach(userId -> {
+                                                                NotificationEvent event = NotificationEvent.builder()
+                                                                        .auctionId(auctionId)
+                                                                        .userId(userId)
+                                                                        .enterTime(LocalDateTime.now())
+                                                                        .build();
+
+                                                                eventSink.emitNext(event, Sinks.EmitFailureHandler.busyLooping(Duration.ofMillis(100L)));
+                                                            });
+                                                            log.info("경매[{}] 알림 이벤트 발행 완료: {}명", auctionId, userIds.size());
+                                                        });
                                             });
 
                                 })
