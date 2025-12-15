@@ -1,7 +1,8 @@
 package com.bidket.queue;
 
 import com.bidket.common.presentation.response.ApiResponse;
-import com.bidket.queue.presentation.api.QueueController;
+import com.bidket.queue.presentation.api.QueueInternalController;
+import com.bidket.queue.presentation.api.QueueTrafficController;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
 import com.bidket.queue.presentation.dto.response.QueueEnterResponse;
@@ -14,10 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
-import reactor.core.publisher.Mono;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
@@ -27,7 +26,9 @@ public class IntegralTest {
 
     private static final Logger log = LoggerFactory.getLogger(IntegralTest.class);
     @Autowired
-    private QueueController queueController;
+    private QueueTrafficController queueTrafficController;
+    @Autowired
+    private QueueInternalController internalController;
     @Autowired
     private ObjectMapper mapper;
 
@@ -41,7 +42,7 @@ public class IntegralTest {
                 .closeAt(Instant.now().plus(2, ChronoUnit.HOURS))
                 .build();
 
-        ResponseEntity<ApiResponse<QueueCreateResponse>> response = queueController.createQueueConfig(request).block();
+        ResponseEntity<ApiResponse<QueueCreateResponse>> response = internalController.createQueueConfig(request).block();
 
         String key = "auction:config:" + request.auctionId() + ":config";
 
@@ -54,7 +55,7 @@ public class IntegralTest {
         UUID userId = UUID.randomUUID();
         UUID auctionId = UUID.fromString("46867f96-661d-4e7a-a613-1e57c3645704");
 
-        ResponseEntity<ApiResponse<QueueEnterResponse>> response = queueController.enterQueue(auctionId).block();
+        ResponseEntity<ApiResponse<QueueEnterResponse>> response = queueTrafficController.enterQueue(auctionId, userId).block();
 
         log.info("response: \n {}", mapper.writeValueAsString(response));
     }
