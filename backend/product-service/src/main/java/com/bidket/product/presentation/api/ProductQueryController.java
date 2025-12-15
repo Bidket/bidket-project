@@ -150,4 +150,17 @@ public class ProductQueryController {
                 categoryService.getCategoryTree()
         );
     }
+
+    @Operation(
+            summary = "상품과 상품 상세 조회",
+            description = "특정 상품의 정보와 상세정보를 함께 조회합니다."
+    )
+    @GetMapping("/products/{productId}")
+    public ApiResponse<ProductPageGetResponse> getProductDetail(
+            @PathVariable UUID productId
+    ) {
+        return ApiResponse.success(
+                productPageQueryFacade.getProductDetail(productId)
+        );
+    }
 }
