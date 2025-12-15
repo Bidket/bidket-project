@@ -68,12 +68,17 @@ public class QueueTrafficController {
                                                                                            @RequestHeader(name = X_MEMBER_ID_HEADER) UUID userId) {
         log.info("X-USER-ID: {}", userId);
         return queueFacade.isAccommodatable(userId, auctionId)
-                .map(response ->
-                        ResponseEntity
-                                .ok()
-                                .header("X-ACTIVE_TOKEN", response.token())
-                                .body(ApiResponse.success(response))
-                );
+                .map(response -> {
+                    if (response.token() != null)
+                        return ResponseEntity.ok()
+                                .header("X-ACTIVE-TOKEN", response.token())
+                                .location(URI.create("/v1/auctions/" + auctionId))
+                                .body(ApiResponse.success(response));
+
+                    return ResponseEntity
+                            .ok()
+                            .body(ApiResponse.success(response));
+                });
     }
 
     @Operation(summary = "대기 취소", description = "사용자가 대기를 취소합니다.")
