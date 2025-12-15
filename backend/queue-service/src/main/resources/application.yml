@@ -23,6 +23,17 @@ spring:
     redis:
       host: ${REDIS_HOST}
       port: 6379
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SEVER:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.JsonSerializer
+    consumer:
+      group-id: queue-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.JsonDeserializer
+
 
 eureka:
   client:
@@ -38,7 +49,6 @@ heartbeat:
 
 springdoc:
   default-consumes-media-type: application/json;charset=UTF-8
-  default-produces-media-type: application/json;charset=UTF-8
   swagger-ui:
     path: swagger-ui.html
     tags-sorter: alpha
