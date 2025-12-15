@@ -1,5 +1,6 @@
 package com.bidket.queue.application.service;
 
+import com.bidket.queue.domain.event.NotificationEvent;
 import com.bidket.queue.domain.exception.QueueException;
 import com.bidket.queue.domain.model.HeartbeatStatus;
 import com.bidket.queue.domain.model.QueueErrorCode;
@@ -13,13 +14,17 @@ import com.bidket.queue.presentation.dto.response.QueueAccommodatableResponse;
 import com.bidket.queue.presentation.dto.response.QueueEnterResponse;
 import com.bidket.queue.presentation.dto.response.QueueHeartbeatResponse;
 import com.bidket.queue.presentation.dto.response.QueueStatusResponse;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.reactive.ReactiveKafkaProducerTemplate;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
@@ -30,9 +35,23 @@ public class QueueTrafficService {
     private final QueueTrafficRepository trafficRepository;
     private final QueueManagementRepository managementRepository;
     private final TokenProvider tokenProvider;
+    private final ReactiveKafkaProducerTemplate<String, NotificationEvent> kafkaTemplate;
+    private final Sinks.Many<NotificationEvent> eventSink;
 
     @Value("${heartbeat.frequency}")
     private Long heartbeatFrequency;
+    private String topic;
+    private String key;
+
+    @PostConstruct
+    public void init() {
+        eventSink.asFlux()
+                .flatMap(event -> kafkaTemplate.send(topic, event))
+                .doOnComplete(() -> log.info("complete"))
+                .doOnError(e -> log.error("알림 이벤트 발행 실패: {}", e.getMessage(), e))
+                .onErrorResume(e -> Mono.empty())
+                .subscribe();
+    }
 
     @CheckQueueConfig
     public Mono<QueueEnterResponse> enterQueue(UUID userId, UUID auctionId) {
@@ -57,6 +76,12 @@ public class QueueTrafficService {
                 .flatMap(token -> {
                     if (!tokenProvider.validateToken(token, userId, auctionId))
                         return Mono.error(new QueueException(QueueErrorCode.INVALID_TOKEN));
+
+                    NotificationEvent event = NotificationEvent.builder()
+                            .auctionId(auctionId)
+                            .userId(userId)
+                            .enterTime(LocalDateTime.now())
+                            .build();
 
                     return Mono.just(QueueAccommodatableResponse.builder()
                             .auctionId(auctionId)

@@ -25,7 +25,7 @@ import java.util.UUID;
 public class QueueAdminController {
     private final QueueFacade queueFacade;
 
-    private static final String X_MEMBER_ID_HEADER = "X-Member-Id";
+    private static final String X_USER_ID_HEADER = "X-User-Id";
 
     @Operation(summary = "대기열 정책 변경", description = "관리자가 대기열의 최대 수용량, 초당 수용량 등의 설정을 변경합니다.")
     @ApiResponses({
@@ -42,7 +42,7 @@ public class QueueAdminController {
     @PatchMapping("/{auctionId}")
     public Mono<ResponseEntity<ApiResponse<QueueConfigUpdateResponse>>> updateConfig(@PathVariable UUID auctionId,
                                                                                      @RequestBody QueueConfigUpdateRequest request,
-                                                                                     @RequestHeader(name = X_MEMBER_ID_HEADER) UUID userId) {
+                                                                                     @RequestHeader(name = X_USER_ID_HEADER) UUID userId) {
         return queueFacade.updateConfig(userId, auctionId, request)
                 .map(response ->
                         ResponseEntity.ok(ApiResponse.success(response))

@@ -27,7 +27,7 @@ import java.util.UUID;
 public class QueueTrafficController {
     private final QueueFacade queueFacade;
 
-    private static final String X_MEMBER_ID_HEADER = "X-Member-Id";
+    private static final String X_MEMBER_ID_HEADER = "X-User-Id";
     private static final String X_ACTIVE_TOKEN_HEADER = "X-ACTIVE-TOKEN";
 
     @Operation(summary = "대기열 입장", description = "사용자가 대기열에 입장합니다.")

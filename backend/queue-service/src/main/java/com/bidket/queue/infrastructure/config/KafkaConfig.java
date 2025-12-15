@@ -1,5 +1,6 @@
 package com.bidket.queue.infrastructure.config;
 
+import com.bidket.queue.domain.event.NotificationEvent;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.ssl.SslBundles;
 import org.springframework.context.annotation.Bean;
@@ -12,7 +13,7 @@ import java.util.Map;
 @Configuration
 public class KafkaConfig {
     @Bean
-    public ReactiveKafkaProducerTemplate<String, String> reactiveKafkaProducerTemplate(
+    public ReactiveKafkaProducerTemplate<String, NotificationEvent> reactiveKafkaProducerTemplate(
             KafkaProperties properties,
             SslBundles sslBundles) {
         return new ReactiveKafkaProducerTemplate<>(
