@@ -4,12 +4,15 @@ import com.bidket.common.presentation.response.ApiResponse;
 import com.bidket.common.presentation.response.PageResponse;
 import com.bidket.product.application.facade.ProductPageQueryFacade;
 import com.bidket.product.application.service.BrandService;
+import com.bidket.product.application.service.CategoryService;
 import com.bidket.product.application.service.ProductQueryService;
 import com.bidket.product.application.service.ProductSearchService;
 import com.bidket.product.presentation.dto.request.PageRequestDto;
 import com.bidket.product.presentation.dto.request.product.ProductSearchRequest;
 import com.bidket.product.presentation.dto.request.product.SkuGetRequest;
 import com.bidket.product.presentation.dto.response.brand.BrandGetResponse;
+import com.bidket.product.presentation.dto.response.category.CategoryGetResponse;
+import com.bidket.product.presentation.dto.response.category.CategoryTreeResponse;
 import com.bidket.product.presentation.dto.response.product.ProductCardGetResponse;
 import com.bidket.product.presentation.dto.response.product.ProductPageGetResponse;
 import com.bidket.product.presentation.dto.response.product.ProductSearchResponse;
@@ -35,6 +38,7 @@ public class ProductQueryController {
     private final ProductQueryService productQueryService;
     private final ProductSearchService productSearchService;
     private final BrandService brandService;
+    private final CategoryService categoryService;
 
     private final ProductPageQueryFacade productPageQueryFacade;
 
@@ -111,11 +115,39 @@ public class ProductQueryController {
             summary = "브랜드 목록 조회",
             description = "활성(ACTIVE) 상태인 브랜드 목록을 조회합니다.."
     )
-    /** 브랜드 목록 조회 */
     @GetMapping("/brands")
     public ApiResponse<List<BrandGetResponse>> getBrands() {
         return ApiResponse.success(
                 brandService.getBrands()
+        );
+    }
+
+    @Operation(
+            summary = "카테고리 목록 조회",
+            description = "카테고리 목록을 조회합니다. "
+                    + "필터링이 없으면 최상위 카테고리를 조회합니다."
+                    + "parentId, depth로 필터링 할 수 있습니다."
+    )
+    @GetMapping("/categories")
+    public ApiResponse<List<CategoryGetResponse>> getCategories(
+            @RequestParam(required = false) UUID parentId,
+            @RequestParam(required = false) Integer depth
+    ) {
+        return ApiResponse.success(
+                categoryService.getCategories(parentId, depth)
+        );
+    }
+
+    @Operation(
+            summary = "카테고리 목록 트리 조회",
+            description = "카테고리 목록을 조회합니다. "
+                    + "필터링이 없으면 최상위 카테고리를 조회합니다."
+                    + "parentId, depth로 필터링 할 수 있습니다."
+    )
+    @GetMapping("/categories/tree")
+    public ApiResponse<List<CategoryTreeResponse>> getCategoryTree() {
+        return ApiResponse.success(
+                categoryService.getCategoryTree()
         );
     }
 }
