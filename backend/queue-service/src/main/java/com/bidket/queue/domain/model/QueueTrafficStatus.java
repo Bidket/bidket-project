@@ -5,12 +5,12 @@ package com.bidket.queue.domain.model;
  * 2500 이상 혼잡
  *
  */
-public enum QueueStatus {
+public enum QueueTrafficStatus {
     SMOOTH,
     CROWDED,
     FULL;
 
-    public static QueueStatus checkStatus(long count, long maxUser) {
+    public static QueueTrafficStatus checkStatus(long count, long maxUser) {
         if(count == maxUser)
             return FULL;
         if(count < maxUser / 2)

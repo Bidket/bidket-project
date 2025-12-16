@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -63,10 +65,8 @@ public class QueueScheduler {
 
                                                 log.info("경매[{}] {} 명 입장", auctionId, userIds.size());
                                                 return trafficRepository.addAllActiveUser(activeKey, userIds)
-                                                        .flatMap(added -> {
-
-                                                            return trafficRepository.saveToken(auctionId, userTokens);
-                                                        });
+                                                        .then(trafficRepository.saveToken(auctionId, userTokens))
+                                                        .then(managementRepository.setExpiration(activeKey, Instant.now().plus(1, ChronoUnit.HOURS)));
                                             });
 
                                 })

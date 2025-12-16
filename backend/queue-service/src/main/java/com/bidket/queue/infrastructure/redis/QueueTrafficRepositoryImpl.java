@@ -49,6 +49,13 @@ public class QueueTrafficRepositoryImpl implements QueueTrafficRepository {
     }
 
     @Override
+    public Mono<Boolean> deleteActiveQueue(UUID auctionId) {
+        String key = keyGenerator.activeKey(auctionId);
+        return redisOps.opsForZSet()
+                .delete(key);
+    }
+
+    @Override
     public Mono<Boolean> addWaitingUser(UUID auctionId, UUID userId) {
         String waitingKey = "queue:auction:" + auctionId + ":waiting";
         long now = System.currentTimeMillis();
@@ -77,6 +84,13 @@ public class QueueTrafficRepositoryImpl implements QueueTrafficRepository {
                 .map(ZSetOperations.TypedTuple::getValue)
                 .map(uuid -> UUID.fromString((String) uuid))
                 .collectList();
+    }
+
+    @Override
+    public Mono<Boolean> deleteWaitingQueue(UUID auctionId) {
+        String key = keyGenerator.waitingKey(auctionId);
+        return redisOps.opsForZSet()
+                .delete(key);
     }
 
     @Override
