@@ -36,7 +36,7 @@ public class QueueConfigAspect {
                         return Mono.error(e);
                     }
                 })
-                .switchIfEmpty(Mono.error(new QueueException(QueueErrorCode.CONFIG_NOT_FOUND)));
+                .switchIfEmpty(Mono.error(new QueueException(QueueErrorCode.CONFIG_NOT_FOUND,  "경매[" + auctionId + "]저장된 대기열 설정이 존재하지 않습니다.")));
     }
 
     private UUID findAuctionId(ProceedingJoinPoint joinPoint) {

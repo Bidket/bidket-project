@@ -27,7 +27,7 @@ import java.util.UUID;
 public class QueueTrafficController {
     private final QueueFacade queueFacade;
 
-    private static final String X_MEMBER_ID_HEADER = "X-User-Id";
+    private static final String X_USER_ID = "X-User-Id";
     private static final String X_ACTIVE_TOKEN_HEADER = "X-ACTIVE-TOKEN";
 
     @Operation(summary = "대기열 입장", description = "사용자가 대기열에 입장합니다.")
@@ -44,7 +44,7 @@ public class QueueTrafficController {
     })
     @PostMapping("/{auctionId}")
     public Mono<ResponseEntity<ApiResponse<QueueEnterResponse>>> enterQueue(@PathVariable UUID auctionId,
-                                                                            @RequestHeader(name = X_MEMBER_ID_HEADER) UUID userId) {
+                                                                            @RequestHeader(name = X_USER_ID) UUID userId) {
         return queueFacade.enterQueue(userId, auctionId)
                 .map(response ->
                         ResponseEntity.ok(ApiResponse.success(response))
@@ -65,7 +65,7 @@ public class QueueTrafficController {
     })
     @GetMapping("/{auctionId}/status")
     public Mono<ResponseEntity<ApiResponse<QueueAccommodatableResponse>>> isAccommodatable(@PathVariable UUID auctionId,
-                                                                                           @RequestHeader(name = X_MEMBER_ID_HEADER) UUID userId) {
+                                                                                           @RequestHeader(name = X_USER_ID) UUID userId) {
         log.info("X-USER-ID: {}", userId);
         return queueFacade.isAccommodatable(userId, auctionId)
                 .map(response -> {
@@ -94,7 +94,7 @@ public class QueueTrafficController {
     })
     @DeleteMapping("/{auctionId}")
     public Mono<ResponseEntity<Void>> cancelWaiting(@PathVariable UUID auctionId,
-                                                    @RequestHeader(name = X_MEMBER_ID_HEADER) UUID userId) {
+                                                    @RequestHeader(name = X_USER_ID) UUID userId) {
         return queueFacade.cancelWaiting(userId, auctionId)
                 .then(Mono.fromCallable(() -> ResponseEntity.noContent()
                         .location(URI.create("/temp"))
@@ -135,7 +135,7 @@ public class QueueTrafficController {
     })
     @PostMapping("/{auctionId}/heartbeat")
     public Mono<ResponseEntity<ApiResponse<QueueHeartbeatResponse>>> heartbeat(@PathVariable UUID auctionId,
-                                                                               @RequestHeader(name = X_MEMBER_ID_HEADER) UUID userId,
+                                                                               @RequestHeader(name = X_USER_ID) UUID userId,
                                                                                @RequestHeader(name = X_ACTIVE_TOKEN_HEADER) String token) {
         return queueFacade.heartbeat(userId, auctionId, token)
                 .map(response ->

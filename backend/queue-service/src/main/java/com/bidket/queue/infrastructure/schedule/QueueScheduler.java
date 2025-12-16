@@ -52,14 +52,19 @@ public class QueueScheduler {
         managementRepository.getAllActiveAuctions()
                 .parallel()
                 .runOn(Schedulers.boundedElastic())
-                .flatMap(this::processAuction)
+                .flatMap(auctionId ->
+                    clearActiveQueue(auctionId)
+                            .doOnError(e -> log.error("경매 [{}] Active Queue 정리 실패", auctionId, e))
+                            .onErrorResume(e -> Mono.empty())
+                            .then(enterProcess(auctionId))
+                )
                 .subscribe(
                         null,
                         e -> log.error("대기열 입장 스케줄러 에러", e)
                 );
     }
 
-    private Mono<Void> processAuction(UUID auctionId) {
+    private Mono<Void> enterProcess(UUID auctionId) {
         String activeKey = "queue:auction:" + auctionId + ":active";
         String waitingKey = "queue:auction:" + auctionId + ":waiting";
 
@@ -88,6 +93,7 @@ public class QueueScheduler {
                                                 log.info("경매[{}] {} 명 입장", auctionId, userIds.size());
                                                 return trafficRepository.addAllActiveUser(activeKey, userIds)
                                                         .then(trafficRepository.saveToken(auctionId, userTokens))
+                                                        // TODO 입장 시 Active Queue TTL 연장 정책 확립해야함
                                                         .then(managementRepository.setExpiration(activeKey, Instant.now().plus(1, ChronoUnit.HOURS)))
                                                         .doOnSuccess(isSuccess -> {
                                                             userIds.forEach(userId -> {
@@ -112,6 +118,18 @@ public class QueueScheduler {
                     return managementRepository.removeActiveAuction(auctionId)
                             .then(Mono.empty());
                 }))
+                .then();
+    }
+
+    private Mono<Void> clearActiveQueue(UUID auctionId) {
+        return trafficRepository.getExpiredActiveUser(auctionId)
+                .collectList()
+                .flatMap(expiredUserIds -> {
+                    if(expiredUserIds.isEmpty())
+                        return Mono.empty();
+
+                    return trafficRepository.removeActiveUsers(auctionId, expiredUserIds);
+                })
                 .then();
     }
 }
