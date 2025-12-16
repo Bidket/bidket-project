@@ -44,6 +44,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/v1/members/signup", "/v1/members/login", "/v1/members/check-email", "/v1/members/check-nickname").permitAll()
+                        .requestMatchers("/api/v1/users/**").permitAll()  // 내부 서비스 간 통신용 API (추후 서비스 간 인증 추가 고려)
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         .anyRequest().authenticated()  // 인증이 필요한 엔드포인트
                 );
