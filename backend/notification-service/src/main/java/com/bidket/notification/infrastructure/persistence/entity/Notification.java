@@ -68,7 +68,7 @@ public class Notification extends BaseEntity {
     public Notification(UUID userId, String type, String category, NotificationChannel channel,
                        String title, String message, String linkUrl, String payload, NotificationStatus status) {
         this.userId = userId;
-        this.type = type != null ? type : (category != null ? category : "SYSTEM"); // type이 없으면 category 사용, 둘 다 없으면 SYSTEM
+        this.type = type;
         this.category = category;
         this.channel = channel != null ? channel : NotificationChannel.PUSH;
         this.title = title;
