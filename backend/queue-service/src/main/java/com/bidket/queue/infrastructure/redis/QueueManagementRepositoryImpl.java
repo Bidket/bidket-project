@@ -2,6 +2,7 @@ package com.bidket.queue.infrastructure.redis;
 
 import com.bidket.queue.domain.model.QueueConfigModel;
 import com.bidket.queue.domain.repository.QueueManagementRepository;
+import com.bidket.queue.global.util.KeyGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.ReactiveRedisOperations;
@@ -18,6 +19,8 @@ import java.util.UUID;
 public class QueueManagementRepositoryImpl implements QueueManagementRepository {
     private final ReactiveRedisOperations<String, Object> redisOps;
     private final ObjectMapper objectMapper;
+    private final KeyGenerator keyGenerator;
+
 
     private static final String GLOBAL_ACTIVE_AUCTIONS_KEY = "global:active_auctions";
 
