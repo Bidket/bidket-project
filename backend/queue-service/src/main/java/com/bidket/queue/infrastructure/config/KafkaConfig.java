@@ -1,7 +1,6 @@
 package com.bidket.queue.infrastructure.config;
 
-import com.bidket.queue.domain.event.NotificationEvent;
-import com.bidket.queue.domain.event.QueueEnteredNotificationEvent;
+import com.bidket.queue.domain.event.EventTemplate;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.TopicConfig;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,7 +34,7 @@ public class KafkaConfig {
     private String nearTurnNotificationRetention;
 
     @Bean
-    public ReactiveKafkaProducerTemplate<String, NotificationEvent> reactiveKafkaProducerTemplate(
+    public ReactiveKafkaProducerTemplate<String, EventTemplate> reactiveKafkaProducerTemplate(
             KafkaProperties properties,
             SslBundles sslBundles) {
         return new ReactiveKafkaProducerTemplate<>(

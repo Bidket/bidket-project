@@ -1,6 +1,6 @@
 package com.bidket.queue.application.service;
 
-import com.bidket.queue.domain.event.NotificationEvent;
+import com.bidket.queue.domain.event.EventTemplate;
 import com.bidket.queue.domain.event.QueueNearTurnEvent;
 import com.bidket.queue.domain.exception.QueueException;
 import com.bidket.queue.domain.model.HeartbeatStatus;
@@ -39,8 +39,8 @@ public class QueueTrafficService {
     private final QueueTrafficRepository trafficRepository;
     private final QueueManagementRepository managementRepository;
     private final TokenProvider tokenProvider;
-    private final ReactiveKafkaProducerTemplate<String, NotificationEvent> kafkaTemplate;
-    private final Sinks.Many<NotificationEvent> eventSink = Sinks.many().multicast().onBackpressureBuffer();
+    private final ReactiveKafkaProducerTemplate<String, EventTemplate> kafkaTemplate;
+    private final Sinks.Many<EventTemplate> eventSink = Sinks.many().multicast().onBackpressureBuffer();
     private final ObjectMapper objectMapper;
 
     private final String EVENT_SOURCE = "queue-service";
@@ -104,7 +104,7 @@ public class QueueTrafficService {
                                         .rank(rank)
                                         .build();
 
-                                NotificationEvent event = NotificationEvent.builder()
+                                EventTemplate event = EventTemplate.builder()
                                         .eventId(UUID.randomUUID())
                                         .occurredAt(LocalDateTime.now())
                                         .userId(userId)

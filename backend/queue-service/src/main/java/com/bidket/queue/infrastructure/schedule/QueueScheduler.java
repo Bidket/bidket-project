@@ -1,6 +1,6 @@
 package com.bidket.queue.infrastructure.schedule;
 
-import com.bidket.queue.domain.event.NotificationEvent;
+import com.bidket.queue.domain.event.EventTemplate;
 import com.bidket.queue.domain.event.QueueEnteredNotificationEvent;
 import com.bidket.queue.domain.repository.QueueManagementRepository;
 import com.bidket.queue.domain.repository.QueueTrafficRepository;
@@ -32,8 +32,8 @@ public class QueueScheduler {
     private final QueueManagementRepository managementRepository;
     private final QueueTrafficRepository trafficRepository;
     private final TokenProvider tokenProvider;
-    private final ReactiveKafkaProducerTemplate<String, NotificationEvent> kafkaTemplate;
-    private final Sinks.Many<NotificationEvent> eventSink = Sinks.many().multicast().onBackpressureBuffer();
+    private final ReactiveKafkaProducerTemplate<String, EventTemplate> kafkaTemplate;
+    private final Sinks.Many<EventTemplate> eventSink = Sinks.many().multicast().onBackpressureBuffer();
     private final ObjectMapper objectMapper;
 
     private final String EVENT_SOURCE = "queue-service";
@@ -108,7 +108,7 @@ public class QueueScheduler {
                                                                         .enterTime(LocalDateTime.now())
                                                                         .build();
 
-                                                                NotificationEvent event = NotificationEvent.builder()
+                                                                EventTemplate event = EventTemplate.builder()
                                                                         .eventId(UUID.randomUUID())
                                                                         .occurredAt(LocalDateTime.now())
                                                                         .source(EVENT_SOURCE)

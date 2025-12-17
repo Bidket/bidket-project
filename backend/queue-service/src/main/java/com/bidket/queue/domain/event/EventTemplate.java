@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Builder
-public record NotificationEvent(
+public record EventTemplate(
         UUID eventId,
         LocalDateTime occurredAt,
         String source,
