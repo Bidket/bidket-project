@@ -74,10 +74,17 @@ public class KafkaOutboxEventPublisher implements OutboxEventPublisher {
         }
     }
 
+    /**
+     * aggregateType에 따라 적절한 토픽을 결정합니다.
+     *
+     * - ORDER: Order 서비스로 보내는 이벤트 (Auction 생산 → Order 소비) → order.auction
+     * - AUCTION: Auction 내부 또는 다른 서비스로 보내는 이벤트 → auction.events
+     */
     private String resolveTopic(String aggregateType) {
-        if ("AUCTION".equalsIgnoreCase(aggregateType)) {
-            return "auction.events";
-        }
-        return "auction.events";
+        return switch (aggregateType.toUpperCase()) {
+            case "ORDER", "SAGA" -> com.bidket.auction.infrastructure.kafka.config.KafkaTopics.ORDER_AUCTION;
+            case "AUCTION" -> com.bidket.auction.infrastructure.kafka.config.KafkaTopics.AUCTION_EVENTS;
+            default -> com.bidket.auction.infrastructure.kafka.config.KafkaTopics.AUCTION_EVENTS;
+        };
     }
 }

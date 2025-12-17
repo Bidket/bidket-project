@@ -1,11 +1,13 @@
 package com.bidket.auction.application.auction.scheduler;
 
+import com.bidket.auction.application.saga.AuctionEndSagaOrchestrator;
 import com.bidket.auction.domain.auction.model.Auction;
 import com.bidket.auction.domain.auction.repository.AuctionRepository;
 import com.bidket.auction.domain.auction.model.AuctionStatus;
 import com.bidket.auction.infrastructure.redis.ViewCountCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -26,6 +29,9 @@ public class AuctionScheduler {
 
     private final AuctionRepository auctionRepository;
     //private final ViewCountCacheService viewCountCacheService;
+
+    @Autowired(required = false)
+    private AuctionEndSagaOrchestrator sagaOrchestrator;
 
     @Scheduled(fixedDelay = 60000)
     @Transactional
@@ -84,11 +90,15 @@ public class AuctionScheduler {
         }
     }
 
+    /**
+     * 경매 자동 종료 Scheduler
+     * SAGA-001: 낙찰자가 있으면 경매 종료 Saga 시작, 없으면 EXPIRED 처리
+     */
     @Scheduled(fixedDelay = 30000)
     @Transactional
     public void endActiveAuctions() {
         LocalDateTime now = LocalDateTime.now();
-        
+
         List<Auction> activeAuctions = auctionRepository
                 .findActiveAuctionsEndingBefore(now);
 
@@ -101,14 +111,20 @@ public class AuctionScheduler {
         for (Auction auction : activeAuctions) {
             try {
                 boolean hasBids = auction.getStats().getTotalBidsCount() > 0;
-                auction.end(hasBids);
-                auctionRepository.save(auction);
-                
-                log.info("경매 종료: {} ({}) - 상태: {}", 
-                        auction.getId(), 
-                        auction.getAuctionTitle(), 
-                        auction.getStatus());
-                
+
+                if (hasBids && sagaOrchestrator != null) {
+                    // 낙찰자 있음 -> Saga 시작 (주문 생성 -> 낙찰 확정)
+                    UUID sagaId = sagaOrchestrator.startAuctionEndSaga(auction.getId());
+                    log.info("경매 종료 Saga 시작: auctionId={}, sagaId={}", auction.getId(), sagaId);
+
+                } else {
+                    // 낙찰자 없음 -> EXPIRED 처리
+                    auction.end(false);
+                    auctionRepository.save(auction);
+                    log.info("경매 종료: {} ({}) - 상태: EXPIRED (입찰 없음)",
+                            auction.getId(), auction.getAuctionTitle());
+                }
+
             } catch (Exception e) {
                 log.error("경매 종료 실패: {}", auction.getId(), e);
             }

@@ -48,9 +48,41 @@ public class KafkaConfig {
             .build();
     }
 
+    /**
+     * Order 서비스가 소비, Auction 서비스가 생산
+     * 예: CREATE_ORDER_REQUESTED
+     */
     @Bean
-    public NewTopic sagaCompensationTopic() {
-        return TopicBuilder.name("saga.compensation")
+    public NewTopic orderAuctionTopic() {
+        return TopicBuilder.name("order.auction")
+            .partitions(3)
+            .replicas(1)
+            .build();
+    }
+
+    /**
+     * Auction 서비스가 소비, Order 서비스가 생산
+     * 예: ORDER_CREATED, ORDER_CREATION_FAILED
+     */
+    @Bean
+    public NewTopic auctionOrderTopic() {
+        return TopicBuilder.name("auction.order")
+            .partitions(3)
+            .replicas(1)
+            .build();
+    }
+
+    @Bean
+    public NewTopic auctionOrderDlqTopic() {
+        return TopicBuilder.name("auction.order.dlq")
+            .partitions(3)
+            .replicas(1)
+            .build();
+    }
+
+    @Bean
+    public NewTopic orderAuctionDlqTopic() {
+        return TopicBuilder.name("order.auction.dlq")
             .partitions(3)
             .replicas(1)
             .build();

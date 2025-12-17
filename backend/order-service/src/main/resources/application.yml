@@ -26,7 +26,26 @@ spring:
       host: localhost
       port: 6379
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: order-service-group
+      auto-offset-reset: earliest
+    producer:
+      acks: all
+      retries: 3
+
 eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_SERVER_URL}
+
+# Order Service Kafka Topics
+# 명명 규칙: [소비_도메인].[생산_도메인]
+order:
+  kafka:
+    topics:
+      # Auction이 생산, Order가 소비
+      order-auction: order.auction
+      # Order가 생산, Auction이 소비
+      auction-order: auction.order

@@ -56,3 +56,12 @@ eureka:
     register-with-eureka: false
     fetch-registry: false
 
+# Saga Recovery 설정 (테스트용)
+bidket:
+  saga:
+    recovery:
+      enabled: false # 테스트 시 자동 복구 비활성화
+      zombie-timeout-minutes: 5 # 테스트용 짧은 타임아웃
+      outbox-max-retries: 2
+      outbox-batch-size: 50
+

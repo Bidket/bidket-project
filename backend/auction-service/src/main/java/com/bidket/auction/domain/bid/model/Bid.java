@@ -219,6 +219,14 @@ public class Bid extends BaseEntity {
         this.status = BidStatus.WON;
     }
 
+    public void revertFromWon() {
+        if (this.status != BidStatus.WON) {
+            throw new BidDomainException(BidErrorCode.BID_CONFLICT);
+        }
+        this.status = BidStatus.ACTIVE;
+        this.bidAmount = this.bidAmount.markAsHighest();
+    }
+
     public void cancel() {
         if (this.isHighest()) {
             throw new BidDomainException(BidErrorCode.CANNOT_CANCEL_HIGHEST_BID);
