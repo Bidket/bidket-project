@@ -6,6 +6,7 @@ import com.bidket.user.application.service.BlacklistRegisterService;
 import com.bidket.user.application.service.BlacklistStatusService;
 import com.bidket.user.application.service.EmailCheckService;
 import com.bidket.user.application.service.LoginService;
+import com.bidket.user.application.service.NicknameCheckService;
 import com.bidket.user.application.service.MyInfoService;
 import com.bidket.user.application.service.PermissionsService;
 import com.bidket.user.application.service.PointBalanceService;
@@ -19,6 +20,7 @@ import com.bidket.user.presentation.dto.response.BlacklistRegisterResponse;
 import com.bidket.user.presentation.dto.response.BlacklistStatusResponse;
 import com.bidket.user.presentation.dto.response.EmailCheckResponse;
 import com.bidket.user.presentation.dto.response.LoginResponse;
+import com.bidket.user.presentation.dto.response.NicknameCheckResponse;
 import com.bidket.user.presentation.dto.response.MyInfoResponse;
 import com.bidket.user.presentation.dto.response.PermissionsResponse;
 import com.bidket.user.presentation.dto.response.PointBalanceResponse;
@@ -58,6 +60,7 @@ public class MemberController {
     private final LoginService loginService;
     private final MyInfoService myInfoService;
     private final EmailCheckService emailCheckService;
+    private final NicknameCheckService nicknameCheckService;
     private final PermissionsService permissionsService;
     private final BlacklistStatusService blacklistStatusService;
     private final BlacklistRegisterService blacklistRegisterService;
@@ -94,6 +97,38 @@ public class MemberController {
             )
             @RequestParam(required = false) String email) {
         EmailCheckResponse response = emailCheckService.checkEmail(email);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
+    }
+
+    /**
+     * 닉네임 중복 체크 API
+     * @param nickname 중복 여부를 확인할 닉네임 (Query Parameter)
+     * @return 닉네임 중복 체크 응답 (nickname, available, reason)
+     */
+    @Operation(summary = "닉네임 중복 체크", description = "닉네임의 중복 여부를 확인합니다.", tags = {"01. 회원 인증"}, operationId = "auth-01-check-nickname")
+    @GetMapping("/check-nickname")
+    public ResponseEntity<NicknameCheckResponse> checkNickname(
+            @Parameter(
+                    description = "중복 여부를 확인할 닉네임",
+                    examples = {
+                            @ExampleObject(
+                                    name = "사용 가능한 닉네임",
+                                    summary = "사용 가능",
+                                    value = "새로운닉네임",
+                                    description = "등록되지 않은 닉네임으로 사용 가능"
+                            ),
+                            @ExampleObject(
+                                    name = "중복된 닉네임",
+                                    summary = "중복됨",
+                                    value = "비드켓",
+                                    description = "이미 등록된 닉네임으로 사용 불가"
+                            )
+                    }
+            )
+            @RequestParam(required = false) String nickname) {
+        NicknameCheckResponse response = nicknameCheckService.checkNickname(nickname);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(response);

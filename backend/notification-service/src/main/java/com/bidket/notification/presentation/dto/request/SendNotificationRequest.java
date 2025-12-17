@@ -28,8 +28,8 @@ public record SendNotificationRequest(
         @Schema(description = "알림 내용", example = "새로운 경매가 시작되었습니다.", requiredMode = Schema.RequiredMode.REQUIRED)
         String message,
 
-        @Schema(description = "Slack 타입일 경우 무시됨 (항상 기본 webhook URL 사용). 추후 다른 타입에서 사용 예정", example = "https://hooks.slack.com/services/xxxx/yyyy/zzzz")
-        String target, // Slack 타입일 경우 무시됨
+        @Schema(description = "알림 타입별 대상 주소: EMAIL 타입일 경우 수신자 이메일 주소 (필수), SLACK 타입일 경우 무시됨 (항상 기본 webhook URL 사용)", example = "user@example.com")
+        String target, // EMAIL 타입일 경우 이메일 주소, SLACK 타입일 경우 무시됨
 
         @Schema(description = "알림 카테고리", example = "AUCTION_START", allowableValues = {"AUCTION_START", "BID_SUCCESS", "PAYMENT_EXPIRE", "QUEUE_CALL", "PAYMENT_DONE", "SYSTEM"})
         String category, // 알림 카테고리 (AUCTION_START, BID_SUCCESS, PAYMENT_EXPIRE 등, 선택사항)
