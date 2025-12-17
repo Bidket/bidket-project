@@ -1,4 +1,6 @@
-package com.bidket.product.presentation.dto.response;
+package com.bidket.product.presentation.dto.response.product;
+
+import com.bidket.product.presentation.dto.response.shoesdetail.ProductShoesDetailCreateResponse;
 
 public record ProductWithShoesCreateResponse(
         ProductCreateResponse product,

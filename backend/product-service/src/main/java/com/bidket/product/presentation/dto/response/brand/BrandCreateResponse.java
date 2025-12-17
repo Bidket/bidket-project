@@ -1,4 +1,4 @@
-package com.bidket.product.presentation.dto.response;
+package com.bidket.product.presentation.dto.response.brand;
 
 import com.bidket.product.domain.model.BrandStatus;
 import com.bidket.product.infrastructure.persistence.entity.Brand;

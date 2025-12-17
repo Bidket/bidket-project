@@ -1,4 +1,4 @@
-package com.bidket.product.presentation.dto.response;
+package com.bidket.product.presentation.dto.response.category;
 
 import com.bidket.product.infrastructure.persistence.entity.Category;
 import java.util.UUID;

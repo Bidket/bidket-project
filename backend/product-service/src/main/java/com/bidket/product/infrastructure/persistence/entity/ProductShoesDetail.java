@@ -69,7 +69,7 @@ public class ProductShoesDetail extends BaseEntity implements ProductDetail {
         return product != null ? product.getId() : null;
     }
 
-    public static ProductShoesDetail create(
+    public static ProductShoesDetail of(
             Product product,
             String colorway,
             String mainMaterial,

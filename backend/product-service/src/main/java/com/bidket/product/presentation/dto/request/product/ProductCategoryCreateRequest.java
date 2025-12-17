@@ -1,4 +1,4 @@
-package com.bidket.product.presentation.dto.request;
+package com.bidket.product.presentation.dto.request.product;
 
 import jakarta.validation.constraints.NotNull;
 import java.util.UUID;

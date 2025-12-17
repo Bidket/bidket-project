@@ -1,4 +1,4 @@
-package com.bidket.product.presentation.dto.response;
+package com.bidket.product.presentation.dto.response.product;
 
 import com.bidket.product.domain.model.Gender;
 import com.bidket.product.domain.model.ProductStatus;
