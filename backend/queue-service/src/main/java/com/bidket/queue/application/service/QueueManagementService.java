@@ -2,6 +2,7 @@ package com.bidket.queue.application.service;
 
 import com.bidket.queue.domain.exception.QueueException;
 import com.bidket.queue.domain.model.QueueConfigModel;
+import com.bidket.queue.domain.model.QueueConfigStatus;
 import com.bidket.queue.domain.model.QueueErrorCode;
 import com.bidket.queue.domain.model.QueueMetrics;
 import com.bidket.queue.domain.repository.QueueManagementRepository;
@@ -9,6 +10,7 @@ import com.bidket.queue.domain.repository.QueueTrafficRepository;
 import com.bidket.queue.global.annotation.CheckQueueConfig;
 import com.bidket.queue.presentation.dto.request.QueueConfigUpdateRequest;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
+import com.bidket.queue.presentation.dto.response.QueueCloseResponse;
 import com.bidket.queue.presentation.dto.response.QueueConfigUpdateResponse;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
 import com.bidket.queue.presentation.dto.response.QueueMetricsResponse;
@@ -106,5 +108,30 @@ public class QueueManagementService {
                             .lastUpdatedBy(config.lastUpdatedBy())
                             .build();
                 });
+    }
+
+    @CheckQueueConfig
+    public Mono<QueueCloseResponse> closeQueue(UUID auctionId) {
+
+        return Mono.zip(
+                        trafficRepository.getActiveUserCount(auctionId).defaultIfEmpty(0L),
+                        trafficRepository.getWaitingUserCount(auctionId).defaultIfEmpty(0L)
+                )
+                .flatMap(tupleCount ->
+                        Mono.zip(
+                                        managementRepository.deleteConfig(auctionId),
+                                        trafficRepository.deleteActiveQueue(auctionId),
+                                        trafficRepository.deleteWaitingQueue(auctionId)
+                                )
+                                .thenReturn(
+                                        QueueCloseResponse.builder()
+                                                .auctionId(auctionId)
+                                                .status(QueueConfigStatus.CLOSED)
+                                                .flushedActiveUser(tupleCount.getT1())
+                                                .flushedWaitingUser(tupleCount.getT2())
+                                                .closedAt(LocalDateTime.now())
+                                                .build())
+                );
+
     }
 }

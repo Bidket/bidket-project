@@ -6,8 +6,14 @@ import com.bidket.product.common.TestFixture;
 import com.bidket.product.domain.exception.ProductException;
 import com.bidket.product.domain.model.*;
 import com.bidket.product.infrastructure.persistence.entity.*;
-import com.bidket.product.presentation.dto.request.*;
-import com.bidket.product.presentation.dto.response.*;
+import com.bidket.product.presentation.dto.request.product.ProductCategoryCreateRequest;
+import com.bidket.product.presentation.dto.request.product.ProductCreateRequest;
+import com.bidket.product.presentation.dto.request.product.ProductTypeCreateRequest;
+import com.bidket.product.presentation.dto.request.product.SkuCreateRequest;
+import com.bidket.product.presentation.dto.response.product.ProductCategoryCreateResponse;
+import com.bidket.product.presentation.dto.response.product.ProductCreateResponse;
+import com.bidket.product.presentation.dto.response.product.ProductTypeCreateResponse;
+import com.bidket.product.presentation.dto.response.product.SkuCreateResponse;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -122,7 +128,6 @@ public class ProductAdminServiceIntegrationTest {
         Size size = fixture.createSize(st);
 
         SkuCreateRequest req = new SkuCreateRequest(
-                product.getId(),
                 size.getId(),
                 "DD1391-100-KR",
                 SkuStatus.ACTIVE
@@ -145,7 +150,6 @@ public class ProductAdminServiceIntegrationTest {
         Size size = fixture.createSize(st);
 
         SkuCreateRequest req = new SkuCreateRequest(
-                product.getId(),
                 size.getId(),
                 "AM97-US10",
                 SkuStatus.ACTIVE
