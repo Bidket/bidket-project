@@ -3,6 +3,8 @@ package com.bidket.auction.application.auction.service;
 import com.bidket.auction.application.auction.dto.request.CreateAuctionRequest;
 import com.bidket.auction.application.auction.dto.request.UpdateAuctionRequest;
 import com.bidket.auction.application.auction.dto.response.AuctionResponse;
+import com.bidket.auction.application.outbox.service.OutboxService;
+import com.bidket.auction.domain.outbox.model.AuctionOutbox;
 import com.bidket.auction.domain.auction.model.Auction;
 import com.bidket.auction.domain.auction.model.AuctionCondition;
 import com.bidket.auction.domain.auction.model.AuctionStatus;
@@ -26,6 +28,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -46,6 +49,9 @@ class AuctionServiceTest {
 
     @Mock
     private ViewCountCacheService viewCountCacheService;
+
+    @Mock
+    private OutboxService outboxService;
 
     @InjectMocks
     private AuctionService auctionService;
@@ -110,8 +116,40 @@ class AuctionServiceTest {
                     LocalDateTime.now().plusDays(2)
             );
 
+            // testAuction에 ID 설정
+            Auction savedAuction = Auction.builder()
+                    .id(testAuctionId)
+                    .productSizeId(testProductSizeId)
+                    .sellerId(testSellerId)
+                    .auctionTitle("[새제품] Nike Air Jordan 1")
+                    .description("새 제품입니다")
+                    .condition(AuctionCondition.DEADSTOCK)
+                    .priceInfo(PriceInfo.builder()
+                            .startPrice(250000L)
+                            .currentPrice(250000L)
+                            .bidIncrement(10000L)
+                            .buyNowPrice(400000L)
+                            .build())
+                    .period(AuctionPeriod.builder()
+                            .startTime(LocalDateTime.now().plusHours(2))
+                            .endTime(LocalDateTime.now().plusDays(2))
+                            .originalEndTime(LocalDateTime.now().plusDays(2))
+                            .extensionCount(0)
+                            .build())
+                    .stats(AuctionStats.createDefault())
+                    .winnerInfo(WinnerInfo.empty())
+                    .status(AuctionStatus.CREATING)
+                    .build();
+
             given(auctionRepository.save(any(Auction.class)))
-                    .willReturn(testAuction);
+                    .willReturn(savedAuction);
+
+            // OutboxService 모킹
+            AuctionOutbox mockOutbox = AuctionOutbox.pending(
+                    "AUCTION", testAuctionId, "AUCTION_CREATED", "{}", UUID.randomUUID()
+            );
+            given(outboxService.saveAuctionEvent(anyString(), any(UUID.class), any(Map.class), any(UUID.class)))
+                    .willReturn(mockOutbox);
 
             // When
             AuctionResponse response = auctionService.createAuction(request);
@@ -125,6 +163,12 @@ class AuctionServiceTest {
 
             verify(auctionValidator).validateCreate(request);
             verify(auctionRepository).save(any(Auction.class));
+            verify(outboxService).saveAuctionEvent(
+                    eq("AUCTION_CREATED"),
+                    any(UUID.class),
+                    any(Map.class),
+                    any(UUID.class)
+            );
         }
 
         @Test

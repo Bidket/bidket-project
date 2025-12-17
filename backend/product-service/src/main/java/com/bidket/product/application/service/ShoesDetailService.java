@@ -6,8 +6,8 @@ import com.bidket.product.infrastructure.persistence.entity.Product;
 import com.bidket.product.infrastructure.persistence.entity.ProductShoesDetail;
 import com.bidket.product.infrastructure.persistence.repository.ProductRepository;
 import com.bidket.product.infrastructure.persistence.repository.ProductShoesDetailRepository;
-import com.bidket.product.presentation.dto.request.ProductShoesDetailCreateRequest;
-import com.bidket.product.presentation.dto.response.ProductShoesDetailCreateResponse;
+import com.bidket.product.presentation.dto.request.shoesdetail.ProductShoesDetailCreateRequest;
+import com.bidket.product.presentation.dto.response.shoesdetail.ProductShoesDetailCreateResponse;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,7 +28,7 @@ public class ShoesDetailService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND));
 
-        ProductShoesDetail productShoesDetail = ProductShoesDetail.create(
+        ProductShoesDetail productShoesDetail = ProductShoesDetail.of(
                 product,
                 req.colorway(),
                 req.mainMaterial(),
@@ -40,5 +40,10 @@ public class ShoesDetailService {
 
         ProductShoesDetail saved = productShoesDetailRepository.save(productShoesDetail);
         return ProductShoesDetailCreateResponse.from(saved);
+    }
+
+    public ProductShoesDetail getShoesDetail(Product product) {
+        return productShoesDetailRepository.findByProduct(product)
+                .orElseThrow(() -> new ProductException(ProductErrorCode.SHOES_DETAIL_NOT_FOUND));
     }
 }

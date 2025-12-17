@@ -27,8 +27,8 @@ import java.util.UUID;
 public class QueueTrafficController {
     private final QueueFacade queueFacade;
 
-    private static final String X_MEMBER_ID_HEADER = "X-Member-Id";
-    private static final String X_ACTIVE_TOKEN_HEADER = "X-ACTIVE-TOKEN";
+    private static final String X_USER_ID = "X-User-Id";
+    private static final String X_Q_ACTIVE_TOKEN = "X-Q-ACTIVE-TOKEN";
 
     @Operation(summary = "대기열 입장", description = "사용자가 대기열에 입장합니다.")
     @ApiResponses({
@@ -44,7 +44,7 @@ public class QueueTrafficController {
     })
     @PostMapping("/{auctionId}")
     public Mono<ResponseEntity<ApiResponse<QueueEnterResponse>>> enterQueue(@PathVariable UUID auctionId,
-                                                                            @RequestHeader(name = X_MEMBER_ID_HEADER) UUID userId) {
+                                                                            @RequestHeader(name = X_USER_ID) UUID userId) {
         return queueFacade.enterQueue(userId, auctionId)
                 .map(response ->
                         ResponseEntity.ok(ApiResponse.success(response))
@@ -65,15 +65,20 @@ public class QueueTrafficController {
     })
     @GetMapping("/{auctionId}/status")
     public Mono<ResponseEntity<ApiResponse<QueueAccommodatableResponse>>> isAccommodatable(@PathVariable UUID auctionId,
-                                                                                           @RequestHeader(name = X_MEMBER_ID_HEADER) UUID userId) {
+                                                                                           @RequestHeader(name = X_USER_ID) UUID userId) {
         log.info("X-USER-ID: {}", userId);
         return queueFacade.isAccommodatable(userId, auctionId)
-                .map(response ->
-                        ResponseEntity
-                                .ok()
-                                .header("X-ACTIVE_TOKEN", response.token())
-                                .body(ApiResponse.success(response))
-                );
+                .map(response -> {
+                    if (response.token() != null)
+                        return ResponseEntity.ok()
+                                .header("X-ACTIVE-TOKEN", response.token())
+                                .location(URI.create("/v1/auctions/" + auctionId))
+                                .body(ApiResponse.success(response));
+
+                    return ResponseEntity
+                            .ok()
+                            .body(ApiResponse.success(response));
+                });
     }
 
     @Operation(summary = "대기 취소", description = "사용자가 대기를 취소합니다.")
@@ -89,7 +94,7 @@ public class QueueTrafficController {
     })
     @DeleteMapping("/{auctionId}")
     public Mono<ResponseEntity<Void>> cancelWaiting(@PathVariable UUID auctionId,
-                                                    @RequestHeader(name = X_MEMBER_ID_HEADER) UUID userId) {
+                                                    @RequestHeader(name = X_USER_ID) UUID userId) {
         return queueFacade.cancelWaiting(userId, auctionId)
                 .then(Mono.fromCallable(() -> ResponseEntity.noContent()
                         .location(URI.create("/temp"))
@@ -130,8 +135,8 @@ public class QueueTrafficController {
     })
     @PostMapping("/{auctionId}/heartbeat")
     public Mono<ResponseEntity<ApiResponse<QueueHeartbeatResponse>>> heartbeat(@PathVariable UUID auctionId,
-                                                                               @RequestHeader(name = X_MEMBER_ID_HEADER) UUID userId,
-                                                                               @RequestHeader(name = X_ACTIVE_TOKEN_HEADER) String token) {
+                                                                               @RequestHeader(name = X_USER_ID) UUID userId,
+                                                                               @RequestHeader(name = X_Q_ACTIVE_TOKEN) String token) {
         return queueFacade.heartbeat(userId, auctionId, token)
                 .map(response ->
                         ResponseEntity.ok(ApiResponse.success(response))

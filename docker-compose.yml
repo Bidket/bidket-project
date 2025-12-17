@@ -104,17 +104,13 @@ services:
       - POSTGRES_PORT=${POSTGRES_PORT}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - QUEUE_DB=${QUEUE_DB}
+      - REDIS_HOST=redis
 
       # Eureka & Gateway
       - EUREKA_SERVER_URL=${EUREKA_SERVER_URL}
       - EUREKA_PORT=8761
       - GATEWAY_PORT=8000
-
-      # DB
-      - USER_DB=bidket_user
-      - QUEUE_DB=${QUEUE_DB}
-      - ORDER_DB=bidket_order
-      - NOTIFICATION_DB=bidket_notification
       - ACTIVE_TOKEN_SECRET=${ACTIVE_TOKEN_SECRET}
       - ACTIVE_TOKEN_EXPIRATION=${ACTIVE_TOKEN_EXPIRATION}
 

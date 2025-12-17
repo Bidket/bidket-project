@@ -4,8 +4,8 @@ import com.bidket.product.domain.exception.ProductErrorCode;
 import com.bidket.product.domain.exception.ProductException;
 import com.bidket.product.infrastructure.persistence.entity.Brand;
 import com.bidket.product.infrastructure.persistence.repository.BrandRepository;
-import com.bidket.product.presentation.dto.request.BrandCreateRequest;
-import com.bidket.product.presentation.dto.response.BrandCreateResponse;
+import com.bidket.product.presentation.dto.request.brand.BrandCreateRequest;
+import com.bidket.product.presentation.dto.response.brand.BrandCreateResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +23,7 @@ public class BrandService {
             throw new ProductException(ProductErrorCode.BRAND_ALREADY_EXISTS);
         }
 
-        Brand brand = Brand.create(
+        Brand brand = Brand.of(
                 req.name(),
                 req.nameKr(),
                 req.originCountry(),
