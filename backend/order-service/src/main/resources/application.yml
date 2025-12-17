@@ -49,3 +49,8 @@ order:
       order-auction: order.auction
       # Order가 생산, Auction이 소비
       auction-order: auction.order
+
+# OutBox 폴링 설정
+outbox:
+  publisher:
+    fixed-delay-ms: 5000  # 5초마다 폴링

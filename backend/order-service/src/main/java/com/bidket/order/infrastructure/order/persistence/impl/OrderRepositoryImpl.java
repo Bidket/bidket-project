@@ -1,10 +1,15 @@
 package com.bidket.order.infrastructure.order.persistence.impl;
 
 import com.bidket.order.domain.order.model.Order;
+import com.bidket.order.domain.order.model.OrderStatus;
 import com.bidket.order.domain.order.repository.OrderRepository;
 import com.bidket.order.infrastructure.order.persistence.entity.OrderEntity;
 import com.bidket.order.infrastructure.order.persistence.repository.OrderJpaRepository;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,7 +23,19 @@ public class OrderRepositoryImpl implements OrderRepository {
 
     @Override
     public Order save(Order order) {
-        OrderEntity entity = toEntity(order);
+        OrderEntity entity;
+        if (order.id() != null) {
+            // 기존 엔티티 업데이트
+            entity = orderJpaRepository.findById(order.id())
+                    .map(existing -> {
+                        existing.setStatus(order.status());
+                        existing.setUpdatedAt(order.updatedAt());
+                        return existing;
+                    })
+                    .orElseGet(() -> toEntity(order));
+        } else {
+            entity = toEntity(order);
+        }
         OrderEntity saved = orderJpaRepository.save(entity);
         return toDomain(saved);
     }
@@ -28,6 +45,20 @@ public class OrderRepositoryImpl implements OrderRepository {
         Page<OrderEntity> page = orderJpaRepository.findByUserIdOrderByCreatedAtDesc(userId,
                 pageable);
         return page.map(this::toDomain);
+    }
+
+    @Override
+    public Optional<Order> findById(UUID orderId) {
+        return orderJpaRepository.findById(orderId)
+                .map(this::toDomain);
+    }
+
+    @Override
+    public List<Order> findExpiredOrders(LocalDateTime now) {
+        return orderJpaRepository.findExpiredOrders(OrderStatus.PAYMENT, now)
+                .stream()
+                .map(this::toDomain)
+                .collect(Collectors.toList());
     }
 
     private OrderEntity toEntity(Order order) {

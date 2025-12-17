@@ -66,6 +66,8 @@ feign:
     url: ${QUEUE_SERVICE_URL:http://localhost:8400}
   product-service:
     url: ${PRODUCT_SERVICE_URL:http://localhost:8200}
+  order-service:
+    url: ${ORDER_SERVICE_URL:http://localhost:8500}
 
 # Outbox 폴링 설정
 outbox:

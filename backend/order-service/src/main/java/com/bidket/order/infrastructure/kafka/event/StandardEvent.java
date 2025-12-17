@@ -1,4 +1,4 @@
-package com.bidket.auction.infrastructure.kafka.event;
+package com.bidket.order.infrastructure.kafka.event;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -11,7 +11,7 @@ import java.util.UUID;
  * - eventId: 멱등성(Idempotency) 체크에 필수
  * - occurredAt: 이벤트 발생 시각
  * - source: 이벤트를 생산한 서비스 (예: "auction-service", "order-service")
- * - type: 이벤트 타입 (예: "CREATE_ORDER_REQUESTED", "ORDER_CREATED")
+ * - eventType: 이벤트 타입 (예: "CREATE_ORDER_REQUESTED", "ORDER_CREATED")
  * - userId: 이벤트와 연관된 사용자 ID (추적 및 권한 검증용)
  * - data: 처리에 필수적인 최소 정보만 포함 (엔티티 스냅샷 X)
  */
@@ -24,19 +24,19 @@ public record StandardEvent(
         Map<String, Object> data
 ) {
     public StandardEvent {
-        if (eventId == null) throw new IllegalArgumentException("eventId must not be null");
-        if (occurredAt == null) throw new IllegalArgumentException("occurredAt must not be null");
-        if (source == null || source.isBlank()) throw new IllegalArgumentException("source must not be blank");
-        if (eventType == null || eventType.isBlank()) throw new IllegalArgumentException("eventType must not be blank");
-        if (data == null) throw new IllegalArgumentException("data must not be null");
+        if (eventId == null) throw new IllegalArgumentException("eventId는 필수입니다");
+        if (occurredAt == null) throw new IllegalArgumentException("occurredAt는 필수입니다");
+        if (source == null || source.isBlank()) throw new IllegalArgumentException("source는 필수입니다");
+        if (eventType == null || eventType.isBlank()) throw new IllegalArgumentException("eventType은 필수입니다");
+        if (data == null) throw new IllegalArgumentException("data는 필수입니다");
     }
 
-    public static StandardEvent of(String source, String type, UUID userId, Map<String, Object> data) {
+    public static StandardEvent of(String source, String eventType, UUID userId, Map<String, Object> data) {
         return new StandardEvent(
                 UUID.randomUUID(),
                 LocalDateTime.now(),
                 source,
-                type,
+                eventType,
                 userId,
                 data
         );

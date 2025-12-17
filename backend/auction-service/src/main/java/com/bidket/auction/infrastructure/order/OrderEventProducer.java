@@ -62,7 +62,7 @@ public class OrderEventProducer {
         Map<String, Object> payload = convertToMap(event);
 
         AuctionOutbox outbox = outboxService.saveOrderEvent(
-                event.type(),
+                event.eventType(),
                 sagaId, // aggregateId로 sagaId 사용
                 payload,
                 UUID.fromString(event.data().get("correlationId").toString())
@@ -77,7 +77,7 @@ public class OrderEventProducer {
         map.put("eventId", event.eventId().toString());
         map.put("occurredAt", event.occurredAt().toString());
         map.put("source", event.source());
-        map.put("type", event.type());
+        map.put("eventType", event.eventType());
         map.put("userId", event.userId() != null ? event.userId().toString() : null);
         map.put("data", event.data());
         return map;
