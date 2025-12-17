@@ -3,10 +3,13 @@ package com.bidket.auction.application.auction.service;
 import com.bidket.auction.application.auction.dto.request.CreateAuctionRequest;
 import com.bidket.auction.application.auction.dto.request.UpdateAuctionRequest;
 import com.bidket.auction.application.auction.dto.response.AuctionResponse;
+import com.bidket.auction.application.outbox.service.OutboxService;
 import com.bidket.auction.domain.auction.model.Auction;
 import com.bidket.auction.domain.auction.model.AuctionStatus;
 import com.bidket.auction.domain.auction.repository.AuctionRepository;
 import com.bidket.auction.domain.auction.service.AuctionValidator;
+import com.bidket.auction.global.exception.AuctionDomainException;
+import com.bidket.auction.global.exception.AuctionErrorCode;
 import com.bidket.auction.infrastructure.redis.ViewCountCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -28,6 +32,7 @@ public class AuctionService {
     private final AuctionRepository auctionRepository;
     private final AuctionValidator auctionValidator;
     private final ViewCountCacheService viewCountCacheService;
+    private final OutboxService outboxService;
 
     @Transactional
     @CacheEvict(value = "auctions", allEntries = true)
@@ -39,6 +44,25 @@ public class AuctionService {
         Auction auction = request.toEntity();
         Auction savedAuction = auctionRepository.save(auction);
 
+        log.info("경매 저장 완료, Outbox 저장 시작: auctionId={}", savedAuction.getId());
+        try {
+            outboxService.saveAuctionEvent(
+                    "AUCTION_CREATED",
+                    savedAuction.getId(),
+                    Map.of(
+                            "auctionId", savedAuction.getId(),
+                            "productSizeId", savedAuction.getProductSizeId(),
+                            "sellerId", savedAuction.getSellerId(),
+                            "status", savedAuction.getStatus().name()
+                    ),
+                    UUID.randomUUID()
+            );
+            log.info("Outbox 저장 호출 완료: auctionId={}", savedAuction.getId());
+        } catch (Exception e) {
+            log.error("Outbox 저장 중 예외 발생: auctionId={}", savedAuction.getId(), e);
+            throw e;
+        }
+
         log.info("경매 생성 완료: {}", savedAuction.getId());
 
         return AuctionResponse.from(savedAuction);
@@ -49,7 +73,7 @@ public class AuctionService {
         log.info("경매 조회: {}", auctionId);
 
         Auction auction = auctionRepository.findById(auctionId)
-                .orElseThrow(() -> new IllegalArgumentException("경매를 찾을 수 없습니다: " + auctionId));
+                .orElseThrow(() -> new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
         viewCountCacheService.incrementViewCountAsync(auctionId);
 
@@ -85,7 +109,7 @@ public class AuctionService {
         auctionValidator.validateUpdate(auctionId, request);
 
         Auction auction = auctionRepository.findById(auctionId)
-                .orElseThrow(() -> new IllegalArgumentException("경매를 찾을 수 없습니다: " + auctionId));
+                .orElseThrow(() -> new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
         updateAuctionFields(auction, request);
 
@@ -104,7 +128,7 @@ public class AuctionService {
         auctionValidator.validateCancel(auctionId);
 
         Auction auction = auctionRepository.findById(auctionId)
-                .orElseThrow(() -> new IllegalArgumentException("경매를 찾을 수 없습니다: " + auctionId));
+                .orElseThrow(() -> new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
         auction.cancel();
         auctionRepository.save(auction);
@@ -118,7 +142,7 @@ public class AuctionService {
         log.info("경매 생성 확정: {}", auctionId);
 
         Auction auction = auctionRepository.findById(auctionId)
-                .orElseThrow(() -> new IllegalArgumentException("경매를 찾을 수 없습니다: " + auctionId));
+                .orElseThrow(() -> new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
         auction.confirmCreation();
         auctionRepository.save(auction);

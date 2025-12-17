@@ -29,6 +29,22 @@ spring:
       host: localhost
       port: 6379
 
+  mail:
+    host: ${EMAIL_HOST:smtp.gmail.com}
+    port: ${EMAIL_PORT:587}
+    username: ${EMAIL_USERNAME}
+    password: ${EMAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+        from-name: ${EMAIL_FROM_NAME:Bidket}
+
 eureka:
   client:
     enabled: true
@@ -39,3 +55,7 @@ eureka:
 
 jwt:
   secret: ${JWT_SECRET}
+
+slack:
+  webhook:
+    url: ${SLACK_WEBHOOK_URL}

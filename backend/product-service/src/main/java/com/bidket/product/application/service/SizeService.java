@@ -8,10 +8,10 @@ import com.bidket.product.infrastructure.persistence.entity.SizeType;
 import com.bidket.product.infrastructure.persistence.repository.ProductTypeRepository;
 import com.bidket.product.infrastructure.persistence.repository.SizeRepository;
 import com.bidket.product.infrastructure.persistence.repository.SizeTypeRepository;
-import com.bidket.product.presentation.dto.request.SizeCreateRequest;
-import com.bidket.product.presentation.dto.request.SizeTypeCreateRequest;
-import com.bidket.product.presentation.dto.response.SizeCreateResponse;
-import com.bidket.product.presentation.dto.response.SizeTypeCreateResponse;
+import com.bidket.product.presentation.dto.request.size.SizeCreateRequest;
+import com.bidket.product.presentation.dto.request.size.SizeTypeCreateRequest;
+import com.bidket.product.presentation.dto.response.size.SizeCreateResponse;
+import com.bidket.product.presentation.dto.response.size.SizeTypeCreateResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,7 +40,7 @@ public class SizeService {
             sizeTypeRepository.resetDefault(productType.getId());
         }
 
-        SizeType sizeType = SizeType.create(
+        SizeType sizeType = SizeType.of(
                 productType,
                 req.code(),
                 req.regionCode(),
@@ -57,7 +57,7 @@ public class SizeService {
         SizeType sizeType = sizeTypeRepository.findById(req.sizeTypeId())
                 .orElseThrow(() -> new ProductException(ProductErrorCode.SIZE_TYPE_NOT_FOUND));
 
-        Size size = Size.create(
+        Size size = Size.of(
                 sizeType,
                 req.code(),
                 req.displayLabel(),

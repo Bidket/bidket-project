@@ -51,13 +51,13 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     /**
      * 사용자 ID로 인앱 알림 목록 조회 (필터링 지원)
      * - onlyUnread: true인 경우 읽지 않은 알림만 조회
-     * - category: 특정 카테고리만 조회 (type 필드와 매칭)
-     * - channel: SYSTEM 채널만 조회 (인앱 알림)
+     * - category: 특정 카테고리만 조회 (category 필드와 매칭)
+     * - channel: IN_APP 채널만 조회 (인앱 알림)
      */
     @Query("SELECT n FROM Notification n WHERE n.userId = :userId " +
-           "AND n.channel = com.bidket.notification.domain.model.NotificationChannel.SYSTEM " +
+           "AND n.channel = com.bidket.notification.domain.model.NotificationChannel.IN_APP " +
            "AND (:onlyUnread IS NULL OR :onlyUnread = false OR (:onlyUnread = true AND n.readAt IS NULL)) " +
-           "AND (:category IS NULL OR n.type = :category) " +
+           "AND (:category IS NULL OR n.category = :category) " +
            "ORDER BY n.createdAt DESC")
     Page<Notification> findInAppNotificationsByUserId(
             @Param("userId") UUID userId,

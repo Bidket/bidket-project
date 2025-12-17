@@ -47,7 +47,7 @@ public class SizeType extends BaseEntity {
     @Column(nullable = false, name = "is_default")
     private Boolean isDefault;
 
-    public static SizeType create(
+    public static SizeType of(
             ProductType productType,
             String code,
             String regionCode,

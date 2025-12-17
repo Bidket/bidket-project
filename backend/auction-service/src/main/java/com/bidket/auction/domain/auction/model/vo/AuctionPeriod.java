@@ -1,5 +1,7 @@
 package com.bidket.auction.domain.auction.model.vo;
 
+import com.bidket.auction.global.exception.AuctionDomainException;
+import com.bidket.auction.global.exception.AuctionErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.AccessLevel;
@@ -43,16 +45,16 @@ public class AuctionPeriod {
 
     public void validate() {
         if (startTime == null || endTime == null) {
-            throw new IllegalArgumentException("시작시간과 종료시간은 필수입니다");
+            throw new AuctionDomainException(AuctionErrorCode.INVALID_TIME_RANGE);
         }
         if (!endTime.isAfter(startTime)) {
-            throw new IllegalArgumentException("종료시간은 시작시간보다 이후여야 합니다");
+            throw new AuctionDomainException(AuctionErrorCode.INVALID_TIME_RANGE);
         }
     }
 
     public AuctionPeriod extend() {
         if (this.extensionCount >= MAX_EXTENSIONS) {
-            throw new IllegalStateException("최대 연장 횟수를 초과했습니다");
+            throw new AuctionDomainException(AuctionErrorCode.MAX_EXTENSIONS_REACHED);
         }
         return AuctionPeriod.builder()
                 .startTime(this.startTime)
