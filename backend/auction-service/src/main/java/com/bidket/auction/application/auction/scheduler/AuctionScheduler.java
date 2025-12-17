@@ -25,7 +25,7 @@ import static java.util.stream.Collectors.toSet;
 public class AuctionScheduler {
 
     private final AuctionRepository auctionRepository;
-    private final ViewCountCacheService viewCountCacheService;
+    //private final ViewCountCacheService viewCountCacheService;
 
     @Scheduled(fixedDelay = 60000)
     @Transactional
@@ -117,27 +117,27 @@ public class AuctionScheduler {
         log.info("경매 자동 종료 완료: {} 건", activeAuctions.size());
     }
 
-    @Scheduled(fixedDelay = 300000)
-    @Transactional
-    public void syncViewCounts() {
-        log.info("조회수 캐시 동기화 시작");
+    // @Scheduled(fixedDelay = 300000)
+    // @Transactional
+    // public void syncViewCounts() {
+    //     log.info("조회수 캐시 동기화 시작");
 
-        try {
-            int syncedCount = viewCountCacheService.syncViewCountsToDatabase();
+    //     try {
+    //         int syncedCount = viewCountCacheService.syncViewCountsToDatabase();
 
-            if (syncedCount > 0) {
-                log.info("조회수 캐시 동기화 완료: {} 건", syncedCount);
-            } else {
-                log.debug("동기화할 조회수 없음");
-            }
+    //         if (syncedCount > 0) {
+    //             log.info("조회수 캐시 동기화 완료: {} 건", syncedCount);
+    //         } else {
+    //             log.debug("동기화할 조회수 없음");
+    //         }
 
-            ViewCountCacheService.CacheStats stats = viewCountCacheService.getCacheStats();
-            log.debug("현재 캐시 상태: {}", stats);
+    //         ViewCountCacheService.CacheStats stats = viewCountCacheService.getCacheStats();
+    //         log.debug("현재 캐시 상태: {}", stats);
 
-        } catch (Exception e) {
-            log.error("조회수 캐시 동기화 중 오류 발생", e);
-        }
-    }
+    //     } catch (Exception e) {
+    //         log.error("조회수 캐시 동기화 중 오류 발생", e);
+    //     }
+    // }
 }
 
 
