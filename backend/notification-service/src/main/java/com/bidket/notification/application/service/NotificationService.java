@@ -59,9 +59,17 @@ public class NotificationService {
                             "이메일 알림의 경우 수신자 이메일 주소(target)가 필수입니다.");
                 }
                 break;
+            case "IN_APP":
+                channel = NotificationChannel.SYSTEM;
+                // In-App 알림의 경우 userId가 필수
+                if (request.userId() == null) {
+                    throw new NotificationException(NotificationErrorCode.INVALID_NOTIFICATION_TYPE,
+                            "In-App 알림의 경우 대상 회원 ID(userId)가 필수입니다.");
+                }
+                break;
             default:
                 throw new NotificationException(NotificationErrorCode.INVALID_NOTIFICATION_TYPE,
-                        "지원하지 않는 알림 타입입니다. (지원 타입: SLACK, EMAIL)");
+                        "지원하지 않는 알림 타입입니다. (지원 타입: SLACK, EMAIL, IN_APP)");
         }
 
         // payload를 JSON 문자열로 변환
@@ -113,6 +121,10 @@ public class NotificationService {
                         notification.getMessage(),
                         notification.getLinkUrl()
                 );
+            } else if (notificationType.equals("IN_APP")) {
+                // In-App 알림은 외부 발송이 필요 없으므로 바로 성공 처리
+                // 데이터베이스에 저장된 알림을 사용자가 조회할 수 있도록 함
+                success = true;
             }
 
             if (success) {

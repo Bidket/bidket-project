@@ -27,7 +27,7 @@ public class NotificationController {
 
     /**
      * 알림 단건 발송 API
-     * 특정 사용자에게 Slack 알림을 바로 보내는 API
+     * 특정 사용자에게 알림을 바로 보내는 API (SLACK, EMAIL, IN_APP 지원)
      * 관리자·내부 시스템에서 직접 발송하거나 Kafka 이벤트 처리 후 내부 호출로도 사용
      *
      * @param request 알림 발송 요청
@@ -35,7 +35,7 @@ public class NotificationController {
      */
     @Operation(
             summary = "알림 단건 발송",
-            description = "Slack 알림을 바로 보내는 API. ROLE_ADMIN 권한 필요.",
+            description = "알림을 바로 보내는 API (SLACK, EMAIL, IN_APP 지원). ROLE_ADMIN 권한 필요.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
