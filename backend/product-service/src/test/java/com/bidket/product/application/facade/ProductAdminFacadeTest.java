@@ -11,8 +11,12 @@ import com.bidket.product.domain.exception.ProductException;
 import com.bidket.product.domain.model.Gender;
 import com.bidket.product.domain.model.ProductStatus;
 import com.bidket.product.domain.model.Silhouette;
-import com.bidket.product.presentation.dto.request.*;
-import com.bidket.product.presentation.dto.response.*;
+import com.bidket.product.presentation.dto.request.product.ProductCreateRequest;
+import com.bidket.product.presentation.dto.request.product.ProductWithShoesCreateRequest;
+import com.bidket.product.presentation.dto.request.shoesdetail.ProductShoesDetailCreateRequest;
+import com.bidket.product.presentation.dto.response.product.ProductCreateResponse;
+import com.bidket.product.presentation.dto.response.product.ProductWithShoesCreateResponse;
+import com.bidket.product.presentation.dto.response.shoesdetail.ProductShoesDetailCreateResponse;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -60,7 +64,6 @@ class ProductAdminFacadeTest {
         // 2. shoesDetail req 생성
         ProductShoesDetailCreateRequest shoesReq =
                 new ProductShoesDetailCreateRequest(
-                        null, // facade에서 생성
                         "Triple White",
                         "Leather",
                         Silhouette.LOW,
@@ -144,7 +147,6 @@ class ProductAdminFacadeTest {
 
         ProductShoesDetailCreateRequest shoesReq =
                 new ProductShoesDetailCreateRequest(
-                        null,
                         "Triple White",
                         "Leather",
                         Silhouette.LOW,

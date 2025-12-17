@@ -1,13 +1,10 @@
 package com.bidket.queue.presentation.dto.request;
 
-import com.bidket.queue.domain.model.QueueConfigModel;
-import com.bidket.queue.domain.model.QueueConfigStatus;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Builder

@@ -48,7 +48,7 @@ public class Brand extends BaseEntity {
     @Column(nullable = false, length = 20)
     private BrandStatus status;
 
-    public static Brand create(String name, String nameKr, String originCountry, String websiteUrl) {
+    public static Brand of(String name, String nameKr, String originCountry, String websiteUrl) {
         Brand brand = new Brand();
         brand.name = name;
         brand.nameKr = nameKr;

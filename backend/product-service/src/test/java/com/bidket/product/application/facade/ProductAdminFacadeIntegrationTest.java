@@ -16,10 +16,10 @@ import com.bidket.product.infrastructure.persistence.repository.BrandRepository;
 import com.bidket.product.infrastructure.persistence.repository.ProductRepository;
 import com.bidket.product.infrastructure.persistence.repository.ProductShoesDetailRepository;
 import com.bidket.product.infrastructure.persistence.repository.ProductTypeRepository;
-import com.bidket.product.presentation.dto.request.ProductCreateRequest;
-import com.bidket.product.presentation.dto.request.ProductShoesDetailCreateRequest;
-import com.bidket.product.presentation.dto.request.ProductWithShoesCreateRequest;
-import com.bidket.product.presentation.dto.response.ProductWithShoesCreateResponse;
+import com.bidket.product.presentation.dto.request.product.ProductCreateRequest;
+import com.bidket.product.presentation.dto.request.shoesdetail.ProductShoesDetailCreateRequest;
+import com.bidket.product.presentation.dto.request.product.ProductWithShoesCreateRequest;
+import com.bidket.product.presentation.dto.response.product.ProductWithShoesCreateResponse;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -60,7 +60,7 @@ public class ProductAdminFacadeIntegrationTest {
     @BeforeEach
     void setup() {
         // 1. 상품타입 생성
-        ProductType pt = ProductType.create(
+        ProductType pt = ProductType.of(
                 "SNEAKERS",
                 "스니커즈",
                 "신발 유형"
@@ -69,7 +69,7 @@ public class ProductAdminFacadeIntegrationTest {
         savedProductTypeId = pt.getId();
 
         // 2. 브랜드 생성
-        Brand brand = Brand.create(
+        Brand brand = Brand.of(
                 "Nike",
                 "나이키",
                 "US",
@@ -100,7 +100,6 @@ public class ProductAdminFacadeIntegrationTest {
         // 2. shoesDetail req 생성
         ProductShoesDetailCreateRequest shoesReq =
                 new ProductShoesDetailCreateRequest(
-                        null,
                         "Triple White",
                         "Leather",
                         Silhouette.LOW,
@@ -145,7 +144,6 @@ public class ProductAdminFacadeIntegrationTest {
 
         ProductShoesDetailCreateRequest req =
                 new ProductShoesDetailCreateRequest(
-                        invalidProductId,
                         "Triple White",
                         "Leather",
                         Silhouette.LOW,
