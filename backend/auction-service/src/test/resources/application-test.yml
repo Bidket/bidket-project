@@ -45,10 +45,13 @@ spring:
     consumer:
       group-id: auction-service-test-group
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       auto-offset-reset: earliest
       properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.deserializer.value.delegate.type: java.util.HashMap
         spring.json.trusted.packages: "*"
+        spring.json.value.default.type: java.util.HashMap
 
 eureka:
   client:
@@ -64,4 +67,12 @@ bidket:
       zombie-timeout-minutes: 5 # 테스트용 짧은 타임아웃
       outbox-max-retries: 2
       outbox-batch-size: 50
+
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+
+# Outbox 폴링 설정
+outbox:
+  publisher:
+    fixed-delay-ms: 5000 # 5초마다 폴링 (기본값: 1000ms)
 

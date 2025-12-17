@@ -37,7 +37,7 @@ public class ProductType extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    public static ProductType create(String code, String name, String description) {
+    public static ProductType of(String code, String name, String description) {
         ProductType type = new ProductType();
         type.code = code;
         type.name = name;
