@@ -16,14 +16,14 @@ import com.bidket.product.infrastructure.persistence.repository.ProductRepositor
 import com.bidket.product.infrastructure.persistence.repository.ProductSkuRepository;
 import com.bidket.product.infrastructure.persistence.repository.ProductTypeRepository;
 import com.bidket.product.infrastructure.persistence.repository.SizeRepository;
-import com.bidket.product.presentation.dto.request.ProductCategoryCreateRequest;
-import com.bidket.product.presentation.dto.request.ProductCreateRequest;
-import com.bidket.product.presentation.dto.request.ProductTypeCreateRequest;
-import com.bidket.product.presentation.dto.request.SkuCreateRequest;
-import com.bidket.product.presentation.dto.response.ProductCategoryCreateResponse;
-import com.bidket.product.presentation.dto.response.ProductCreateResponse;
-import com.bidket.product.presentation.dto.response.ProductTypeCreateResponse;
-import com.bidket.product.presentation.dto.response.SkuCreateResponse;
+import com.bidket.product.presentation.dto.request.product.ProductCategoryCreateRequest;
+import com.bidket.product.presentation.dto.request.product.ProductCreateRequest;
+import com.bidket.product.presentation.dto.request.product.ProductTypeCreateRequest;
+import com.bidket.product.presentation.dto.request.product.SkuCreateRequest;
+import com.bidket.product.presentation.dto.response.product.ProductCategoryCreateResponse;
+import com.bidket.product.presentation.dto.response.product.ProductCreateResponse;
+import com.bidket.product.presentation.dto.response.product.ProductTypeCreateResponse;
+import com.bidket.product.presentation.dto.response.product.SkuCreateResponse;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -44,7 +44,7 @@ public class ProductAdminService {
 
     public ProductTypeCreateResponse createProductType(ProductTypeCreateRequest req) {
 
-        ProductType productType = ProductType.create(
+        ProductType productType = ProductType.of(
                 req.code(),
                 req.name(),
                 req.description()
@@ -62,7 +62,7 @@ public class ProductAdminService {
         Brand brand = brandRepository.findById(req.brandId())
                 .orElseThrow(() -> new ProductException(ProductErrorCode.BRAND_NOT_FOUND));
 
-        Product product = Product.create(
+        Product product = Product.of(
                 productType,
                 brand,
                 req.name(),
@@ -117,7 +117,7 @@ public class ProductAdminService {
             throw new ProductException(ProductErrorCode.SKU_CODE_ALREADY_EXISTS);
         }
 
-        ProductSku sku = ProductSku.create(
+        ProductSku sku = ProductSku.of(
                 product,
                 size,
                 req.skuCode(),

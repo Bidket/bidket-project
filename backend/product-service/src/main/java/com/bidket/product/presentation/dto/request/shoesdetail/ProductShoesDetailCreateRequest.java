@@ -1,4 +1,4 @@
-package com.bidket.product.presentation.dto.request;
+package com.bidket.product.presentation.dto.request.shoesdetail;
 
 import com.bidket.product.domain.model.Silhouette;
 import jakarta.validation.constraints.DecimalMin;
@@ -7,12 +7,11 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
-import java.util.UUID;
 
 public record ProductShoesDetailCreateRequest(
 
-        @NotNull(message = "상품 ID는 필수입니다.")
-        UUID productId,
+        //@NotNull(message = "상품 ID는 필수입니다.")
+        //UUID productId,
 
         @NotBlank(message = "컬러웨이는 필수입니다.")
         @Size(max = 50, message = "컬러웨이는 최대 50자입니다.")

@@ -55,7 +55,7 @@ public class ProductSku extends BaseEntity {
     @Column(nullable = false, length = 20)
     private SkuStatus status;
 
-    public static ProductSku create(
+    public static ProductSku of(
             Product product,
             Size size,
             String skuCode,
