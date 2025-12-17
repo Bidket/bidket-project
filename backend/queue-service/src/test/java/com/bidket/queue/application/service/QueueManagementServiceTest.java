@@ -1,22 +1,18 @@
-package com.bidket.queue;
+package com.bidket.queue.application.service;
 
-import com.bidket.queue.application.facade.QueueFacade;
-import com.bidket.queue.application.service.QueueManagementService;
-import com.bidket.queue.application.service.QueueTrafficService;
 import com.bidket.queue.domain.exception.QueueException;
 import com.bidket.queue.domain.model.QueueConfigModel;
 import com.bidket.queue.domain.model.QueueErrorCode;
 import com.bidket.queue.domain.repository.QueueManagementRepository;
 import com.bidket.queue.domain.repository.QueueTrafficRepository;
+import com.bidket.queue.global.util.jwt.TokenProvider;
 import com.bidket.queue.presentation.dto.request.QueueCreateRequest;
 import com.bidket.queue.presentation.dto.response.QueueCreateResponse;
-import com.bidket.queue.presentation.dto.response.QueueEnterResponse;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -27,11 +23,8 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
-public class UnitTest {
+public class QueueManagementServiceTest {
 
-    @InjectMocks
-    private QueueTrafficService trafficService;
     @InjectMocks
     private QueueManagementService managementService;
 
@@ -39,6 +32,17 @@ public class UnitTest {
     private QueueManagementRepository managementRepository;
     @Mock
     private QueueTrafficRepository trafficRepository;
+    @Mock
+    private TokenProvider tokenProvider;
+
+    private UUID userId;
+    private UUID auctionId;
+
+    @BeforeEach
+    void setup() {
+        userId = UUID.randomUUID();
+        auctionId = UUID.randomUUID();
+    }
 
     @Test
     @DisplayName("성공: config queue 생성")
@@ -62,11 +66,12 @@ public class UnitTest {
         // when
         Mono<QueueCreateResponse> response = managementService.createConfigQueue(request);
 
+        // then
         StepVerifier.create(response)
-                .expectNextMatches(result ->
-                        result.auctionId().equals(request.auctionId()) &&
-                                result.maxActive() == 100L
-                )
+                .assertNext(result -> {
+                    assert result.auctionId().equals(request.auctionId());
+                    assert result.maxActive() == 100L;
+                })
                 .verifyComplete();
     }
 
@@ -120,38 +125,5 @@ public class UnitTest {
                                 ((QueueException) throwable).getErrorCode() == QueueErrorCode.REDIS_EXPIRE_SET_FAILED
                 )
                 .verify();
-    }
-
-    @Test
-    @DisplayName("성공: 대기열 입장 성공")
-    void enterQueue_Enter_Success() {
-        // given
-        UUID userId = UUID.randomUUID();
-        UUID auctionId = UUID.randomUUID();
-        String configKey = "configKey";
-        QueueConfigModel queueConfig = QueueConfigModel.builder()
-                .auctionId(auctionId)
-                .openAt(Instant.now())
-                .closeAt(Instant.now().plus(1, ChronoUnit.DAYS))
-                .permitsPerSec(5)
-                .maxActive(1000L)
-                .build();
-
-        when(trafficRepository.addWaitingUser(auctionId, userId))
-                .thenReturn(Mono.just(true));
-        when(trafficRepository.getRank(auctionId, userId))
-                .thenReturn(Mono.just(1L));
-
-        // when
-        Mono<QueueEnterResponse> response = trafficService.enterQueue(userId, auctionId);
-
-        // then
-        StepVerifier.create(response)
-                .expectNextMatches(result ->
-                        result.token() == null &&
-                                result.rank() == 1L &&
-                                result.userId() == userId
-                )
-                .verifyComplete();
     }
 }
