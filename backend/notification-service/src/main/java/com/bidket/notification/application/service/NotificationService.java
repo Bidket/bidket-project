@@ -4,6 +4,7 @@ import com.bidket.notification.domain.exception.NotificationErrorCode;
 import com.bidket.notification.domain.exception.NotificationException;
 import com.bidket.notification.domain.model.NotificationChannel;
 import com.bidket.notification.domain.model.NotificationStatus;
+import com.bidket.notification.infrastructure.external.EmailSender;
 import com.bidket.notification.infrastructure.external.SlackSender;
 import com.bidket.notification.infrastructure.persistence.entity.Notification;
 import com.bidket.notification.infrastructure.persistence.repository.NotificationRepository;
@@ -26,6 +27,7 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final SlackSender slackSender;
+    private final EmailSender emailSender;
     private final ObjectMapper objectMapper;
 
     /**
@@ -35,10 +37,31 @@ public class NotificationService {
      */
     @Transactional
     public SendNotificationResponse sendNotification(SendNotificationRequest request) {
-        // Slack 타입만 지원
-        if (request.type() == null || !request.type().equalsIgnoreCase("SLACK")) {
+        // 알림 타입 검증
+        if (request.type() == null) {
             throw new NotificationException(NotificationErrorCode.INVALID_NOTIFICATION_TYPE,
-                    "현재 Slack 알림만 지원합니다.");
+                    "알림 타입은 필수입니다.");
+        }
+
+        String notificationType = request.type().toUpperCase();
+        NotificationChannel channel;
+
+        // 알림 타입에 따른 채널 설정
+        switch (notificationType) {
+            case "SLACK":
+                channel = NotificationChannel.SLACK;
+                break;
+            case "EMAIL":
+                channel = NotificationChannel.EMAIL;
+                // 이메일 타입일 경우 target 필드에 이메일 주소가 필요
+                if (request.target() == null || request.target().trim().isEmpty()) {
+                    throw new NotificationException(NotificationErrorCode.INVALID_NOTIFICATION_TYPE,
+                            "이메일 알림의 경우 수신자 이메일 주소(target)가 필수입니다.");
+                }
+                break;
+            default:
+                throw new NotificationException(NotificationErrorCode.INVALID_NOTIFICATION_TYPE,
+                        "지원하지 않는 알림 타입입니다. (지원 타입: SLACK, EMAIL)");
         }
 
         // payload를 JSON 문자열로 변환
@@ -56,7 +79,7 @@ public class NotificationService {
                 .userId(request.userId())
                 .type(request.type())
                 .category(request.category())
-                .channel(NotificationChannel.SLACK)
+                .channel(channel)
                 .title(request.title())
                 .message(request.message())
                 .linkUrl(request.linkUrl())
@@ -67,17 +90,30 @@ public class NotificationService {
         // 알림 저장
         notification = notificationRepository.save(notification);
 
-        // Slack 발송 처리
+        // 알림 타입에 따른 발송 처리
         NotificationStatus finalStatus;
         String resultMessage;
         
         try {
-            // Slack 알림은 항상 기본 webhook URL 사용 (target 필드 무시)
-            boolean success = slackSender.sendMessage(
-                    notification.getTitle(),
-                    notification.getMessage(),
-                    notification.getLinkUrl()
-            );
+            boolean success = false;
+
+            if (notificationType.equals("SLACK")) {
+                // Slack 발송 처리
+                success = slackSender.sendMessage(
+                        notification.getTitle(),
+                        notification.getMessage(),
+                        notification.getLinkUrl()
+                );
+            } else if (notificationType.equals("EMAIL")) {
+                // 이메일 발송 처리 (HTML 형식)
+                success = emailSender.sendHtmlEmail(
+                        request.target(), // 수신자 이메일 주소
+                        notification.getTitle(),
+                        notification.getTitle(),
+                        notification.getMessage(),
+                        notification.getLinkUrl()
+                );
+            }
 
             if (success) {
                 notification.markAsSent();
