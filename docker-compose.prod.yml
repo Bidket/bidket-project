@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  eureka-server:
+    image: bidket/eureka-server:latest
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    environment:
+      - TZ=Asia/Seoul
+      - SPRING_PROFILES_ACTIVE=prod
+    restart: unless-stopped
+    networks:
+      - bidket-net
+
+networks:
+  bidket-net:
+    driver: bridge
