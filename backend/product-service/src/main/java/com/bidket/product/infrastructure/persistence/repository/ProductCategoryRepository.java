@@ -1,6 +1,8 @@
 package com.bidket.product.infrastructure.persistence.repository;
 
+import com.bidket.product.infrastructure.persistence.entity.Product;
 import com.bidket.product.infrastructure.persistence.entity.ProductCategory;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -11,4 +13,6 @@ public interface ProductCategoryRepository extends JpaRepository<ProductCategory
     @Modifying
     @Query("UPDATE ProductCategory pc SET pc.isPrimary = false WHERE pc.product.id = :productId")
     void resetPrimary(UUID productId);
+
+    List<ProductCategory> findByProduct(Product product);
 }

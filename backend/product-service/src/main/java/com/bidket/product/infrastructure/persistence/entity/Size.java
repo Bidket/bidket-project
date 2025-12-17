@@ -44,7 +44,7 @@ public class Size extends BaseEntity {
     @Column(nullable = false, name = "sort_id")
     private Long sortId;
 
-    public static Size create(
+    public static Size of(
             SizeType sizeType,
             String code,
             String displayLabel,

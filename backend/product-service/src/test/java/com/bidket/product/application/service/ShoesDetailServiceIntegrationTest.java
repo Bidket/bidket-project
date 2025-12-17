@@ -7,8 +7,8 @@ import com.bidket.product.common.TestFixture;
 import com.bidket.product.domain.exception.ProductException;
 import com.bidket.product.domain.model.Silhouette;
 import com.bidket.product.infrastructure.persistence.entity.*;
-import com.bidket.product.presentation.dto.request.ProductShoesDetailCreateRequest;
-import com.bidket.product.presentation.dto.response.ProductShoesDetailCreateResponse;
+import com.bidket.product.presentation.dto.request.shoesdetail.ProductShoesDetailCreateRequest;
+import com.bidket.product.presentation.dto.response.shoesdetail.ProductShoesDetailCreateResponse;
 import java.math.BigDecimal;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,7 +44,6 @@ public class ShoesDetailServiceIntegrationTest {
 
         ProductShoesDetailCreateRequest req =
                 new ProductShoesDetailCreateRequest(
-                        product.getId(),
                         "Black",
                         "Leather",
                         Silhouette.HIGH,
@@ -64,7 +63,6 @@ public class ShoesDetailServiceIntegrationTest {
 
         ProductShoesDetailCreateRequest req =
                 new ProductShoesDetailCreateRequest(
-                        UUID.randomUUID(),
                         "Black",
                         "Leather",
                         Silhouette.HIGH,
