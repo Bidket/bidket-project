@@ -147,9 +147,10 @@ class PaymentTimeoutSagaOrchestratorTest {
 
         // then
         assertThat(sagaId).isNotNull();
-        verify(auctionRepository).findById(auctionId);
+        verify(auctionRepository, atLeastOnce()).findById(auctionId);
         verify(sagaRepository).findByOrderId(orderId);
-        verify(bidRepository).findById(winningBidId);
+        verify(bidRepository, atLeastOnce()).findById(winningBidId);
+        // 각 step마다 save 호출: 1(초기 생성) + 2(start) + 3~7(각 step별 proceedToNextStep 또는 complete)
         verify(sagaRepository, atLeast(2)).save(any(PaymentTimeoutSagaContext.class));
         verify(auctionRepository, atLeastOnce()).save(any(Auction.class));
         verify(bidRepository, atLeastOnce()).save(any(Bid.class));

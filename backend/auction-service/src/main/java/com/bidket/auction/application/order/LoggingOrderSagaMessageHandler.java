@@ -1,10 +1,10 @@
 package com.bidket.auction.application.order;
 
-import com.bidket.auction.infrastructure.kafka.event.OrderCreatedEvent;
-import com.bidket.auction.infrastructure.kafka.event.OrderCreationFailedEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Component;
+
+import java.util.Map;
 
 /**
  * Order Service 이벤트를 로깅만 하는 기본 핸들러
@@ -18,13 +18,8 @@ import org.springframework.stereotype.Component;
 public class LoggingOrderSagaMessageHandler implements OrderSagaMessageHandler {
 
     @Override
-    public void handleOrderCreated(OrderCreatedEvent event) {
-        log.info("[LoggingOrderSagaMessageHandler] ORDER_CREATED 수신: sagaId={}, orderId={}, auctionId={}, userId={}, amount={}",
-                event.sagaId(),
-                event.orderId(),
-                event.auctionId(),
-                event.userId(),
-                event.amount());
+    public void handleOrderCreated(Map<String, Object> payload) {
+        log.info("[LoggingOrderSagaMessageHandler] ORDER_CREATED 수신: payload={}", payload);
 
         // TODO: SAGA-001 구현 시, 실제 Saga 로직으로 교체
         // 1. Saga 상태를 ORDER_CREATED로 업데이트
@@ -33,14 +28,8 @@ public class LoggingOrderSagaMessageHandler implements OrderSagaMessageHandler {
     }
 
     @Override
-    public void handleOrderCreationFailed(OrderCreationFailedEvent event) {
-        log.warn("[LoggingOrderSagaMessageHandler] ORDER_CREATION_FAILED 수신: sagaId={}, auctionId={}, userId={}, reason={}, code={}, retryable={}",
-                event.sagaId(),
-                event.auctionId(),
-                event.userId(),
-                event.failureReason(),
-                event.failureCode(),
-                event.retryable());
+    public void handleOrderCreationFailed(Map<String, Object> payload) {
+        log.warn("[LoggingOrderSagaMessageHandler] ORDER_CREATION_FAILED 수신: payload={}", payload);
 
         // TODO: SAGA-001 구현 시, 실제 보상 트랜잭션 로직으로 교체
         // 1. Saga 상태를 FAILED로 업데이트

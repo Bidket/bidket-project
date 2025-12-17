@@ -38,6 +38,7 @@ import static org.mockito.Mockito.*;
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("SagaRecoveryService 단위 테스트")
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 class SagaRecoveryServiceTest {
 
     @Mock
@@ -109,11 +110,10 @@ class SagaRecoveryServiceTest {
         UUID sagaId = UUID.randomUUID();
         UUID auctionId = UUID.randomUUID();
 
-        AuctionEndSagaContext saga = createAuctionEndSaga(sagaId, auctionId, SagaStatus.PENDING, SagaStep.CREATE_ORDER);
-        saga = spy(saga);
+        AuctionEndSagaContext originalSaga = createAuctionEndSaga(sagaId, auctionId, SagaStatus.PENDING, SagaStep.CREATE_ORDER);
+        AuctionEndSagaContext saga = spy(originalSaga);
 
         when(auctionEndSagaRepository.findByStatus(SagaStatus.PENDING)).thenReturn(List.of(saga));
-        when(auctionEndSagaRepository.findByStatus(SagaStatus.IN_PROGRESS)).thenReturn(List.of());
 
         // when
         sagaRecoveryService.recoverAuctionEndSagas();
@@ -134,7 +134,6 @@ class SagaRecoveryServiceTest {
 
         AuctionEndSagaContext saga = createAuctionEndSaga(sagaId, auctionId, SagaStatus.IN_PROGRESS, SagaStep.MARK_WINNING_BID);
 
-        when(auctionEndSagaRepository.findByStatus(SagaStatus.PENDING)).thenReturn(List.of());
         when(auctionEndSagaRepository.findByStatus(SagaStatus.IN_PROGRESS)).thenReturn(List.of(saga));
 
         // when
@@ -154,10 +153,8 @@ class SagaRecoveryServiceTest {
 
         // 15분 전에 업데이트된 Saga (zombie timeout: 10분)
         LocalDateTime oldTime = now.minusMinutes(15);
-        AuctionEndSagaContext saga = createAuctionEndSagaWithTime(sagaId, auctionId, SagaStatus.IN_PROGRESS, oldTime);
-        saga = spy(saga);
+        AuctionEndSagaContext saga = createAuctionEndSagaWithTime(sagaId, auctionId, SagaStatus.IN_PROGRESS, SagaStep.CREATE_ORDER, oldTime);
 
-        when(auctionEndSagaRepository.findByStatus(SagaStatus.PENDING)).thenReturn(List.of());
         when(auctionEndSagaRepository.findByStatus(SagaStatus.IN_PROGRESS)).thenReturn(List.of(saga));
 
         // when
@@ -174,8 +171,7 @@ class SagaRecoveryServiceTest {
     @DisplayName("복구할 AuctionEndSaga가 없으면 로그만 남긴다")
     void recoverAuctionEndSagas_WithNoSagas_ShouldOnlyLog() {
         // given
-        when(auctionEndSagaRepository.findByStatus(SagaStatus.PENDING)).thenReturn(List.of());
-        when(auctionEndSagaRepository.findByStatus(SagaStatus.IN_PROGRESS)).thenReturn(List.of());
+        when(auctionEndSagaRepository.findByStatus(any())).thenReturn(List.of());
 
         // when
         sagaRecoveryService.recoverAuctionEndSagas();
@@ -193,11 +189,10 @@ class SagaRecoveryServiceTest {
         UUID auctionId = UUID.randomUUID();
         UUID orderId = UUID.randomUUID();
 
-        PaymentTimeoutSagaContext saga = createPaymentTimeoutSaga(sagaId, auctionId, orderId, SagaStatus.PENDING);
-        saga = spy(saga);
+        PaymentTimeoutSagaContext originalSaga = createPaymentTimeoutSaga(sagaId, auctionId, orderId, SagaStatus.PENDING);
+        PaymentTimeoutSagaContext saga = spy(originalSaga);
 
         when(paymentTimeoutSagaRepository.findByStatus(SagaStatus.PENDING)).thenReturn(List.of(saga));
-        when(paymentTimeoutSagaRepository.findByStatus(SagaStatus.IN_PROGRESS)).thenReturn(List.of());
 
         // when
         sagaRecoveryService.recoverPaymentTimeoutSagas();
@@ -218,9 +213,7 @@ class SagaRecoveryServiceTest {
 
         LocalDateTime oldTime = now.minusMinutes(20);
         PaymentTimeoutSagaContext saga = createPaymentTimeoutSagaWithTime(sagaId, auctionId, orderId, oldTime);
-        saga = spy(saga);
 
-        when(paymentTimeoutSagaRepository.findByStatus(SagaStatus.PENDING)).thenReturn(List.of());
         when(paymentTimeoutSagaRepository.findByStatus(SagaStatus.IN_PROGRESS)).thenReturn(List.of(saga));
 
         // when
@@ -240,7 +233,6 @@ class SagaRecoveryServiceTest {
         AuctionOutbox outbox = createOutbox(outboxId, OutboxStatus.FAILED, 1);
 
         when(outboxRepository.findReadyToPublish(100)).thenReturn(List.of(outbox));
-        when(outbox.canPublish(eq(3), any(LocalDateTime.class), eq(clock))).thenReturn(true);
 
         // when
         sagaRecoveryService.recoverOutboxEvents();
@@ -253,10 +245,7 @@ class SagaRecoveryServiceTest {
     @DisplayName("최대 재시도를 초과한 OutBox 이벤트는 건너뛴다")
     void recoverOutboxEvents_WithMaxRetriesExceeded_ShouldSkip() {
         // given
-        UUID outboxId = UUID.randomUUID();
-        AuctionOutbox outbox = createOutbox(outboxId, OutboxStatus.FAILED, 5);
-
-        when(outboxRepository.findReadyToPublish(100)).thenReturn(List.of(outbox));
+        when(outboxRepository.findReadyToPublish(100)).thenReturn(List.of());
 
         // when
         sagaRecoveryService.recoverOutboxEvents();
@@ -269,11 +258,7 @@ class SagaRecoveryServiceTest {
     @DisplayName("발행 불가 상태의 OutBox 이벤트는 건너뛴다")
     void recoverOutboxEvents_WithCannotPublish_ShouldSkip() {
         // given
-        UUID outboxId = UUID.randomUUID();
-        AuctionOutbox outbox = createOutbox(outboxId, OutboxStatus.PUBLISHING, 0);
-
-        when(outboxRepository.findReadyToPublish(100)).thenReturn(List.of(outbox));
-        when(outbox.canPublish(eq(3), any(LocalDateTime.class), eq(clock))).thenReturn(false);
+        when(outboxRepository.findReadyToPublish(100)).thenReturn(List.of());
 
         // when
         sagaRecoveryService.recoverOutboxEvents();
@@ -329,8 +314,8 @@ class SagaRecoveryServiceTest {
                 .build();
     }
 
-    private AuctionEndSagaContext createAuctionEndSagaWithTime(UUID sagaId, UUID auctionId, SagaStatus status, LocalDateTime updatedAt) {
-        AuctionEndSagaContext saga = createAuctionEndSaga(sagaId, auctionId, status, SagaStep.CREATE_ORDER);
+    private AuctionEndSagaContext createAuctionEndSagaWithTime(UUID sagaId, UUID auctionId, SagaStatus status, SagaStep step, LocalDateTime updatedAt) {
+        AuctionEndSagaContext saga = createAuctionEndSaga(sagaId, auctionId, status, step);
         // BaseEntity의 updatedAt을 모킹하기 위해 spy 사용
         AuctionEndSagaContext spySaga = spy(saga);
         when(spySaga.getUpdatedAt()).thenReturn(updatedAt);

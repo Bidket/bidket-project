@@ -39,6 +39,9 @@ class BidServiceTest {
     @Mock
     private AuctionRepository auctionRepository;
 
+    @Mock
+    private com.bidket.auction.infrastructure.notification.NotificationEventProducer notificationEventProducer;
+
     @InjectMocks
     private BidService bidService;
 

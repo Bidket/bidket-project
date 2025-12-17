@@ -24,4 +24,7 @@ public final class KafkaTopics {
 
     public static final String QUEUE_EVENTS = "queue.events";
     public static final String PRODUCT_EVENTS = "product.events";
+
+    // Notification 서비스가 소비 → Auction 서비스가 생산
+    public static final String NOTIFICATION_AUCTION = "notification.auction";
 }

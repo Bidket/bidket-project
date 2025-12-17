@@ -13,6 +13,7 @@ import com.bidket.auction.domain.saga.repository.AuctionEndSagaContextRepository
 import com.bidket.auction.global.exception.AuctionDomainException;
 import com.bidket.auction.global.exception.AuctionErrorCode;
 import com.bidket.auction.infrastructure.kafka.event.CreateOrderRequestedEvent;
+import com.bidket.auction.infrastructure.notification.NotificationEventProducer;
 import com.bidket.auction.infrastructure.order.OrderEventProducer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.resilience4j.bulkhead.annotation.Bulkhead;
@@ -28,7 +29,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -56,6 +59,7 @@ public class AuctionEndSagaOrchestrator {
     private final AuctionRepository auctionRepository;
     private final BidRepository bidRepository;
     private final OrderEventProducer orderEventProducer;
+    private final NotificationEventProducer notificationEventProducer;
     private final CompensationExecutor compensationExecutor;
     private final ObjectMapper objectMapper;
 
@@ -203,7 +207,11 @@ public class AuctionEndSagaOrchestrator {
     }
 
     /**
-     * Step 4: AUCTION_ENDED 이벤트 발행
+     * Step 4: 낙찰자/패찰자 알림 이벤트 발행
+     *
+     * INT-005 (Notification Service 연동) 구현:
+     * - 낙찰자: result="WON" 알림 발행
+     * - 패찰자들: result="LOST" 알림 발행
      */
     @Transactional
     public void executePublishEndEventStep(AuctionEndSagaContext sagaContext) {
@@ -214,15 +222,47 @@ public class AuctionEndSagaOrchestrator {
             return;
         }
 
-        // TODO: AUCTION_ENDED 이벤트 발행 (확장 버전에서 구현)
-        // MVP에서는 로깅만 수행
+        LocalDateTime closedAt = LocalDateTime.now();
+
+        // 1. 낙찰자 알림 발행
+        notificationEventProducer.publishWinnerNotification(
+                sagaContext.getWinnerId(),
+                sagaContext.getAuctionId(),
+                sagaContext.getFinalPrice(),
+                closedAt,
+                sagaContext.getCorrelationId()
+        );
+
+        log.info("[AuctionEndSaga] 낙찰자 알림 발행 완료: winnerId={}, auctionId={}",
+                sagaContext.getWinnerId(), sagaContext.getAuctionId());
+
+        // 2. 패찰자 알림 발행 (낙찰자를 제외한 모든 입찰자)
+        List<Bid> allBids = bidRepository.findByAuctionId(sagaContext.getAuctionId());
+        int loserCount = 0;
+
+        for (Bid bid : allBids) {
+            // 낙찰자는 제외
+            if (!bid.getBidderId().equals(sagaContext.getWinnerId())) {
+                notificationEventProducer.publishLoserNotification(
+                        bid.getBidderId(),
+                        sagaContext.getAuctionId(),
+                        sagaContext.getFinalPrice(),
+                        closedAt,
+                        sagaContext.getCorrelationId()
+                );
+                loserCount++;
+            }
+        }
+
+        log.info("[AuctionEndSaga] 패찰자 알림 발행 완료: loserCount={}, auctionId={}",
+                loserCount, sagaContext.getAuctionId());
 
         // Saga 완료
         sagaContext.complete();
         sagaRepository.save(sagaContext);
 
-        log.info("[AuctionEndSaga] Saga 완료: sagaId={}, auctionId={}, status=COMPLETED",
-                sagaContext.getId(), sagaContext.getAuctionId());
+        log.info("[AuctionEndSaga] Saga 완료: sagaId={}, auctionId={}, status=COMPLETED, totalNotifications={}",
+                sagaContext.getId(), sagaContext.getAuctionId(), loserCount + 1);
     }
 
     /**

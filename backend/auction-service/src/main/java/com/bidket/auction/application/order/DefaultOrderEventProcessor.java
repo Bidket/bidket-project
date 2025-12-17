@@ -30,9 +30,13 @@ public class DefaultOrderEventProcessor implements OrderEventProcessor {
     private static final String EVENT_TYPE_ORDER_CREATED = "ORDER_CREATED";
     private static final String EVENT_TYPE_ORDER_CREATION_FAILED = "ORDER_CREATION_FAILED";
     private static final String EVENT_TYPE_PAYMENT_TIMEOUT = "PAYMENT_TIMEOUT";
+    private static final String EVENT_TYPE_PAYMENT_COMPLETED = "PAYMENT_COMPLETED";
+    private static final String EVENT_TYPE_ORDER_CANCELED = "ORDER_CANCELED";
 
     private final OrderSagaMessageHandler sagaMessageHandler;
     private final PaymentTimeoutEventProcessor paymentTimeoutEventProcessor;
+    private final PaymentCompletedEventProcessor paymentCompletedEventProcessor;
+    private final OrderCanceledEventProcessor orderCanceledEventProcessor;
 
     @Override
     public void process(String eventType, Map<String, Object> payload) {
@@ -47,6 +51,12 @@ public class DefaultOrderEventProcessor implements OrderEventProcessor {
                 break;
             case EVENT_TYPE_PAYMENT_TIMEOUT:
                 handlePaymentTimeout(payload);
+                break;
+            case EVENT_TYPE_PAYMENT_COMPLETED:
+                handlePaymentCompleted(payload);
+                break;
+            case EVENT_TYPE_ORDER_CANCELED:
+                handleOrderCanceled(payload);
                 break;
             default:
                 log.warn("[OrderEventProcessor] 알 수 없는 이벤트 타입: {}", eventType);
@@ -99,6 +109,28 @@ public class DefaultOrderEventProcessor implements OrderEventProcessor {
         } catch (Exception e) {
             log.error("[OrderEventProcessor] PAYMENT_TIMEOUT 처리 실패: payload={}", payload, e);
             throw new RuntimeException("PAYMENT_TIMEOUT 이벤트 처리 실패", e);
+        }
+    }
+
+    private void handlePaymentCompleted(Map<String, Object> payload) {
+        try {
+            log.info("[OrderEventProcessor] PAYMENT_COMPLETED 처리: orderId={}, auctionId={}",
+                    payload.get("orderId"), payload.get("auctionId"));
+            paymentCompletedEventProcessor.processPaymentCompleted(payload);
+        } catch (Exception e) {
+            log.error("[OrderEventProcessor] PAYMENT_COMPLETED 처리 실패: payload={}", payload, e);
+            throw new RuntimeException("PAYMENT_COMPLETED 이벤트 처리 실패", e);
+        }
+    }
+
+    private void handleOrderCanceled(Map<String, Object> payload) {
+        try {
+            log.info("[OrderEventProcessor] ORDER_CANCELED 처리: orderId={}, auctionId={}",
+                    payload.get("orderId"), payload.get("auctionId"));
+            orderCanceledEventProcessor.processOrderCanceled(payload);
+        } catch (Exception e) {
+            log.error("[OrderEventProcessor] ORDER_CANCELED 처리 실패: payload={}", payload, e);
+            throw new RuntimeException("ORDER_CANCELED 이벤트 처리 실패", e);
         }
     }
 

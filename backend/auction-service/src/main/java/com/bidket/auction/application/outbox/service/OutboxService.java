@@ -18,6 +18,7 @@ public class OutboxService {
 
     private static final String AGGREGATE_TYPE_AUCTION = "AUCTION";
     private static final String AGGREGATE_TYPE_ORDER = "ORDER";
+    private static final String AGGREGATE_TYPE_NOTIFICATION = "NOTIFICATION";
 
     private final OutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
@@ -34,6 +35,13 @@ public class OutboxService {
                                         Map<String, Object> payload,
                                         UUID correlationId) {
         return saveEvent(AGGREGATE_TYPE_ORDER, eventType, aggregateId, payload, correlationId);
+    }
+
+    public AuctionOutbox saveNotificationEvent(String eventType,
+                                               UUID userId,
+                                               Map<String, Object> payload,
+                                               UUID correlationId) {
+        return saveEvent(AGGREGATE_TYPE_NOTIFICATION, eventType, userId, payload, correlationId);
     }
 
     private AuctionOutbox saveEvent(String aggregateType,

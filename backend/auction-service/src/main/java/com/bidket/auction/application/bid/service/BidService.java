@@ -12,12 +12,14 @@ import com.bidket.auction.global.exception.AuctionDomainException;
 import com.bidket.auction.global.exception.AuctionErrorCode;
 import com.bidket.auction.global.exception.BidDomainException;
 import com.bidket.auction.global.exception.BidErrorCode;
+import com.bidket.auction.infrastructure.notification.NotificationEventProducer;
 import com.bidket.auction.infrastructure.retry.RetryOnOptimisticLock;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -30,6 +32,7 @@ public class BidService {
 
     private final BidRepository bidRepository;
     private final AuctionRepository auctionRepository;
+    private final NotificationEventProducer notificationEventProducer;
 
     @Transactional
     @RetryOnOptimisticLock
@@ -55,6 +58,17 @@ public class BidService {
             Bid prevBid = previousHighestBid.get();
             prevBid.markAsOutbid();
             bidRepository.save(prevBid);
+
+            // 이전 최고 입찰자에게 상회 입찰 알림 발행
+            notificationEventProducer.publishOutbidNotification(
+                    prevBid.getBidderId(),
+                    auctionId,
+                    amount,
+                    LocalDateTime.now(),
+                    auctionId
+            );
+            log.info("상회 입찰 알림 발행: previousBidderId={}, auctionId={}, newAmount={}",
+                    prevBid.getBidderId(), auctionId, amount);
         }
 
         Bid newBid = Bid.builder()
@@ -151,6 +165,17 @@ public class BidService {
             Bid prevBid = previousHighestBid.get();
             prevBid.markAsOutbid();
             bidRepository.save(prevBid);
+
+            // 이전 최고 입찰자에게 상회 입찰 알림 발행 (즉시 구매로 인한 패찰)
+            notificationEventProducer.publishOutbidNotification(
+                    prevBid.getBidderId(),
+                    auctionId,
+                    buyNowPrice,
+                    LocalDateTime.now(),
+                    auctionId
+            );
+            log.info("즉시 구매로 인한 상회 입찰 알림 발행: previousBidderId={}, auctionId={}, buyNowPrice={}",
+                    prevBid.getBidderId(), auctionId, buyNowPrice);
         }
 
         Bid buyNowBid = Bid.builder()
