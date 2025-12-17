@@ -38,7 +38,7 @@ public class QueueScheduler {
 
     private final String EVENT_SOURCE = "queue-service";
 
-    @Value("${kafka.queue.enter.notification.topic}")
+    @Value("${kafka.notification.queue.admitted.topic}")
     private String queueEnterTopic;
 
     @PostConstruct

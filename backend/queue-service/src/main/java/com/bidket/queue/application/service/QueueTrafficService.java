@@ -1,5 +1,7 @@
 package com.bidket.queue.application.service;
 
+import com.bidket.queue.domain.event.NotificationEvent;
+import com.bidket.queue.domain.event.QueueNearTurnEvent;
 import com.bidket.queue.domain.exception.QueueException;
 import com.bidket.queue.domain.model.HeartbeatStatus;
 import com.bidket.queue.domain.model.QueueErrorCode;
@@ -13,14 +15,21 @@ import com.bidket.queue.presentation.dto.response.QueueAccommodatableResponse;
 import com.bidket.queue.presentation.dto.response.QueueEnterResponse;
 import com.bidket.queue.presentation.dto.response.QueueHeartbeatResponse;
 import com.bidket.queue.presentation.dto.response.QueueStatusResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.reactive.ReactiveKafkaProducerTemplate;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -30,6 +39,24 @@ public class QueueTrafficService {
     private final QueueTrafficRepository trafficRepository;
     private final QueueManagementRepository managementRepository;
     private final TokenProvider tokenProvider;
+    private final ReactiveKafkaProducerTemplate<String, NotificationEvent> kafkaTemplate;
+    private final Sinks.Many<NotificationEvent> eventSink = Sinks.many().multicast().onBackpressureBuffer();
+    private final ObjectMapper objectMapper;
+
+    private final String EVENT_SOURCE = "queue-service";
+
+    @Value("${kafka.notification.queue.near_turn.topic}")
+    private String queueNearTurnTopic;
+
+    @PostConstruct
+    public void init() {
+        eventSink.asFlux()
+                .flatMap(event -> kafkaTemplate.send(queueNearTurnTopic, event.userId().toString(), event))
+                .doOnComplete(() -> log.info("complete"))
+                .doOnError(e -> log.error("알림 이벤트 발행 실패: {}", e.getMessage(), e))
+                .onErrorResume(e -> Mono.empty())
+                .subscribe();
+    }
 
     @Value("${heartbeat.frequency}")
     private Long heartbeatFrequency;
@@ -69,15 +96,35 @@ public class QueueTrafficService {
                             .build());
                 })
                 .switchIfEmpty(trafficRepository.getRank(auctionId, userId)
-                        .map(rank -> QueueAccommodatableResponse.builder()
-                                .auctionId(auctionId)
-                                .userId(userId)
-                                .status(UserStatus.WAITING)
-                                .rank(rank)
-                                .retryAfter(3)
-                                .token(null)
-                                .message("현재 대기 인원 " + rank + "명 남았습니다.")
-                                .build())
+                        .map(rank -> {
+                            if (rank <= 10) {
+                                QueueNearTurnEvent eventData = QueueNearTurnEvent.builder()
+                                        .auctionId(auctionId)
+                                        .userId(userId)
+                                        .rank(rank)
+                                        .build();
+
+                                NotificationEvent event = NotificationEvent.builder()
+                                        .eventId(UUID.randomUUID())
+                                        .occurredAt(LocalDateTime.now())
+                                        .userId(userId)
+                                        .source(EVENT_SOURCE)
+                                        .data(objectMapper.convertValue(eventData, Map.class))
+                                        .build();
+
+                                eventSink.emitNext(event, Sinks.EmitFailureHandler.busyLooping(Duration.ofMillis(100L)));
+                            }
+
+                            return QueueAccommodatableResponse.builder()
+                                    .auctionId(auctionId)
+                                    .userId(userId)
+                                    .status(UserStatus.WAITING)
+                                    .rank(rank)
+                                    .retryAfter(3)
+                                    .token(null)
+                                    .message("현재 대기 인원 " + rank + "명 남았습니다.")
+                                    .build();
+                        })
                         .switchIfEmpty(Mono.error(() -> new QueueException(QueueErrorCode.WAITING_USER_NOT_FOUND)))
                 );
 
