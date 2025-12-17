@@ -1,7 +1,9 @@
 package com.bidket.queue.domain.repository;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -12,7 +14,11 @@ public interface QueueTrafficRepository {
 
     Mono<Long> getActiveUserCount(UUID auctionId);
 
-    Mono<Long> kickActiveUser(UUID auctionId, UUID userId);
+    Flux<UUID> getExpiredActiveUser(UUID auctionId);
+
+    Mono<Boolean> renewActiveUser(UUID auctionId, UUID userId, Instant updateTime);
+
+    Mono<Long> removeActiveUsers(UUID auctionId, List<UUID> userIds);
 
     Mono<Boolean> deleteActiveQueue(UUID auctionId);
 
