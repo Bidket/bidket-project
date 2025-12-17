@@ -1,9 +1,11 @@
 package com.bidket.queue.infrastructure.schedule;
 
 import com.bidket.queue.domain.event.NotificationEvent;
+import com.bidket.queue.domain.event.QueueEnteredNotificationEvent;
 import com.bidket.queue.domain.repository.QueueManagementRepository;
 import com.bidket.queue.domain.repository.QueueTrafficRepository;
 import com.bidket.queue.global.util.jwt.TokenProvider;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,14 +34,17 @@ public class QueueScheduler {
     private final TokenProvider tokenProvider;
     private final ReactiveKafkaProducerTemplate<String, NotificationEvent> kafkaTemplate;
     private final Sinks.Many<NotificationEvent> eventSink = Sinks.many().multicast().onBackpressureBuffer();
+    private final ObjectMapper objectMapper;
+
+    private final String EVENT_SOURCE = "queue-service";
 
     @Value("${kafka.queue.enter.notification.topic}")
-    private String topic;
+    private String queueEnterTopic;
 
     @PostConstruct
     public void init() {
         eventSink.asFlux()
-                .flatMap(event -> kafkaTemplate.send(topic, event.userId().toString(), event))
+                .flatMap(event -> kafkaTemplate.send(queueEnterTopic, event.userId().toString(), event))
                 .doOnComplete(() -> log.info("complete"))
                 .doOnError(e -> log.error("알림 이벤트 발행 실패: {}", e.getMessage(), e))
                 .onErrorResume(e -> Mono.empty())
@@ -53,10 +58,10 @@ public class QueueScheduler {
                 .parallel()
                 .runOn(Schedulers.boundedElastic())
                 .flatMap(auctionId ->
-                    clearActiveQueue(auctionId)
-                            .doOnError(e -> log.error("경매 [{}] Active Queue 정리 실패", auctionId, e))
-                            .onErrorResume(e -> Mono.empty())
-                            .then(enterProcess(auctionId))
+                        clearActiveQueue(auctionId)
+                                .doOnError(e -> log.error("경매 [{}] Active Queue 정리 실패", auctionId, e))
+                                .onErrorResume(e -> Mono.empty())
+                                .then(enterProcess(auctionId))
                 )
                 .subscribe(
                         null,
@@ -97,10 +102,18 @@ public class QueueScheduler {
                                                         .then(managementRepository.setExpiration(activeKey, Instant.now().plus(1, ChronoUnit.HOURS)))
                                                         .doOnSuccess(isSuccess -> {
                                                             userIds.forEach(userId -> {
-                                                                NotificationEvent event = NotificationEvent.builder()
+                                                                QueueEnteredNotificationEvent eventData = QueueEnteredNotificationEvent.builder()
                                                                         .auctionId(auctionId)
                                                                         .userId(userId)
                                                                         .enterTime(LocalDateTime.now())
+                                                                        .build();
+
+                                                                NotificationEvent event = NotificationEvent.builder()
+                                                                        .eventId(UUID.randomUUID())
+                                                                        .occurredAt(LocalDateTime.now())
+                                                                        .source(EVENT_SOURCE)
+                                                                        .userId(userId)
+                                                                        .data(objectMapper.convertValue(eventData, Map.class))
                                                                         .build();
 
                                                                 eventSink.emitNext(event, Sinks.EmitFailureHandler.busyLooping(Duration.ofMillis(100L)));
@@ -125,7 +138,7 @@ public class QueueScheduler {
         return trafficRepository.getExpiredActiveUser(auctionId)
                 .collectList()
                 .flatMap(expiredUserIds -> {
-                    if(expiredUserIds.isEmpty())
+                    if (expiredUserIds.isEmpty())
                         return Mono.empty();
 
                     return trafficRepository.removeActiveUsers(auctionId, expiredUserIds);

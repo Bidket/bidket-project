@@ -50,13 +50,18 @@ heartbeat:
   frequency: 5
 
 kafka:
-  queue:
-    enter:
-      notification:
-        topic: queue.enter.notification
+  notification:
+    queue:
+      admitted:
+        topic: notification.queue.admitted
         partition: 3
         replicas: 1
-        retention: 86400
+        retention: 8400
+      near_turn:
+        topic: notification.queue.near_turn
+        partition: 3
+        replicas: 1
+        retention: 8400
 
 springdoc:
   default-consumes-media-type: application/json;charset=UTF-8

@@ -28,7 +28,7 @@ public class QueueTrafficController {
     private final QueueFacade queueFacade;
 
     private static final String X_USER_ID = "X-User-Id";
-    private static final String X_ACTIVE_TOKEN_HEADER = "X-ACTIVE-TOKEN";
+    private static final String X_Q_ACTIVE_TOKEN = "X-Q-ACTIVE-TOKEN";
 
     @Operation(summary = "대기열 입장", description = "사용자가 대기열에 입장합니다.")
     @ApiResponses({
@@ -136,7 +136,7 @@ public class QueueTrafficController {
     @PostMapping("/{auctionId}/heartbeat")
     public Mono<ResponseEntity<ApiResponse<QueueHeartbeatResponse>>> heartbeat(@PathVariable UUID auctionId,
                                                                                @RequestHeader(name = X_USER_ID) UUID userId,
-                                                                               @RequestHeader(name = X_ACTIVE_TOKEN_HEADER) String token) {
+                                                                               @RequestHeader(name = X_Q_ACTIVE_TOKEN) String token) {
         return queueFacade.heartbeat(userId, auctionId, token)
                 .map(response ->
                         ResponseEntity.ok(ApiResponse.success(response))

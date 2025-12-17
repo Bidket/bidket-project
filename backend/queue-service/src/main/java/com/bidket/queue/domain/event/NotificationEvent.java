@@ -3,12 +3,15 @@ package com.bidket.queue.domain.event;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 @Builder
 public record NotificationEvent(
-        UUID auctionId,
+        UUID eventId,
+        LocalDateTime occurredAt,
+        String source,
         UUID userId,
-        LocalDateTime enterTime
+        Map<String, Object> data
 ) {
 }
