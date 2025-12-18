@@ -5,11 +5,15 @@
 # ============================
 set -e
 
+echo "EUREKA_IMAGE_TAG=$EUREKA_IMAGE_TAG"
+echo "GATEWAY_IMAGE_TAG=$GATEWAY_IMAGE_TAG"
+
 echo "📌 Step 1. 이동: /opt/bidket"
 cd /opt/bidket || exit
 
 echo "📌 Step 2. 최신 이미지 Pull"
-docker compose -f docker-compose.prod.yml pull
+docker compose  --env-file .env.dev \
+  -f docker-compose.prod.yml pull
 
 echo "⏳ Step 2-1. build/push 대기 (임시)"
 sleep 20
