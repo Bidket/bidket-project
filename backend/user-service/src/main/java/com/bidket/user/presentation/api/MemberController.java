@@ -2,6 +2,7 @@ package com.bidket.user.presentation.api;
 
 import com.bidket.common.presentation.response.ApiResponse;
 import com.bidket.user.application.service.BidEligibilityService;
+import com.bidket.user.application.service.BlacklistListService;
 import com.bidket.user.application.service.BlacklistRegisterService;
 import com.bidket.user.application.service.BlacklistReleaseService;
 import com.bidket.user.application.service.BlacklistStatusService;
@@ -17,6 +18,7 @@ import com.bidket.user.presentation.dto.request.BlacklistRegisterRequest;
 import com.bidket.user.presentation.dto.request.LoginRequest;
 import com.bidket.user.presentation.dto.request.SignupRequest;
 import com.bidket.user.presentation.dto.response.BidEligibilityResponse;
+import com.bidket.user.presentation.dto.response.BlacklistListResponse;
 import com.bidket.user.presentation.dto.response.BlacklistRegisterResponse;
 import com.bidket.user.presentation.dto.response.BlacklistReleaseResponse;
 import com.bidket.user.presentation.dto.response.BlacklistStatusResponse;
@@ -66,6 +68,7 @@ public class MemberController {
     private final NicknameCheckService nicknameCheckService;
     private final PermissionsService permissionsService;
     private final BlacklistStatusService blacklistStatusService;
+    private final BlacklistListService blacklistListService;
     private final BlacklistRegisterService blacklistRegisterService;
     private final BlacklistReleaseService blacklistReleaseService;
     private final BidEligibilityService bidEligibilityService;
@@ -248,6 +251,28 @@ public class MemberController {
     }
 
     /**
+     * 블랙리스트 목록 조회 API (관리자)
+     * @param page 페이지 번호 (0부터 시작, 기본값 0)
+     * @param size 페이지 사이즈 (기본값 20)
+     * @param activeOnly 현재 유효한 블랙리스트만 조회할지 여부 (기본값 true)
+     * @return 블랙리스트 목록 조회 응답 (페이지네이션 포함)
+     */
+    @Operation(summary = "블랙리스트 목록 조회", description = "블랙리스트 목록을 조회합니다.", tags = {"03. 블랙리스트 관리"}, security = @SecurityRequirement(name = "Bearer Authentication"))
+    @GetMapping("/blacklist")
+    public ResponseEntity<BlacklistListResponse> getBlacklistList(
+            @Parameter(description = "페이지 번호 (0부터 시작)", example = "0", schema = @Schema(defaultValue = "0"))
+            @RequestParam(required = false) Integer page,
+            @Parameter(description = "페이지 사이즈", example = "20", schema = @Schema(defaultValue = "20"))
+            @RequestParam(required = false) Integer size,
+            @Parameter(description = "현재 유효한 블랙리스트만 조회할지 여부", example = "true", schema = @Schema(defaultValue = "true"))
+            @RequestParam(required = false) Boolean activeOnly) {
+        BlacklistListResponse response = blacklistListService.getBlacklistList(page, size, activeOnly);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
+    }
+
+    /**
      * 블랙리스트 등록 API
      * @param memberId 블랙리스트로 등록할 회원 ID
      * @param request 블랙리스트 등록 요청 정보 (reason, expireAt)
@@ -322,9 +347,12 @@ public class MemberController {
     @Operation(summary = "포인트 히스토리 조회", description = "현재 로그인한 사용자의 포인트 거래 내역을 조회합니다.", tags = {"04. 포인트"}, security = @SecurityRequirement(name = "Bearer Authentication"))
     @GetMapping("/points/history")
     public ResponseEntity<PointHistoryResponse> getPointHistory(
-            @RequestParam(required = false) @Schema(example = "0") Integer page,
-            @RequestParam(required = false) @Schema(example = "20") Integer size,
-            @RequestParam(required = false) @Schema(example = "CHARGE") String type) {
+            @Parameter(description = "페이지 번호 (0부터 시작)", example = "0", schema = @Schema(defaultValue = "0"))
+            @RequestParam(required = false) Integer page,
+            @Parameter(description = "페이지 사이즈", example = "20", schema = @Schema(defaultValue = "20"))
+            @RequestParam(required = false) Integer size,
+            @Parameter(description = "필터용 타입 (CHARGE, USE, REFUND, CANCEL 등)", example = "CHARGE")
+            @RequestParam(required = false) String type) {
         PointHistoryResponse response = pointHistoryService.getPointHistory(page, size, type);
         return ResponseEntity
                 .status(HttpStatus.OK)
