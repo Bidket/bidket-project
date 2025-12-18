@@ -353,4 +353,61 @@ class PaymentTimeoutSagaOrchestratorTest {
         verify(compensationExecutor).executeCompensations(sagaId, "Test failure");
         verify(sagaRepository, atLeast(2)).save(any(PaymentTimeoutSagaContext.class));
     }
+
+    @Test
+    @DisplayName("Saga 실행 중 예외 발생 시 보상 트랜잭션 자동 실행")
+    void startPaymentTimeoutSaga_FailureTriggersCompensation() {
+        // given
+        when(auctionRepository.findById(auctionId)).thenReturn(Optional.of(auction));
+        when(sagaRepository.findByOrderId(orderId)).thenReturn(Optional.empty());
+        when(bidRepository.findById(winningBidId)).thenReturn(Optional.of(winningBid));
+
+        // Saga Context 저장 시 ID를 가진 context 반환
+        UUID sagaId = UUID.randomUUID();
+
+        when(sagaRepository.save(any(PaymentTimeoutSagaContext.class)))
+                .thenAnswer(invocation -> {
+                    PaymentTimeoutSagaContext context = invocation.getArgument(0);
+                    return PaymentTimeoutSagaContext.builder()
+                            .id(context.getId() != null ? context.getId() : sagaId)
+                            .auctionId(context.getAuctionId())
+                            .orderId(context.getOrderId())
+                            .winnerId(context.getWinnerId())
+                            .winningBidId(context.getWinningBidId())
+                            .productSizeId(context.getProductSizeId())
+                            .status(context.getStatus())
+                            .currentStep(context.getCurrentStep())
+                            .build();
+                });
+
+        when(sagaRepository.findById(any(UUID.class)))
+                .thenAnswer(invocation -> {
+                    return Optional.of(PaymentTimeoutSagaContext.builder()
+                            .id(sagaId)
+                            .auctionId(auctionId)
+                            .orderId(orderId)
+                            .winnerId(winnerId)
+                            .winningBidId(winningBidId)
+                            .productSizeId(productSizeId)
+                            .status(SagaStatus.IN_PROGRESS)
+                            .currentStep(PaymentTimeoutSagaStep.REOPEN_AUCTION)
+                            .build());
+                });
+
+        // Step 1 (경매 재오픈)에서 예외 발생 시뮬레이션
+        when(auctionRepository.save(any(Auction.class)))
+                .thenThrow(new RuntimeException("Database error"));
+
+        doNothing().when(compensationExecutor).executeCompensations(any(), any());
+
+        // when
+        try {
+            sagaOrchestrator.startPaymentTimeoutSaga(auctionId, orderId);
+        } catch (Exception e) {
+            // 예외 발생 예상됨
+        }
+
+        // then - 보상 트랜잭션이 실행되었는지 검증
+        verify(compensationExecutor).executeCompensations(eq(sagaId), anyString());
+    }
 }
