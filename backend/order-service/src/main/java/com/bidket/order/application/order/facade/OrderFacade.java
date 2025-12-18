@@ -31,11 +31,9 @@ public class OrderFacade {
             Long usedPointAmount
     ) {
         // TODO: 포인트/재고 검증 추가
-
         if (orderRepository.existsByAuctionId(auctionId)) {
             throw new IllegalStateException("이미 주문이 생성된 경매입니다.");
         }
-        // TODO: 경매 낙찰 상태 + 낙찰자 검증 추가
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime paymentExpiredAt = now.plusMinutes(15);
 
