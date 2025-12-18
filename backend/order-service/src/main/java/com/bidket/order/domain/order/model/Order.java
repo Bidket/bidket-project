@@ -80,4 +80,55 @@ public record Order(
                 updatedAt
         );
     }
+
+    public Order markPaid(LocalDateTime now) {
+        return new Order(
+                this.id,
+                this.userId,
+                this.auctionId,
+                this.shoeId,
+                OrderStatus.PAID,
+                this.amount,
+                this.usedPointAmount,
+                this.paymentExpiredAt,
+                this.createdAt,
+                now
+        );
+    }
+
+    public Order cancelByPaymentFail(LocalDateTime now, String errorCode, String errorMessage) {
+        return new Order(
+                this.id,
+                this.userId,
+                this.auctionId,
+                this.shoeId,
+                OrderStatus.CANCELED,
+                this.amount,
+                this.usedPointAmount,
+                this.paymentExpiredAt,
+                this.createdAt,
+                now
+        );
+    }
+
+    public boolean isPaymentExpired(LocalDateTime now) {
+        return this.status == OrderStatus.PAYMENT
+                && this.paymentExpiredAt != null
+                && now.isAfter(this.paymentExpiredAt);
+    }
+
+    public Order markExpired(LocalDateTime now) {
+        return new Order(
+                this.id,
+                this.userId,
+                this.auctionId,
+                this.shoeId,
+                OrderStatus.EXPIRED,
+                this.amount,
+                this.usedPointAmount,
+                this.paymentExpiredAt,
+                this.createdAt,
+                now
+        );
+    }
 }
