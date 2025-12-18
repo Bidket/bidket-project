@@ -102,10 +102,25 @@ public class AuctionEndSagaOrchestrator {
         sagaContext.start();
         sagaContext = sagaRepository.save(sagaContext);
 
-        // 5. Step 1: 주문 생성 요청
-        executeCreateOrderStep(sagaContext);
+        try {
+            // 5. Step 1: 주문 생성 요청
+            executeCreateOrderStep(sagaContext);
 
-        log.info("[AuctionEndSaga] Saga 시작 완료: sagaId={}, auctionId={}", sagaContext.getId(), auctionId);
+            log.info("[AuctionEndSaga] Saga 시작 완료: sagaId={}, auctionId={}", sagaContext.getId(), auctionId);
+
+        } catch (Exception e) {
+            log.error("[AuctionEndSaga] Saga 실패: sagaId={}, error={}",
+                    sagaContext.getId(), e.getMessage(), e);
+
+            sagaContext.fail(e.getMessage());
+            sagaRepository.save(sagaContext);
+
+            // 보상 트랜잭션 실행
+            compensate(sagaContext.getId(), "AuctionEndSagaFailed: " + e.getMessage());
+
+            throw e;
+        }
+
         return sagaContext.getId();
     }
 
@@ -382,6 +397,30 @@ public class AuctionEndSagaOrchestrator {
                 );
             }
 
+            // TODO: 추가 보상 액션 등록 - CANCEL_PAYMENT: 결제 취소
+            // 결제가 완료된 상태에서 Saga 실패 시 결제 취소 필요
+            // paymentId가 있는 경우에만 실행
+            // Note: 현재 AuctionEndSaga는 결제 전 단계이므로 일반적으로 필요 없음
+            // 하지만 향후 확장을 위해 주석으로 남김
+            //
+            // if (sagaContext.getPaymentId() != null) {
+            //     Map<String, Object> payload = new HashMap<>();
+            //     payload.put("paymentId", sagaContext.getPaymentId().toString());
+            //     payload.put("orderId", sagaContext.getOrderId().toString());
+            //     payload.put("auctionId", sagaContext.getAuctionId().toString());
+            //     payload.put("reason", "SAGA_COMPENSATION");
+            //
+            //     compensationExecutor.createCompensationLog(
+            //             sagaContext.getId(),
+            //             "AUCTION_END_SAGA",
+            //             "PAYMENT",
+            //             sagaContext.getPaymentId(),
+            //             CompensationType.CANCEL_PAYMENT,
+            //             0, // 가장 먼저 실행 (Step 1 전)
+            //             objectMapper.writeValueAsString(payload)
+            //     );
+            // }
+
             log.info("[AuctionEndSaga] 보상 로그 생성 완료: sagaId={}", sagaContext.getId());
 
         } catch (Exception e) {
@@ -410,15 +449,10 @@ public class AuctionEndSagaOrchestrator {
      * Circuit Breaker OPEN 또는 Order Service 장애 시 호출
      */
     private void executeCreateOrderStepFallback(AuctionEndSagaContext sagaContext, Exception e) {
-        log.error("[AuctionEndSaga] Order Service Circuit Breaker 활성화 - 보상 트랜잭션 시작: sagaId={}, error={}",
+        log.error("[AuctionEndSaga] Order Service Circuit Breaker 활성화: sagaId={}, error={}",
                 sagaContext.getId(), e.getMessage());
 
-        // Circuit Breaker가 열렸거나 Order Service 장애 시 즉시 보상 실행
-        String failureMessage = "Order Service 장애: " + e.getMessage();
-        sagaContext.fail(failureMessage);
-        sagaRepository.save(sagaContext);
-
-        // 보상 트랜잭션 시작
-        compensate(sagaContext.getId(), "ORDER_SERVICE_UNAVAILABLE");
+        // 예외를 다시 던져서 상위 try-catch에서 보상 트랜잭션을 실행하도록 함
+        throw new RuntimeException("Order Service unavailable: " + e.getMessage(), e);
     }
 }

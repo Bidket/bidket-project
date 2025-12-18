@@ -310,4 +310,34 @@ class AuctionEndSagaOrchestratorTest {
         );
         verify(bidRepository).findByAuctionId(auctionId);
     }
+
+    @Test
+    @DisplayName("보상 트랜잭션 실행 성공")
+    void compensate_Success() {
+        // given
+        UUID sagaId = UUID.randomUUID();
+        AuctionEndSagaContext context = AuctionEndSagaContext.builder()
+                .id(sagaId)
+                .auctionId(auctionId)
+                .winnerId(winnerId)
+                .winningBidId(winningBidId)
+                .productSizeId(productSizeId)
+                .finalPrice(150000L)
+                .status(SagaStatus.IN_PROGRESS)
+                .currentStep(SagaStep.CREATE_ORDER)
+                .build();
+
+        when(sagaRepository.findById(sagaId)).thenReturn(Optional.of(context));
+        when(sagaRepository.save(any(AuctionEndSagaContext.class))).thenReturn(context);
+        doNothing().when(compensationExecutor).executeCompensations(any(), any());
+
+        // when
+        sagaOrchestrator.compensate(sagaId, "Test failure");
+
+        // then
+        verify(sagaRepository).findById(sagaId);
+        verify(compensationExecutor).executeCompensations(sagaId, "Test failure");
+        verify(sagaRepository, atLeast(2)).save(any(AuctionEndSagaContext.class));
+    }
+
 }
