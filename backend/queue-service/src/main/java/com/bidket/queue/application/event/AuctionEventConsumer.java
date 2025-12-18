@@ -24,7 +24,7 @@ import java.util.Collections;
 @Component
 @RequiredArgsConstructor
 public class AuctionEventConsumer {
-//    private final KafkaReceiver<String, EventTemplate> kafkaReceiver;
+    private final ReceiverOptions<String, EventTemplate> baseReceiverOptions;
     private final QueueManagementService managementService;
     private final ObjectMapper objectMapper;
 
@@ -33,44 +33,46 @@ public class AuctionEventConsumer {
 
     private Disposable disposable;
 
-//    @PostConstruct
-//    public void consumeAuctionEvent() {
-//        kafkaReceiver.receive()
-//                .flatMap(record -> {
-//                    return processAuctionCreate(record)
-//                            .then(record);
-//                })
-//                .doOnNext(record -> )
-//        ReceiverOptions<String, EventTemplate> receiverOptions = baseReceiverOptions
-//                .subscription(Collections.singleton(auctionTopic));
-//
-//        disposable = KafkaReceiver.create(receiverOptions)
-//                .receive()
-//                .flatMap(this::processAuctionCreate, 20)
-//                .subscribe();
-//    }
-//
-//    private Mono<EventTemplate> processAuctionCreate(ReceiverRecord<String, EventTemplate> record) {
-//        return Mono.fromCallable(() ->
-//                        objectMapper.convertValue(record.value().data(), QueueCreateRequest.class)
-//                )
-//                .flatMap(managementService::createConfigQueue)
-//                .doOnSuccess(isSuccess -> record.receiverOffset().acknowledge())
-//                .onErrorResume(e -> {
-//                    if (e instanceof IllegalArgumentException) {
-//                        log.error("data -> dto 변환 중 에러 발생: {}", e.getMessage(), e);
-//                        record.receiverOffset().acknowledge();
-//                    } else
-//                        log.error("경매 생성 이벤트 처리 중 에러 발생 {}", e.getMessage(), e);
-//
-//                    return Mono.empty();
-//                })
-//                .then();
-//    }
+
+    @PostConstruct
+    public void startConsuming() {
+        ReceiverOptions<String, EventTemplate> receiverOptions =baseReceiverOptions
+                .subscription(Collections.singleton(auctionTopic));
+
+        disposable = KafkaReceiver.create(receiverOptions)
+                .receive()
+                .flatMap(this::processAuctionCreate, 20)
+                .subscribe(
+                        null,
+                        e -> log.error("Event Consumer 에러 발생: {}", e.getMessage(), e)
+                );
+    }
+
+    private Mono<Void> processAuctionCreate(ReceiverRecord<String, EventTemplate> record) {
+        return Mono.fromCallable(() ->
+                        objectMapper.convertValue(record.value().data(), QueueCreateRequest.class)
+                )
+                .flatMap(managementService::createConfigQueue)
+                .doOnSuccess(isSuccess -> {
+                    record.receiverOffset().acknowledge();
+                    log.info("경매 생성 이벤트 처리 성공: offset = {}", record.receiverOffset().offset());
+                })
+                .onErrorResume(e -> {
+                    if (e instanceof IllegalArgumentException || e instanceof NullPointerException) {
+                        log.error("data -> dto 변환 중 에러 발생: {}", e.getMessage(), e);
+                        record.receiverOffset().acknowledge();
+                    } else
+                        log.error("경매 생성 이벤트 처리 중 에러 발생: offset = {}, message = {}", record.receiverOffset().offset(), e.getMessage(), e);
+
+                    return Mono.empty();
+                })
+                .then();
+    }
 
     @PreDestroy
     public void close() {
-        if (disposable != null && !disposable.isDisposed())
+        if (disposable != null && !disposable.isDisposed()) {
             disposable.dispose();
+        }
     }
 }
