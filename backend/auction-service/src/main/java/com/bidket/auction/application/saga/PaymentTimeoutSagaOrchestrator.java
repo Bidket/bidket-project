@@ -5,21 +5,19 @@ import com.bidket.auction.domain.auction.model.Auction;
 import com.bidket.auction.domain.auction.repository.AuctionRepository;
 import com.bidket.auction.domain.bid.model.Bid;
 import com.bidket.auction.domain.bid.repository.BidRepository;
-import com.bidket.auction.domain.compensation.model.CompensationType;
 import com.bidket.auction.domain.saga.model.PaymentTimeoutSagaContext;
 import com.bidket.auction.domain.saga.model.PaymentTimeoutSagaStep;
 import com.bidket.auction.domain.saga.model.SagaStatus;
 import com.bidket.auction.domain.saga.repository.PaymentTimeoutSagaContextRepository;
 import com.bidket.auction.global.exception.AuctionDomainException;
 import com.bidket.auction.global.exception.AuctionErrorCode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.bidket.auction.infrastructure.notification.NotificationEventProducer;
+import com.bidket.auction.infrastructure.order.OrderEventProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -29,9 +27,12 @@ import java.util.UUID;
  * Saga Flow:
  * 1. REOPEN_AUCTION: 경매 상태를 REOPENED로 변경하고 endTime을 +24h 연장
  * 2. REVERT_BID_STATUS: 이전 낙찰 입찰을 WON에서 ACTIVE로 되돌림
- * 3. RELEASE_STOCK: Product Service에 재고 복원 요청
- * 4. CANCEL_ORDER: Order Service에 주문 취소 요청
- * 5. PUBLISH_REOPEN_EVENT: AUCTION_REOPENED 이벤트 발행
+ * 3. CANCEL_ORDER: Order Service에 주문 취소 요청
+ * 4. PUBLISH_REOPEN_EVENT: AUCTION_REOPENED 이벤트 발행
+ *
+ * Note: 재고 복원 단계 제거됨
+ * - Bidket은 크림/StockX와 같은 리셀 플랫폼 (1개 신발 = 1개 경매)
+ * - 재고 개념이 없으므로 경매 재오픈으로만 처리
  *
  * Compensation:
  * - Saga 실패 시 CompensationExecutor를 통한 보상 실행
@@ -42,11 +43,14 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PaymentTimeoutSagaOrchestrator {
 
+    private static final String PAYMENT_TIMEOUT_REASON = "PAYMENT_TIMEOUT";
+
     private final PaymentTimeoutSagaContextRepository sagaRepository;
     private final AuctionRepository auctionRepository;
     private final BidRepository bidRepository;
+    private final OrderEventProducer orderEventProducer;
+    private final NotificationEventProducer notificationEventProducer;
     private final CompensationExecutor compensationExecutor;
-    private final ObjectMapper objectMapper;
 
     /**
      * 결제 타임아웃 Saga 시작
@@ -61,8 +65,7 @@ public class PaymentTimeoutSagaOrchestrator {
         log.info("[PaymentTimeoutSaga] Saga 시작: auctionId={}, orderId={}", auctionId, orderId);
 
         // 1. 경매 조회 및 검증
-        Auction auction = auctionRepository.findById(auctionId)
-                .orElseThrow(() -> new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_FOUND));
+        Auction auction = findAuction(auctionId);
 
         // 2. Idempotency 체크: 이미 진행 중인 Saga가 있는지 확인
         sagaRepository.findByOrderId(orderId).ifPresent(existingSaga -> {
@@ -73,8 +76,7 @@ public class PaymentTimeoutSagaOrchestrator {
 
         // 3. 낙찰 입찰 조회
         Bid winningBid = auction.getWinnerInfo() != null && auction.getWinnerInfo().getWinningBidId() != null
-                ? bidRepository.findById(auction.getWinnerInfo().getWinningBidId())
-                .orElseThrow(() -> new AuctionDomainException(AuctionErrorCode.BID_NOT_FOUND))
+                ? findBid(auction.getWinnerInfo().getWinningBidId())
                 : null;
 
         if (winningBid == null) {
@@ -106,13 +108,10 @@ public class PaymentTimeoutSagaOrchestrator {
             // 7. Step 2: 입찰 상태 복원
             executeRevertBidStatusStep(sagaContext);
 
-            // 8. Step 3: 재고 복원 (현재는 로깅만, 추후 Product Service 연동)
-            executeReleaseStockStep(sagaContext);
-
-            // 9. Step 4: 주문 취소 (현재는 로깅만, 추후 Order Service 연동)
+            // 8. Step 3: 주문 취소
             executeCancelOrderStep(sagaContext);
 
-            // 10. Step 5: AUCTION_REOPENED 이벤트 발행
+            // 9. Step 4: AUCTION_REOPENED 이벤트 발행
             executePublishReopenEventStep(sagaContext);
 
             log.info("[PaymentTimeoutSaga] Saga 완료: sagaId={}, auctionId={}, status=COMPLETED",
@@ -144,15 +143,12 @@ public class PaymentTimeoutSagaOrchestrator {
     public void executeReopenAuctionStep(PaymentTimeoutSagaContext sagaContext) {
         log.info("[PaymentTimeoutSaga] Step 1 시작: REOPEN_AUCTION, sagaId={}", sagaContext.getId());
 
-        if (sagaContext.getCurrentStep() != PaymentTimeoutSagaStep.REOPEN_AUCTION) {
-            log.warn("[PaymentTimeoutSaga] 잘못된 단계: expected=REOPEN_AUCTION, actual={}",
-                    sagaContext.getCurrentStep());
+        if (!validateStep(sagaContext, PaymentTimeoutSagaStep.REOPEN_AUCTION)) {
             return;
         }
 
         // 경매 조회
-        Auction auction = auctionRepository.findById(sagaContext.getAuctionId())
-                .orElseThrow(() -> new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_FOUND));
+        Auction auction = findAuction(sagaContext.getAuctionId());
 
         // 경매 재오픈 (도메인 메서드 사용)
         auction.reopen();
@@ -174,15 +170,12 @@ public class PaymentTimeoutSagaOrchestrator {
     public void executeRevertBidStatusStep(PaymentTimeoutSagaContext sagaContext) {
         log.info("[PaymentTimeoutSaga] Step 2 시작: REVERT_BID_STATUS, sagaId={}", sagaContext.getId());
 
-        if (sagaContext.getCurrentStep() != PaymentTimeoutSagaStep.REVERT_BID_STATUS) {
-            log.warn("[PaymentTimeoutSaga] 잘못된 단계: expected=REVERT_BID_STATUS, actual={}",
-                    sagaContext.getCurrentStep());
+        if (!validateStep(sagaContext, PaymentTimeoutSagaStep.REVERT_BID_STATUS)) {
             return;
         }
 
         // 낙찰 입찰 조회
-        Bid winningBid = bidRepository.findById(sagaContext.getWinningBidId())
-                .orElseThrow(() -> new AuctionDomainException(AuctionErrorCode.BID_NOT_FOUND));
+        Bid winningBid = findBid(sagaContext.getWinningBidId());
 
         // 입찰 상태 복원 (WON → ACTIVE)
         winningBid.revertFromWon();
@@ -197,50 +190,26 @@ public class PaymentTimeoutSagaOrchestrator {
     }
 
     /**
-     * Step 3: 재고 복원 요청
-     * MVP: 로깅만 수행
-     * 확장: Product Service에 RELEASE_STOCK_REQUESTED 이벤트 발행
-     */
-    @Transactional
-    public void executeReleaseStockStep(PaymentTimeoutSagaContext sagaContext) {
-        log.info("[PaymentTimeoutSaga] Step 3 시작: RELEASE_STOCK, sagaId={}", sagaContext.getId());
-
-        if (sagaContext.getCurrentStep() != PaymentTimeoutSagaStep.RELEASE_STOCK) {
-            log.warn("[PaymentTimeoutSaga] 잘못된 단계: expected=RELEASE_STOCK, actual={}",
-                    sagaContext.getCurrentStep());
-            return;
-        }
-
-        // TODO: Product Service에 재고 복원 요청 (확장 버전)
-        // productEventProducer.publishReleaseStockRequest(sagaContext.getProductSizeId(), sagaContext.getCorrelationId());
-
-        log.info("[PaymentTimeoutSaga] Step 3 완료 (MVP): RELEASE_STOCK 로깅만 수행, productSizeId={}, sagaId={}",
-                sagaContext.getProductSizeId(), sagaContext.getId());
-
-        // 다음 단계로 진행
-        sagaContext.proceedToNextStep();
-        sagaRepository.save(sagaContext);
-    }
-
-    /**
-     * Step 4: 주문 취소 요청
-     * MVP: 로깅만 수행
-     * 확장: Order Service에 CANCEL_ORDER_REQUESTED 이벤트 발행
+     * Step 3: 주문 취소 요청
+     * Order Service에 CANCEL_ORDER_REQUESTED 이벤트 발행
      */
     @Transactional
     public void executeCancelOrderStep(PaymentTimeoutSagaContext sagaContext) {
-        log.info("[PaymentTimeoutSaga] Step 4 시작: CANCEL_ORDER, sagaId={}", sagaContext.getId());
+        log.info("[PaymentTimeoutSaga] Step 3 시작: CANCEL_ORDER, sagaId={}", sagaContext.getId());
 
-        if (sagaContext.getCurrentStep() != PaymentTimeoutSagaStep.CANCEL_ORDER) {
-            log.warn("[PaymentTimeoutSaga] 잘못된 단계: expected=CANCEL_ORDER, actual={}",
-                    sagaContext.getCurrentStep());
+        if (!validateStep(sagaContext, PaymentTimeoutSagaStep.CANCEL_ORDER)) {
             return;
         }
 
-        // TODO: Order Service에 주문 취소 요청 (확장 버전)
-        // orderEventProducer.publishCancelOrderRequest(sagaContext.getOrderId(), sagaContext.getCorrelationId());
+        // Order Service에 주문 취소 요청 (OutBox 패턴)
+        orderEventProducer.publishCancelOrderRequest(
+                sagaContext.getOrderId(),
+                sagaContext.getAuctionId(),
+                PAYMENT_TIMEOUT_REASON,
+                sagaContext.getCorrelationId()
+        );
 
-        log.info("[PaymentTimeoutSaga] Step 4 완료 (MVP): CANCEL_ORDER 로깅만 수행, orderId={}, sagaId={}",
+        log.info("[PaymentTimeoutSaga] Step 3 완료: CANCEL_ORDER 이벤트 발행, orderId={}, sagaId={}",
                 sagaContext.getOrderId(), sagaContext.getId());
 
         // 다음 단계로 진행
@@ -249,24 +218,31 @@ public class PaymentTimeoutSagaOrchestrator {
     }
 
     /**
-     * Step 5: AUCTION_REOPENED 이벤트 발행
-     * MVP: 로깅만 수행
-     * 확장: Kafka에 AUCTION_REOPENED 이벤트 발행하여 Notification Service 알림
+     * Step 4: AUCTION_REOPENED 이벤트 발행
+     * Notification Service에 AUCTION_REOPENED 이벤트 발행
      */
     @Transactional
     public void executePublishReopenEventStep(PaymentTimeoutSagaContext sagaContext) {
-        log.info("[PaymentTimeoutSaga] Step 5 시작: PUBLISH_REOPEN_EVENT, sagaId={}", sagaContext.getId());
+        log.info("[PaymentTimeoutSaga] Step 4 시작: PUBLISH_REOPEN_EVENT, sagaId={}", sagaContext.getId());
 
-        if (sagaContext.getCurrentStep() != PaymentTimeoutSagaStep.PUBLISH_REOPEN_EVENT) {
-            log.warn("[PaymentTimeoutSaga] 잘못된 단계: expected=PUBLISH_REOPEN_EVENT, actual={}",
-                    sagaContext.getCurrentStep());
+        if (!validateStep(sagaContext, PaymentTimeoutSagaStep.PUBLISH_REOPEN_EVENT)) {
             return;
         }
 
-        // TODO: AUCTION_REOPENED 이벤트 발행 (확장 버전)
-        // auctionEventPublisher.publishAuctionReopened(sagaContext.getAuctionId(), sagaContext.getCorrelationId());
+        // 경매 조회하여 새로운 종료 시간 가져오기
+        Auction auction = findAuction(sagaContext.getAuctionId());
 
-        log.info("[PaymentTimeoutSaga] Step 5 완료 (MVP): AUCTION_REOPENED 로깅만 수행, auctionId={}, sagaId={}",
+        // AUCTION_REOPENED 이벤트 발행 (OutBox 패턴)
+        notificationEventProducer.publishAuctionReopenedNotification(
+                sagaContext.getAuctionId(),
+                sagaContext.getProductSizeId(),
+                sagaContext.getWinnerId(),
+                PAYMENT_TIMEOUT_REASON,
+                auction.getPeriod().getEndTime(),
+                sagaContext.getCorrelationId()
+        );
+
+        log.info("[PaymentTimeoutSaga] Step 4 완료: AUCTION_REOPENED 이벤트 발행, auctionId={}, sagaId={}",
                 sagaContext.getAuctionId(), sagaContext.getId());
 
         // Saga 완료
@@ -319,6 +295,46 @@ public class PaymentTimeoutSagaOrchestrator {
     }
 
     /**
+     * 현재 Saga 단계가 예상한 단계와 일치하는지 검증
+     *
+     * @param sagaContext    Saga Context
+     * @param expectedStep   예상 단계
+     * @return 단계가 일치하면 true, 불일치하면 false
+     */
+    private boolean validateStep(PaymentTimeoutSagaContext sagaContext, PaymentTimeoutSagaStep expectedStep) {
+        if (sagaContext.getCurrentStep() != expectedStep) {
+            log.warn("[PaymentTimeoutSaga] 잘못된 단계: expected={}, actual={}",
+                    expectedStep, sagaContext.getCurrentStep());
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 경매 ID로 경매 조회
+     *
+     * @param auctionId 경매 ID
+     * @return 조회된 경매
+     * @throws AuctionDomainException 경매를 찾을 수 없는 경우
+     */
+    private Auction findAuction(UUID auctionId) {
+        return auctionRepository.findById(auctionId)
+                .orElseThrow(() -> new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_FOUND));
+    }
+
+    /**
+     * 입찰 ID로 입찰 조회
+     *
+     * @param bidId 입찰 ID
+     * @return 조회된 입찰
+     * @throws AuctionDomainException 입찰을 찾을 수 없는 경우
+     */
+    private Bid findBid(UUID bidId) {
+        return bidRepository.findById(bidId)
+                .orElseThrow(() -> new AuctionDomainException(AuctionErrorCode.BID_NOT_FOUND));
+    }
+
+    /**
      * 보상 로그 생성
      * Saga의 각 단계에 대한 보상 로그를 역순으로 생성
      *
@@ -340,10 +356,6 @@ public class PaymentTimeoutSagaOrchestrator {
 
             if (sagaContext.getCurrentStep().ordinal() >= PaymentTimeoutSagaStep.REOPEN_AUCTION.ordinal()) {
                 // Step 1: REOPEN_AUCTION → 경매를 SUCCESS로 되돌림 (중요한 경우만)
-                Map<String, Object> payload = new HashMap<>();
-                payload.put("auctionId", sagaContext.getAuctionId().toString());
-                payload.put("reason", "PAYMENT_TIMEOUT_SAGA_FAILED");
-
                 // 주의: 경매 재오픈이 실패한 경우, 경매를 원래 SUCCESS 상태로 복원해야 할 수 있음
                 // 하지만 일반적으로는 재오픈이 성공하면 보상이 불필요함
                 log.info("[PaymentTimeoutSaga] Step 1 보상: 경매 재오픈 실패 시에만 필요");

@@ -14,7 +14,8 @@ import com.bidket.auction.domain.saga.model.SagaStatus;
 import com.bidket.auction.domain.saga.repository.PaymentTimeoutSagaContextRepository;
 import com.bidket.auction.global.exception.AuctionDomainException;
 import com.bidket.auction.global.exception.AuctionErrorCode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.bidket.auction.infrastructure.notification.NotificationEventProducer;
+import com.bidket.auction.infrastructure.order.OrderEventProducer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -50,10 +51,13 @@ class PaymentTimeoutSagaOrchestratorTest {
     private BidRepository bidRepository;
 
     @Mock
-    private CompensationExecutor compensationExecutor;
+    private OrderEventProducer orderEventProducer;
 
     @Mock
-    private ObjectMapper objectMapper;
+    private NotificationEventProducer notificationEventProducer;
+
+    @Mock
+    private CompensationExecutor compensationExecutor;
 
     @InjectMocks
     private PaymentTimeoutSagaOrchestrator sagaOrchestrator;
@@ -272,31 +276,7 @@ class PaymentTimeoutSagaOrchestratorTest {
     }
 
     @Test
-    @DisplayName("Step 3: 재고 복원 성공 (MVP - 로깅만)")
-    void executeReleaseStockStep_Success() {
-        // given
-        PaymentTimeoutSagaContext context = PaymentTimeoutSagaContext.builder()
-                .id(UUID.randomUUID())
-                .auctionId(auctionId)
-                .orderId(orderId)
-                .winnerId(winnerId)
-                .winningBidId(winningBidId)
-                .productSizeId(productSizeId)
-                .status(SagaStatus.IN_PROGRESS)
-                .currentStep(PaymentTimeoutSagaStep.RELEASE_STOCK)
-                .build();
-
-        when(sagaRepository.save(any(PaymentTimeoutSagaContext.class))).thenReturn(context);
-
-        // when
-        sagaOrchestrator.executeReleaseStockStep(context);
-
-        // then
-        verify(sagaRepository).save(any(PaymentTimeoutSagaContext.class));
-    }
-
-    @Test
-    @DisplayName("Step 4: 주문 취소 성공 (MVP - 로깅만)")
+    @DisplayName("Step 3: 주문 취소 성공 (MVP - 로깅만)")
     void executeCancelOrderStep_Success() {
         // given
         PaymentTimeoutSagaContext context = PaymentTimeoutSagaContext.builder()
@@ -335,6 +315,7 @@ class PaymentTimeoutSagaOrchestratorTest {
                 .build();
 
         when(sagaRepository.save(any(PaymentTimeoutSagaContext.class))).thenReturn(context);
+        when(auctionRepository.findById(auctionId)).thenReturn(Optional.of(auction));
 
         // when
         sagaOrchestrator.executePublishReopenEventStep(context);
