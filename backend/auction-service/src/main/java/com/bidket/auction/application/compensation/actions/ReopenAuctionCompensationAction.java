@@ -2,6 +2,7 @@ package com.bidket.auction.application.compensation.actions;
 
 import com.bidket.auction.application.compensation.CompensationAction;
 import com.bidket.auction.domain.auction.model.Auction;
+import com.bidket.auction.domain.auction.model.AuctionStatus;
 import com.bidket.auction.domain.auction.repository.AuctionRepository;
 import com.bidket.auction.global.exception.AuctionDomainException;
 import com.bidket.auction.global.exception.AuctionErrorCode;
@@ -34,7 +35,7 @@ public class ReopenAuctionCompensationAction implements CompensationAction {
                 .orElseThrow(() -> new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
         // 2. Idempotency 체크: 이미 재오픈된 경매는 건너뜀
-        if (auction.getStatus() == com.bidket.auction.domain.auction.model.AuctionStatus.REOPENED) {
+        if (auction.getStatus() == AuctionStatus.REOPENED) {
             log.info("[ReopenAuctionCompensation] 이미 재오픈된 경매: auctionId={}, status={}",
                     auctionId, auction.getStatus());
             return;
