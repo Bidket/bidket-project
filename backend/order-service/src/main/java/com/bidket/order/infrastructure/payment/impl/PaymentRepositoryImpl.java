@@ -1,9 +1,11 @@
 package com.bidket.order.infrastructure.payment.impl;
 
 import com.bidket.order.domain.payment.model.Payment;
+import com.bidket.order.domain.payment.model.PaymentStatus;
 import com.bidket.order.domain.payment.repository.PaymentRepository;
 import com.bidket.order.infrastructure.payment.entity.PaymentEntity;
 import com.bidket.order.infrastructure.payment.repository.PaymentJpaRepository;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,5 +28,16 @@ public class PaymentRepositoryImpl implements PaymentRepository {
     public Page<Payment> findByUserId(UUID userId, Pageable pageable) {
         return paymentJpaRepository.findByUserId(userId, pageable)
                 .map(PaymentEntity::toModel);
+    }
+
+    @Override
+    public Optional<Payment> findByOrderId(UUID orderId) {
+        return paymentJpaRepository.findByOrderId(orderId)
+                .map(PaymentEntity::toModel);
+    }
+
+    @Override
+    public boolean existsByOrderIdAndStatus(UUID orderId, PaymentStatus status) {
+        return paymentJpaRepository.existsByOrderIdAndStatus(orderId, status);
     }
 }

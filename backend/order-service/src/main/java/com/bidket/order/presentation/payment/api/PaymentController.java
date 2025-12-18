@@ -4,8 +4,11 @@ import com.bidket.common.presentation.response.ApiResponse;
 import com.bidket.common.presentation.response.PageResponse;
 import com.bidket.order.application.payment.facade.PaymentFacade;
 import com.bidket.order.application.payment.info.PaymentSummaryInfo;
+import com.bidket.order.presentation.payment.dto.request.PaymentConfirmRequest;
 import com.bidket.order.presentation.payment.dto.request.PaymentCreateRequest;
+import com.bidket.order.presentation.payment.dto.request.PaymentFailRequest;
 import com.bidket.order.presentation.payment.dto.response.PaymentCreateResponse;
+import com.bidket.order.presentation.payment.dto.response.PaymentStatusResponse;
 import com.bidket.order.presentation.payment.dto.response.PaymentSummaryResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,7 +41,7 @@ public class PaymentController {
     )
     @PostMapping
     public ApiResponse<PaymentCreateResponse> createPayment(
-            @RequestParam String userId,              // TODO: 인증 적용 예정 (토큰에서 userId 추출)
+            @RequestParam String userId, // TODO: 인증 적용 예정
             @RequestBody PaymentCreateRequest request
     ) {
         UUID userUuid = UUID.fromString(userId);
@@ -56,6 +60,56 @@ public class PaymentController {
         );
     }
 
+    @Operation(
+            summary = "결제 승인 처리",
+            description = "PG 결제 완료 후 전달되는 paymentKey, orderId, amount 등을 검증하고 결제를 최종 승인합니다.\n"
+                    + "성공 시 주문 상태를 PAID로 변경합니다."
+    )
+    @PostMapping("/confirm")
+    public ApiResponse<PaymentStatusResponse> confirmPayment(
+            @RequestParam String userId, // TODO: 인증 적용 예정
+            @RequestBody PaymentConfirmRequest request
+    ) {
+        UUID userUuid = UUID.fromString(userId);
+
+        var payment = paymentFacade.confirmPayment(
+                userUuid,
+                request.paymentKey(),
+                request.orderId(),
+                request.amount()
+        );
+
+        return ApiResponse.success(
+                "결제가 승인되었습니다.",
+                PaymentStatusResponse.from(payment)
+        );
+    }
+
+    @Operation(
+            summary = "결제 실패 처리",
+            description = "PG 결제 실패/취소 콜백을 처리합니다.\n"
+                    + "결제 상태를 FAILED로 기록하고 주문 상태를 CANCELED 또는 EXPIRED로 변경합니다."
+    )
+    @PatchMapping("/fail")
+    public ApiResponse<PaymentStatusResponse> failPayment(
+            @RequestParam String userId, // TODO: 인증 적용 예정
+            @RequestBody PaymentFailRequest request
+    ) {
+        UUID userUuid = UUID.fromString(userId);
+
+        var payment = paymentFacade.failPayment(
+                userUuid,
+                request.orderId(),
+                request.errorCode(),
+                request.errorMessage()
+        );
+
+        return ApiResponse.success(
+                "결제 실패가 처리되었습니다.",
+                PaymentStatusResponse.from(payment)
+        );
+    }
+
     @GetMapping
     @Operation(
             summary = "결제 목록 조회",
@@ -64,7 +118,7 @@ public class PaymentController {
     public ApiResponse<PageResponse<PaymentSummaryResponse>> getMyPayments(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam String userId            // TODO: 인증 적용 예정 (토큰에서 userId 추출)
+            @RequestParam String userId // TODO: 인증 적용 예정
     ) {
         UUID userUuid = UUID.fromString(userId);
         Pageable pageable = PageRequest.of(page, size);
