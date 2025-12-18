@@ -42,8 +42,8 @@ jobs:
       - name: Run deployment script on EC2
         run: |
           ssh -p 2222 ubuntu@${{ secrets.EC2_HOST }} "
-            export EUREKA_IMAGE_TAG=${{ github.sha }} &&
-            export GATEWAY_IMAGE_TAG=${{ github.sha }} &&
+            export EUREKA_IMAGE_TAG=latest &&
+            export GATEWAY_IMAGE_TAG=$latest &&
             chmod +x /opt/bidket/run.sh && 
             bash /opt/bidket/run.sh
           "
