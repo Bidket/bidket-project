@@ -9,10 +9,10 @@ echo "📌 Step 1. 이동: /opt/bidket"
 cd /opt/bidket || exit
 
 echo "📌 Step 2. 최신 이미지 Pull"
-docker docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml pull
 
 echo "📌 Step 3. docker compose 적용"
-docker docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 
 echo "📌 Step 4. 불필요한 도커 이미지 정리"
 docker image prune -f
