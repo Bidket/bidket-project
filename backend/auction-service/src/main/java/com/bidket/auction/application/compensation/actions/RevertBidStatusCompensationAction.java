@@ -2,6 +2,7 @@ package com.bidket.auction.application.compensation.actions;
 
 import com.bidket.auction.application.compensation.CompensationAction;
 import com.bidket.auction.domain.bid.model.Bid;
+import com.bidket.auction.domain.bid.model.BidStatus;
 import com.bidket.auction.domain.bid.repository.BidRepository;
 import com.bidket.auction.global.exception.AuctionDomainException;
 import com.bidket.auction.global.exception.AuctionErrorCode;
@@ -34,7 +35,7 @@ public class RevertBidStatusCompensationAction implements CompensationAction {
                 .orElseThrow(() -> new AuctionDomainException(AuctionErrorCode.BID_NOT_FOUND));
 
         // 2. Idempotency 체크: 이미 WON이 아니면 건너뜀
-        if (bid.getStatus() != com.bidket.auction.domain.bid.model.BidStatus.WON) {
+        if (bid.getStatus() != BidStatus.WON) {
             log.info("[RevertBidStatusCompensation] 이미 WON 상태가 아닌 입찰: bidId={}, status={}",
                     bidId, bid.getStatus());
             return;
