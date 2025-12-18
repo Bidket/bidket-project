@@ -12,6 +12,7 @@ public record EventTemplate(
         LocalDateTime occurredAt,
         String source,
         UUID userId,
+        String eventType,
         Map<String, Object> data
 ) {
 }

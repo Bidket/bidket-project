@@ -6,18 +6,18 @@ import com.bidket.queue.domain.repository.QueueManagementRepository;
 import com.bidket.queue.domain.repository.QueueTrafficRepository;
 import com.bidket.queue.global.util.jwt.TokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.kafka.core.reactive.ReactiveKafkaProducerTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
+import reactor.kafka.sender.KafkaSender;
+import reactor.kafka.sender.SenderRecord;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -32,24 +32,13 @@ public class QueueScheduler {
     private final QueueManagementRepository managementRepository;
     private final QueueTrafficRepository trafficRepository;
     private final TokenProvider tokenProvider;
-    private final ReactiveKafkaProducerTemplate<String, EventTemplate> kafkaTemplate;
-    private final Sinks.Many<EventTemplate> eventSink = Sinks.many().multicast().onBackpressureBuffer();
+    private final KafkaSender<String, EventTemplate> kafkaSender;
     private final ObjectMapper objectMapper;
 
     private final String EVENT_SOURCE = "queue-service";
 
     @Value("${kafka.notification.queue.admitted.topic}")
     private String queueEnterTopic;
-
-    @PostConstruct
-    public void init() {
-        eventSink.asFlux()
-                .flatMap(event -> kafkaTemplate.send(queueEnterTopic, event.userId().toString(), event))
-                .doOnComplete(() -> log.info("complete"))
-                .doOnError(e -> log.error("알림 이벤트 발행 실패: {}", e.getMessage(), e))
-                .onErrorResume(e -> Mono.empty())
-                .subscribe();
-    }
 
     @Scheduled(fixedDelay = 1000)
     public void entranceSchedule() {
@@ -100,24 +89,38 @@ public class QueueScheduler {
                                                         .then(trafficRepository.saveToken(auctionId, userTokens))
                                                         // TODO 입장 시 Active Queue TTL 연장 정책 확립해야함
                                                         .then(managementRepository.setExpiration(activeKey, Instant.now().plus(1, ChronoUnit.HOURS)))
+                                                        .then(Mono.defer(() -> {
+                                                            if (userIds.isEmpty())
+                                                                return Mono.empty();
+
+                                                            Flux<SenderRecord<String, EventTemplate, UUID>> records = Flux.fromIterable(userIds)
+                                                                    .map(userId -> {
+                                                                        QueueEnteredNotificationEvent eventData = QueueEnteredNotificationEvent.builder()
+                                                                                .auctionId(auctionId)
+                                                                                .userId(userId)
+                                                                                .enterTime(LocalDateTime.now())
+                                                                                .build();
+
+                                                                        EventTemplate event = EventTemplate.builder()
+                                                                                .eventId(UUID.randomUUID())
+                                                                                .occurredAt(LocalDateTime.now())
+                                                                                .source(EVENT_SOURCE)
+                                                                                .userId(userId)
+                                                                                .data(objectMapper.convertValue(eventData, Map.class))
+                                                                                .build();
+
+                                                                        return SenderRecord.create(
+                                                                                new ProducerRecord<>(queueEnterTopic, event.eventId().toString(), event),
+                                                                                event.eventId()
+                                                                        );
+                                                                    });
+
+                                                            return kafkaSender.send(records)
+                                                                    .doOnNext(r -> log.debug("이벤트 발행 성공: correctionId = {}", r.correlationMetadata()))
+                                                                    .then();
+
+                                                        }))
                                                         .doOnSuccess(isSuccess -> {
-                                                            userIds.forEach(userId -> {
-                                                                QueueEnteredNotificationEvent eventData = QueueEnteredNotificationEvent.builder()
-                                                                        .auctionId(auctionId)
-                                                                        .userId(userId)
-                                                                        .enterTime(LocalDateTime.now())
-                                                                        .build();
-
-                                                                EventTemplate event = EventTemplate.builder()
-                                                                        .eventId(UUID.randomUUID())
-                                                                        .occurredAt(LocalDateTime.now())
-                                                                        .source(EVENT_SOURCE)
-                                                                        .userId(userId)
-                                                                        .data(objectMapper.convertValue(eventData, Map.class))
-                                                                        .build();
-
-                                                                eventSink.emitNext(event, Sinks.EmitFailureHandler.busyLooping(Duration.ofMillis(100L)));
-                                                            });
                                                             log.info("경매[{}] 알림 이벤트 발행 완료: {}명", auctionId, userIds.size());
                                                         });
                                             });

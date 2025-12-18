@@ -19,11 +19,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.reactive.ReactiveKafkaProducerTemplate;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
+import reactor.kafka.sender.KafkaSender;
+import reactor.kafka.sender.SenderRecord;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -39,24 +42,13 @@ public class QueueTrafficService {
     private final QueueTrafficRepository trafficRepository;
     private final QueueManagementRepository managementRepository;
     private final TokenProvider tokenProvider;
-    private final ReactiveKafkaProducerTemplate<String, EventTemplate> kafkaTemplate;
-    private final Sinks.Many<EventTemplate> eventSink = Sinks.many().multicast().onBackpressureBuffer();
+    private final KafkaSender<String, EventTemplate> kafkaSender;
     private final ObjectMapper objectMapper;
 
     private final String EVENT_SOURCE = "queue-service";
 
     @Value("${kafka.notification.queue.near_turn.topic}")
     private String queueNearTurnTopic;
-
-    @PostConstruct
-    public void init() {
-        eventSink.asFlux()
-                .flatMap(event -> kafkaTemplate.send(queueNearTurnTopic, event.userId().toString(), event))
-                .doOnComplete(() -> log.info("complete"))
-                .doOnError(e -> log.error("알림 이벤트 발행 실패: {}", e.getMessage(), e))
-                .onErrorResume(e -> Mono.empty())
-                .subscribe();
-    }
 
     @Value("${heartbeat.frequency}")
     private Long heartbeatFrequency;
@@ -96,7 +88,17 @@ public class QueueTrafficService {
                             .build());
                 })
                 .switchIfEmpty(trafficRepository.getRank(auctionId, userId)
-                        .map(rank -> {
+                        .flatMap(rank -> {
+                            QueueAccommodatableResponse response = QueueAccommodatableResponse.builder()
+                                    .auctionId(auctionId)
+                                    .userId(userId)
+                                    .status(UserStatus.WAITING)
+                                    .rank(rank)
+                                    .retryAfter(3)
+                                    .token(null)
+                                    .message("현재 대기 인원 " + rank + "명 남았습니다.")
+                                    .build();
+
                             if (rank <= 10) {
                                 QueueNearTurnEvent eventData = QueueNearTurnEvent.builder()
                                         .auctionId(auctionId)
@@ -112,18 +114,18 @@ public class QueueTrafficService {
                                         .data(objectMapper.convertValue(eventData, Map.class))
                                         .build();
 
-                                eventSink.emitNext(event, Sinks.EmitFailureHandler.busyLooping(Duration.ofMillis(100L)));
+                                SenderRecord<String, EventTemplate, UUID> record = SenderRecord.create(
+                                        new ProducerRecord<>(queueNearTurnTopic, event.eventId().toString(), event),
+                                        event.eventId()
+                                );
+
+                                return kafkaSender.send(Mono.just(record))
+                                        .next()
+                                        .doOnError(e -> log.error("알림 전송 실패", e))
+                                        .then(Mono.just(response));
                             }
 
-                            return QueueAccommodatableResponse.builder()
-                                    .auctionId(auctionId)
-                                    .userId(userId)
-                                    .status(UserStatus.WAITING)
-                                    .rank(rank)
-                                    .retryAfter(3)
-                                    .token(null)
-                                    .message("현재 대기 인원 " + rank + "명 남았습니다.")
-                                    .build();
+                            return Mono.just(response);
                         })
                         .switchIfEmpty(Mono.error(() -> new QueueException(QueueErrorCode.WAITING_USER_NOT_FOUND)))
                 );

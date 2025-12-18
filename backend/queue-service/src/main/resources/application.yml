@@ -62,6 +62,8 @@ kafka:
         partition: 3
         replicas: 1
         retention: 8400
+  auction:
+    topic: queue.auction
 
 springdoc:
   default-consumes-media-type: application/json;charset=UTF-8
