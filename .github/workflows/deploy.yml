@@ -1,17 +1,20 @@
 name: Deploy to EC2
 
 on:
-  workflow_run:
-    workflows:
-      # - Build & Push Eureka Server Image # 변동 있을때 활성화
-      - Build & Push Gateway Service Image
-    types:
-      - completed
-  workflow_dispatch: {} # 수동 실행용
+  push:
+    branches:
+      - cicd-test
+  #workflow_run:
+  #  workflows:
+  #    # - Build & Push Eureka Server Image # 변동 있을때 활성화
+  #    - Build & Push Gateway Service Image
+  #  types:
+  #    - completed
+  #workflow_dispatch: {} # 수동 실행용
 
 jobs:
   deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    #if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:

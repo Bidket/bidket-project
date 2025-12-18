@@ -11,6 +11,9 @@ cd /opt/bidket || exit
 echo "📌 Step 2. 최신 이미지 Pull"
 docker compose -f docker-compose.prod.yml pull
 
+echo "⏳ Step 2-1. build/push 대기 (임시)"
+sleep 20
+
 echo "📌 Step 3. docker compose 적용"
 docker compose --env-file .env.dev \
   -f docker-compose.prod.yml \
