@@ -43,8 +43,7 @@ public class AuctionEndSagaMessageHandler implements OrderSagaMessageHandler {
                 sagaId, orderId, auctionId);
 
         // Saga Context 조회
-        AuctionEndSagaContext sagaContext = sagaRepository.findById(sagaId)
-                .orElseThrow(() -> new AuctionDomainException(AuctionErrorCode.SAGA_NOT_FOUND));
+        AuctionEndSagaContext sagaContext = findSagaContext(sagaId);
 
         // orderId 저장
         sagaContext.recordOrderId(orderId);
@@ -96,5 +95,10 @@ public class AuctionEndSagaMessageHandler implements OrderSagaMessageHandler {
             return (UUID) value;
         }
         return UUID.fromString(value.toString());
+    }
+
+    private AuctionEndSagaContext findSagaContext(UUID sagaId) {
+        return sagaRepository.findById(sagaId)
+                .orElseThrow(() -> new AuctionDomainException(AuctionErrorCode.SAGA_NOT_FOUND));
     }
 }
