@@ -17,6 +17,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +36,9 @@ public class NotificationService {
     private final EmailSender emailSender;
     private final ObjectMapper objectMapper;
 
+    @Value("${system.user.id}")
+    private UUID systemUserId;
+
     /**
      * 알림 단건 발송
      * @param request 알림 발송 요청
@@ -49,6 +53,8 @@ public class NotificationService {
         switch (notificationType) {
             case "SLACK":
                 channel = NotificationChannel.SLACK;
+                // SLACK 알림은 시스템 사용자 UUID 사용 (운영/모니터링용)
+                // userId가 null이면 시스템 사용자 UUID를 기본값으로 사용
                 break;
             case "EMAIL":
                 channel = NotificationChannel.EMAIL;
@@ -56,6 +62,11 @@ public class NotificationService {
                 if (request.target() == null || request.target().trim().isEmpty()) {
                     throw new NotificationException(NotificationErrorCode.INVALID_NOTIFICATION_TYPE,
                             "이메일 알림의 경우 수신자 이메일 주소(target)가 필수입니다.");
+                }
+                // userId도 필수 (스키마상 NOT NULL)
+                if (request.userId() == null) {
+                    throw new NotificationException(NotificationErrorCode.INVALID_NOTIFICATION_TYPE,
+                            "이메일 알림의 경우 대상 회원 ID(userId)가 필수입니다.");
                 }
                 break;
             case "IN_APP":
@@ -81,9 +92,17 @@ public class NotificationService {
             }
         }
 
+        // userId 결정: SLACK 알림의 경우 null이면 시스템 사용자 UUID 사용
+        UUID userId = request.userId();
+        if (channel == NotificationChannel.SLACK && userId == null) {
+            userId = systemUserId;
+            log.debug("SLACK 알림에 시스템 사용자 UUID 사용: {}", userId);
+        }
+
         // 알림 엔티티 생성
+        // REST API 직접 발송의 경우: occurredAt=현재시각, source=notification-service
         Notification notification = Notification.builder()
-                .userId(request.userId())
+                .userId(userId)
                 .type(request.type())
                 .category(request.category())
                 .channel(channel)
@@ -92,39 +111,48 @@ public class NotificationService {
                 .linkUrl(request.linkUrl())
                 .payload(payloadJson)
                 .status(NotificationStatus.PENDING)
+                .occurredAt(java.time.LocalDateTime.now()) // REST API 직접 발송 시 현재 시각
+                .source("notification-service") // REST API 직접 발송
+                .retryCount(0)
                 .build();
 
         // 알림 저장
         notification = notificationRepository.save(notification);
 
-        // 알림 타입에 따른 발송 처리
+        // 알림 채널에 따른 발송 처리
         NotificationStatus finalStatus;
         String resultMessage;
         
         try {
-            boolean success = false;
-
-            if (notificationType.equals("SLACK")) {
-                // Slack 발송 처리
-                success = slackSender.sendMessage(
-                        notification.getTitle(),
-                        notification.getMessage(),
-                        notification.getLinkUrl()
-                );
-            } else if (notificationType.equals("EMAIL")) {
-                // 이메일 발송 처리 (HTML 형식)
-                success = emailSender.sendHtmlEmail(
-                        request.target(), // 수신자 이메일 주소
-                        notification.getTitle(),
-                        notification.getTitle(),
-                        notification.getMessage(),
-                        notification.getLinkUrl()
-                );
-            } else if (notificationType.equals("IN_APP")) {
-                // In-App 알림은 외부 발송이 필요 없으므로 바로 성공 처리
-                // 데이터베이스에 저장된 알림을 사용자가 조회할 수 있도록 함
-                success = true;
-            }
+            boolean success = switch (channel) {
+                case SLACK -> {
+                    // Slack 발송 처리
+                    yield slackSender.sendMessage(
+                            notification.getTitle(),
+                            notification.getMessage(),
+                            notification.getLinkUrl()
+                    );
+                }
+                case EMAIL -> {
+                    // 이메일 발송 처리 (HTML 형식)
+                    yield emailSender.sendHtmlEmail(
+                            request.target(), // 수신자 이메일 주소
+                            notification.getTitle(),
+                            notification.getTitle(),
+                            notification.getMessage(),
+                            notification.getLinkUrl()
+                    );
+                }
+                case IN_APP -> {
+                    // In-App 알림은 외부 발송이 필요 없으므로 바로 성공 처리
+                    // 데이터베이스에 저장된 알림을 사용자가 조회할 수 있도록 함
+                    yield true;
+                }
+                default -> {
+                    log.warn("지원하지 않는 알림 채널입니다. channel={}", channel);
+                    yield false;
+                }
+            };
 
             if (success) {
                 notification.markAsSent();
