@@ -3,6 +3,7 @@ package com.bidket.user.presentation.api;
 import com.bidket.common.presentation.response.ApiResponse;
 import com.bidket.user.application.service.BidEligibilityService;
 import com.bidket.user.application.service.BlacklistRegisterService;
+import com.bidket.user.application.service.BlacklistReleaseService;
 import com.bidket.user.application.service.BlacklistStatusService;
 import com.bidket.user.application.service.EmailCheckService;
 import com.bidket.user.application.service.LoginService;
@@ -17,6 +18,7 @@ import com.bidket.user.presentation.dto.request.LoginRequest;
 import com.bidket.user.presentation.dto.request.SignupRequest;
 import com.bidket.user.presentation.dto.response.BidEligibilityResponse;
 import com.bidket.user.presentation.dto.response.BlacklistRegisterResponse;
+import com.bidket.user.presentation.dto.response.BlacklistReleaseResponse;
 import com.bidket.user.presentation.dto.response.BlacklistStatusResponse;
 import com.bidket.user.presentation.dto.response.EmailCheckResponse;
 import com.bidket.user.presentation.dto.response.LoginResponse;
@@ -37,6 +39,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -64,6 +67,7 @@ public class MemberController {
     private final PermissionsService permissionsService;
     private final BlacklistStatusService blacklistStatusService;
     private final BlacklistRegisterService blacklistRegisterService;
+    private final BlacklistReleaseService blacklistReleaseService;
     private final BidEligibilityService bidEligibilityService;
     private final PointBalanceService pointBalanceService;
     private final PointHistoryService pointHistoryService;
@@ -257,6 +261,21 @@ public class MemberController {
         BlacklistRegisterResponse response = blacklistRegisterService.registerBlacklist(memberId, request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
+                .body(response);
+    }
+
+    /**
+     * 블랙리스트 해제 API (관리자)
+     * @param memberId 블랙리스트를 해제할 회원 ID
+     * @return 블랙리스트 해제 응답 (memberId, blacklisted, updatedAt)
+     */
+    @Operation(summary = "블랙리스트 해제", description = "특정 회원의 블랙리스트를 해제합니다.", tags = {"03. 블랙리스트 관리"}, security = @SecurityRequirement(name = "Bearer Authentication"))
+    @DeleteMapping("/{memberId}/blacklist")
+    public ResponseEntity<BlacklistReleaseResponse> releaseBlacklist(
+            @PathVariable UUID memberId) {
+        BlacklistReleaseResponse response = blacklistReleaseService.releaseBlacklist(memberId);
+        return ResponseEntity
+                .status(HttpStatus.OK)
                 .body(response);
     }
 
