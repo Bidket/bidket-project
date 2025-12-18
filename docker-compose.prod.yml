@@ -1,8 +1,7 @@
-version: "3.9"
 
 services:
   eureka-server:
-    image: bidket/eureka-server:latest
+    image: bidket/eureka-server:${EUREKA_IMAGE_TAG}
     container_name: eureka-server
     ports:
       - "8761:8761"
@@ -14,7 +13,7 @@ services:
       - bidket-net
 
   gateway-service:
-    image: bidket/gateway-service:latest
+    image: bidket/gateway-service:${GATEWAY_IMAGE_TAG}
     container_name: gateway-service
     ports:
       - "8000:8000"

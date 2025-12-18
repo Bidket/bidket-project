@@ -46,10 +46,16 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
-            -t bidket/gateway-service:latest \
+            -t bidket/gateway-service:${{ github.sha }} \
             backend/gateway-service
 
       # 7) Docker Hub로 Push
       - name: Push Docker image
         run: |
+          docker push bidket/gateway-service:${{ github.sha }}
+
+      # 8) 최신 안정본 표시
+      - name: Tag as latest
+        run: |
+          docker tag bidket/gateway-service:${{ github.sha }} bidket/gateway-service:latest
           docker push bidket/gateway-service:latest

@@ -46,10 +46,16 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
-            -t bidket/eureka-server:latest \
+            -t bidket/eureka-server:${{ github.sha }} \
             backend/eureka-server
 
       # 7) Docker Hub로 Push
       - name: Push Docker image
         run: |
+          docker push bidket/eureka-server:${{ github.sha }}
+
+      # 8) 최신 안정본 표시
+      - name: Tag as latest
+        run: |
+          docker tag bidket/eureka-server:${{ github.sha }} bidket/eureka-server:latest
           docker push bidket/eureka-server:latest

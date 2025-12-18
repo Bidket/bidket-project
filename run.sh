@@ -12,7 +12,9 @@ echo "📌 Step 2. 최신 이미지 Pull"
 docker compose -f docker-compose.prod.yml pull
 
 echo "📌 Step 3. docker compose 적용"
-docker compose -f docker-compose.prod.yml up -d
+docker compose --env-file .env.dev \
+  -f docker-compose.prod.yml \
+  up -d --pull always
 
 echo "📌 Step 4. 불필요한 도커 이미지 정리"
 docker image prune -f
