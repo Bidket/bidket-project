@@ -28,6 +28,10 @@ public enum UserErrorCode {
     INACTIVE_MEMBER(HttpStatus.FORBIDDEN, "INACTIVE_MEMBER", "비활성화된 계정입니다."),
     BLACKLISTED_MEMBER(HttpStatus.FORBIDDEN, "BLACKLISTED_MEMBER", "블랙리스트 회원으로 로그인할 수 없습니다."),
     
+    // 404 Not Found
+    BLACKLIST_NOT_FOUND(HttpStatus.NOT_FOUND, "BLACKLIST_NOT_FOUND", "블랙리스트를 찾을 수 없습니다."),
+    BLACKLIST_ALREADY_RELEASED(HttpStatus.CONFLICT, "BLACKLIST_ALREADY_RELEASED", "이미 해제된 블랙리스트입니다."),
+    
     // 405 Method Not Allowed
     METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "METHOD_NOT_ALLOWED", "이 요청 방식은 허용되지 않습니다."),
     

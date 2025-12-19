@@ -18,7 +18,6 @@ public interface UserBlacklistRepository extends JpaRepository<UserBlacklist, Lo
     
     /**
      * 활성화된 블랙리스트 조회
-     * 
      * @param userId 사용자 ID
      * @return 활성화되고 만료되지 않은 블랙리스트 (active=true AND (expire_at IS NULL OR expire_at > now()))
      */
@@ -26,5 +25,12 @@ public interface UserBlacklistRepository extends JpaRepository<UserBlacklist, Lo
            "AND ub.active = true " +
            "AND (ub.expireAt IS NULL OR ub.expireAt > :now)")
     Optional<UserBlacklist> findActiveBlacklistByUserId(@Param("userId") UUID userId, @Param("now") LocalDateTime now);
+    
+    /**
+     * 사용자의 최근 블랙리스트 조회 (활성화 여부와 무관)
+     * @param userId 사용자 ID
+     * @return 사용자의 가장 최근 블랙리스트 (활성화 여부와 무관)
+     */
+    Optional<UserBlacklist> findFirstByUserIdOrderByCreatedAtDesc(UUID userId);
 }
 
