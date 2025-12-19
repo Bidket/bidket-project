@@ -29,6 +29,20 @@ spring:
       host: localhost
       port: 6379
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: notification-service
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.deserializer.value.delegate.type: com.bidket.notification.domain.model.EventTemplate
+        spring.json.trusted.packages: "*"
+        spring.json.value.default.type: com.bidket.notification.domain.model.EventTemplate
+
   mail:
     host: ${EMAIL_HOST:smtp.gmail.com}
     port: ${EMAIL_PORT:587}
@@ -59,3 +73,15 @@ jwt:
 slack:
   webhook:
     url: ${SLACK_WEBHOOK_URL}
+
+system:
+  user:
+    id: ${SYSTEM_USER_ID:00000000-0000-0000-0000-000000000000} # 시스템 사용자 UUID (SLACK 알림용)
+
+services:
+  user-service:
+    name: user-service
+    url: http://localhost:8100
+  auction-service:
+    name: auction-service
+    url: http://localhost:8300

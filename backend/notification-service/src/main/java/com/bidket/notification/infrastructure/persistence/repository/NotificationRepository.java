@@ -27,7 +27,7 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
      * 사용자 ID와 읽음 여부로 알림 목록 조회
      */
     @Query("SELECT n FROM Notification n WHERE n.userId = :userId AND " +
-           "(:read = true AND n.readAt IS NOT NULL) OR (:read = false AND n.readAt IS NULL) " +
+           "((:read = true AND n.readAt IS NOT NULL) OR (:read = false AND n.readAt IS NULL)) " +
            "ORDER BY n.createdAt DESC")
     Page<Notification> findByUserIdAndReadStatus(@Param("userId") UUID userId,
                                                   @Param("read") boolean read,
@@ -65,5 +65,18 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
             @Param("category") String category,
             Pageable pageable
     );
+
+    /**
+     * eventId로 알림 조회 (멱등성 확인용)
+     * @deprecated channel을 함께 확인하는 existsByEventIdAndChannel 사용 권장
+     */
+    @Deprecated
+    boolean existsByEventId(UUID eventId);
+
+    /**
+     * eventId와 channel로 알림 존재 여부 확인 (멱등성 확인용)
+     * DB 제약조건: UNIQUE(event_id, channel)
+     */
+    boolean existsByEventIdAndChannel(UUID eventId, com.bidket.notification.domain.model.NotificationChannel channel);
 }
 
