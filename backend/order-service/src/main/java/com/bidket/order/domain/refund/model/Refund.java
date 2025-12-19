@@ -5,6 +5,7 @@ import java.util.UUID;
 
 public record Refund(
         UUID id,
+        UUID userId,
         UUID paymentId,
         Long refundAmount,
         Long refundedPointAmount,
@@ -27,6 +28,7 @@ public record Refund(
     }
 
     public static Refund request(
+            UUID userId,
             UUID paymentId,
             Long refundAmount,
             Long refundPointAmount,
@@ -35,6 +37,7 @@ public record Refund(
     ) {
         return new Refund(
                 null,
+                userId,
                 paymentId,
                 refundAmount,
                 refundPointAmount,
