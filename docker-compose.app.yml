@@ -1,0 +1,24 @@
+
+services:
+  gateway-service:
+    image: bidket/gateway-service:${GATEWAY_IMAGE_TAG}
+    container_name: gateway-service
+    ports:
+      - "${GATEWAY_PORT}:8000"
+    environment:
+      - TZ=Asia/Seoul
+      - SPRING_PROFILES_ACTIVE=prod
+
+      # infra EC2 eureka로 연결
+      - EUREKA_SERVER_URL=${EUREKA_SERVER_URL}
+
+      # JWT
+      - JWT_SECRET=${JWT_SECRET}
+
+    restart: unless-stopped
+    networks:
+      - bidket-app-net
+
+networks:
+  bidket-app-net:
+    driver: bridge
