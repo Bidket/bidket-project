@@ -2,10 +2,13 @@ package com.bidket.user.presentation.api;
 
 import com.bidket.common.presentation.response.ApiResponse;
 import com.bidket.user.application.service.BidEligibilityService;
+import com.bidket.user.application.service.BlacklistListService;
 import com.bidket.user.application.service.BlacklistRegisterService;
+import com.bidket.user.application.service.BlacklistReleaseService;
 import com.bidket.user.application.service.BlacklistStatusService;
 import com.bidket.user.application.service.EmailCheckService;
 import com.bidket.user.application.service.LoginService;
+import com.bidket.user.application.service.NicknameCheckService;
 import com.bidket.user.application.service.MyInfoService;
 import com.bidket.user.application.service.PermissionsService;
 import com.bidket.user.application.service.PointBalanceService;
@@ -15,10 +18,13 @@ import com.bidket.user.presentation.dto.request.BlacklistRegisterRequest;
 import com.bidket.user.presentation.dto.request.LoginRequest;
 import com.bidket.user.presentation.dto.request.SignupRequest;
 import com.bidket.user.presentation.dto.response.BidEligibilityResponse;
+import com.bidket.user.presentation.dto.response.BlacklistListResponse;
 import com.bidket.user.presentation.dto.response.BlacklistRegisterResponse;
+import com.bidket.user.presentation.dto.response.BlacklistReleaseResponse;
 import com.bidket.user.presentation.dto.response.BlacklistStatusResponse;
 import com.bidket.user.presentation.dto.response.EmailCheckResponse;
 import com.bidket.user.presentation.dto.response.LoginResponse;
+import com.bidket.user.presentation.dto.response.NicknameCheckResponse;
 import com.bidket.user.presentation.dto.response.MyInfoResponse;
 import com.bidket.user.presentation.dto.response.PermissionsResponse;
 import com.bidket.user.presentation.dto.response.PointBalanceResponse;
@@ -35,6 +41,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -58,9 +65,12 @@ public class MemberController {
     private final LoginService loginService;
     private final MyInfoService myInfoService;
     private final EmailCheckService emailCheckService;
+    private final NicknameCheckService nicknameCheckService;
     private final PermissionsService permissionsService;
     private final BlacklistStatusService blacklistStatusService;
+    private final BlacklistListService blacklistListService;
     private final BlacklistRegisterService blacklistRegisterService;
+    private final BlacklistReleaseService blacklistReleaseService;
     private final BidEligibilityService bidEligibilityService;
     private final PointBalanceService pointBalanceService;
     private final PointHistoryService pointHistoryService;
@@ -94,6 +104,38 @@ public class MemberController {
             )
             @RequestParam(required = false) String email) {
         EmailCheckResponse response = emailCheckService.checkEmail(email);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
+    }
+
+    /**
+     * 닉네임 중복 체크 API
+     * @param nickname 중복 여부를 확인할 닉네임 (Query Parameter)
+     * @return 닉네임 중복 체크 응답 (nickname, available, reason)
+     */
+    @Operation(summary = "닉네임 중복 체크", description = "닉네임의 중복 여부를 확인합니다.", tags = {"01. 회원 인증"}, operationId = "auth-01-check-nickname")
+    @GetMapping("/check-nickname")
+    public ResponseEntity<NicknameCheckResponse> checkNickname(
+            @Parameter(
+                    description = "중복 여부를 확인할 닉네임",
+                    examples = {
+                            @ExampleObject(
+                                    name = "사용 가능한 닉네임",
+                                    summary = "사용 가능",
+                                    value = "새로운닉네임",
+                                    description = "등록되지 않은 닉네임으로 사용 가능"
+                            ),
+                            @ExampleObject(
+                                    name = "중복된 닉네임",
+                                    summary = "중복됨",
+                                    value = "비드켓",
+                                    description = "이미 등록된 닉네임으로 사용 불가"
+                            )
+                    }
+            )
+            @RequestParam(required = false) String nickname) {
+        NicknameCheckResponse response = nicknameCheckService.checkNickname(nickname);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(response);
@@ -209,6 +251,28 @@ public class MemberController {
     }
 
     /**
+     * 블랙리스트 목록 조회 API (관리자)
+     * @param page 페이지 번호 (0부터 시작, 기본값 0)
+     * @param size 페이지 사이즈 (기본값 20)
+     * @param activeOnly 현재 유효한 블랙리스트만 조회할지 여부 (기본값 true)
+     * @return 블랙리스트 목록 조회 응답 (페이지네이션 포함)
+     */
+    @Operation(summary = "블랙리스트 목록 조회", description = "블랙리스트 목록을 조회합니다.", tags = {"03. 블랙리스트 관리"}, security = @SecurityRequirement(name = "Bearer Authentication"))
+    @GetMapping("/blacklist")
+    public ResponseEntity<BlacklistListResponse> getBlacklistList(
+            @Parameter(description = "페이지 번호 (0부터 시작)", example = "0", schema = @Schema(defaultValue = "0"))
+            @RequestParam(required = false) Integer page,
+            @Parameter(description = "페이지 사이즈", example = "20", schema = @Schema(defaultValue = "20"))
+            @RequestParam(required = false) Integer size,
+            @Parameter(description = "현재 유효한 블랙리스트만 조회할지 여부", example = "true", schema = @Schema(defaultValue = "true"))
+            @RequestParam(required = false) Boolean activeOnly) {
+        BlacklistListResponse response = blacklistListService.getBlacklistList(page, size, activeOnly);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
+    }
+
+    /**
      * 블랙리스트 등록 API
      * @param memberId 블랙리스트로 등록할 회원 ID
      * @param request 블랙리스트 등록 요청 정보 (reason, expireAt)
@@ -222,6 +286,21 @@ public class MemberController {
         BlacklistRegisterResponse response = blacklistRegisterService.registerBlacklist(memberId, request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
+                .body(response);
+    }
+
+    /**
+     * 블랙리스트 해제 API (관리자)
+     * @param memberId 블랙리스트를 해제할 회원 ID
+     * @return 블랙리스트 해제 응답 (memberId, blacklisted, updatedAt)
+     */
+    @Operation(summary = "블랙리스트 해제", description = "특정 회원의 블랙리스트를 해제합니다.", tags = {"03. 블랙리스트 관리"}, security = @SecurityRequirement(name = "Bearer Authentication"))
+    @DeleteMapping("/{memberId}/blacklist")
+    public ResponseEntity<BlacklistReleaseResponse> releaseBlacklist(
+            @PathVariable UUID memberId) {
+        BlacklistReleaseResponse response = blacklistReleaseService.releaseBlacklist(memberId);
+        return ResponseEntity
+                .status(HttpStatus.OK)
                 .body(response);
     }
 
@@ -268,9 +347,12 @@ public class MemberController {
     @Operation(summary = "포인트 히스토리 조회", description = "현재 로그인한 사용자의 포인트 거래 내역을 조회합니다.", tags = {"04. 포인트"}, security = @SecurityRequirement(name = "Bearer Authentication"))
     @GetMapping("/points/history")
     public ResponseEntity<PointHistoryResponse> getPointHistory(
-            @RequestParam(required = false) @Schema(example = "0") Integer page,
-            @RequestParam(required = false) @Schema(example = "20") Integer size,
-            @RequestParam(required = false) @Schema(example = "CHARGE") String type) {
+            @Parameter(description = "페이지 번호 (0부터 시작)", example = "0", schema = @Schema(defaultValue = "0"))
+            @RequestParam(required = false) Integer page,
+            @Parameter(description = "페이지 사이즈", example = "20", schema = @Schema(defaultValue = "20"))
+            @RequestParam(required = false) Integer size,
+            @Parameter(description = "필터용 타입 (CHARGE, USE, REFUND, CANCEL 등)", example = "CHARGE")
+            @RequestParam(required = false) String type) {
         PointHistoryResponse response = pointHistoryService.getPointHistory(page, size, type);
         return ResponseEntity
                 .status(HttpStatus.OK)
