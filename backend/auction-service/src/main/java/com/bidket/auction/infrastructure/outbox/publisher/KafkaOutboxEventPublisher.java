@@ -10,6 +10,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
+import com.bidket.auction.infrastructure.kafka.config.KafkaTopics;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -83,10 +84,10 @@ public class KafkaOutboxEventPublisher implements OutboxEventPublisher {
      */
     private String resolveTopic(String aggregateType) {
         return switch (aggregateType.toUpperCase()) {
-            case "ORDER", "SAGA" -> com.bidket.auction.infrastructure.kafka.config.KafkaTopics.ORDER_AUCTION;
-            case "AUCTION" -> com.bidket.auction.infrastructure.kafka.config.KafkaTopics.AUCTION_EVENTS;
-            case "NOTIFICATION" -> com.bidket.auction.infrastructure.kafka.config.KafkaTopics.NOTIFICATION_AUCTION;
-            default -> com.bidket.auction.infrastructure.kafka.config.KafkaTopics.AUCTION_EVENTS;
+            case "ORDER", "SAGA" -> KafkaTopics.ORDER_AUCTION;
+            case "AUCTION" -> KafkaTopics.AUCTION_EVENTS;
+            case "NOTIFICATION" -> KafkaTopics.NOTIFICATION_AUCTION;
+            default -> KafkaTopics.AUCTION_EVENTS;
         };
     }
 }

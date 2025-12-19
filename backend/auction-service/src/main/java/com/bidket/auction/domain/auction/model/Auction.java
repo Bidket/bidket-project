@@ -25,6 +25,57 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * [Senior's Guide: 역할]
+ * 이 클래스는 Bidket 경매 도메인의 핵심 Aggregate Root입니다.
+ * 경매의 전체 생명주기를 관리하며, [경매 생성 → 확정 → 시작 → 입찰 → 종료 → 낙찰] 흐름의 중심에 있습니다.
+ *
+ * [도메인 흐름에서의 위치]
+ * 1. 생성 단계: CREATING → PENDING (Product Service의 재고 확보 대기)
+ * 2. 시작 단계: PENDING → ACTIVE (AuctionScheduler가 startTime 도래 시 자동 시작)
+ * 3. 진행 단계: ACTIVE (사용자 입찰 진행, BidService와 협력)
+ * 4. 종료 단계: ACTIVE → SUCCESS/EXPIRED (AuctionEndSaga 시작)
+ * 5. 예외 흐름: SUCCESS → REOPENED (PaymentTimeoutSaga - 결제 타임아웃 시)
+ *
+ * [왜 이렇게 설계했을까?]
+ *
+ * 1. @NoArgsConstructor(access = AccessLevel.PROTECTED)
+ *    - JPA는 엔티티 로드 시 기본 생성자가 필요합니다 (리플렉션 사용)
+ *    - 하지만 외부에서 new Auction()으로 직접 생성하는 것은 불완전한 객체를 만들 수 있어 위험합니다
+ *    - PROTECTED로 설정하여 JPA/프록시는 접근 가능하지만, 도메인 외부에서는 Builder만 사용하도록 강제했습니다
+ *    - 이는 "항상 유효한 상태의 객체만 존재한다"는 도메인 불변식(Invariant)을 지키는 설계입니다
+ *
+ * 2. @Version (Optimistic Lock)
+ *    - 여러 사용자가 동시에 같은 경매에 입찰할 때 데이터 일관성을 보장합니다
+ *    - 예: User A와 User B가 동시에 입찰 → JPA가 version을 체크하여 하나만 성공
+ *    - 실패한 입찰은 @RetryOnOptimisticLock AOP가 자동으로 재시도합니다
+ *    - DB 락(Pessimistic Lock)보다 성능이 좋고, 동시성이 높은 경매 시스템에 적합합니다
+ *
+ * 3. @Embedded (Value Object 패턴)
+ *    - PriceInfo, AuctionPeriod, WinnerInfo, AuctionStats는 개념적으로 Auction의 일부입니다
+ *    - 별도 테이블로 분리하면 JOIN이 필요하고 복잡도가 증가합니다
+ *    - Embedded로 설계하여 응집도를 높이고, 하나의 트랜잭션으로 원자적 업데이트를 보장합니다
+ *    - "경매"라는 개념이 여러 속성의 집합이 아니라, 하나의 완전한 비즈니스 객체임을 명확히 합니다
+ *
+ * 4. @Index 설계 이유
+ *    - idx_auction_status_end: 스케줄러가 "종료 시간 도래 & ACTIVE 상태" 경매를 빠르게 조회
+ *    - idx_auction_seller: 판매자별 경매 목록 조회 (마이페이지)
+ *    - idx_auction_product_size: 동일 상품에 대해 ACTIVE 경매가 이미 있는지 확인 (1개 신발 = 1개 경매 규칙)
+ *    - idx_auction_winner: 낙찰자별 낙찰 내역 조회
+ *
+ * [어디서 이 클래스를 사용하나요?]
+ * - {@link com.bidket.auction.application.auction.service.AuctionService}: 경매 생성, 조회, 수정
+ * - {@link com.bidket.auction.application.bid.service.BidService}: 입찰 시 currentPrice 업데이트
+ * - {@link com.bidket.auction.application.auction.scheduler.AuctionScheduler}: 경매 시작/종료
+ * - {@link com.bidket.auction.application.saga.AuctionEndSagaOrchestrator}: 경매 종료 후 Saga 시작
+ * - {@link com.bidket.auction.application.saga.PaymentTimeoutSagaOrchestrator}: 결제 타임아웃 시 경매 재오픈
+ *
+ * [신입 개발자 주의사항]
+ * - 경매 상태 변경은 반드시 도메인 메서드를 사용하세요 (setStatus() 같은 setter는 없습니다)
+ * - 예: auction.start(), auction.end(), auction.reopen()
+ * - 직접 필드를 변경하면 비즈니스 규칙이 깨질 수 있습니다
+ * - 모든 상태 전이는 validate()를 거치며, 잘못된 전이 시도는 예외가 발생합니다
+ */
 @Entity
 @Table(name = "auction", indexes = {
     @Index(name = "idx_auction_status_end", columnList = "status, end_time"),

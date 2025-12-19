@@ -29,7 +29,6 @@ public class OrderRepositoryImpl implements OrderRepository {
             entity = orderJpaRepository.findById(order.id())
                     .map(existing -> {
                         existing.setStatus(order.status());
-                        existing.setUpdatedAt(order.updatedAt());
                         return existing;
                     })
                     .orElseGet(() -> toEntity(order));

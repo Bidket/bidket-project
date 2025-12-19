@@ -62,12 +62,8 @@ eureka:
 
 # Feign Client 설정
 feign:
-  queue-service:
-    url: ${QUEUE_SERVICE_URL:http://localhost:8400}
   product-service:
     url: ${PRODUCT_SERVICE_URL:http://localhost:8200}
-  order-service:
-    url: ${ORDER_SERVICE_URL:http://localhost:8500}
 
 # Outbox 폴링 설정
 outbox:
@@ -99,19 +95,6 @@ bidket:
 resilience4j:
   circuitbreaker:
     instances:
-      # Order Service 호출 Circuit Breaker
-      orderService:
-        sliding-window-type: COUNT_BASED
-        sliding-window-size: 10
-        minimum-number-of-calls: 5
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 30s
-        permitted-number-of-calls-in-half-open-state: 3
-        automatic-transition-from-open-to-half-open-enabled: true
-        record-exceptions:
-          - java.util.concurrent.TimeoutException
-          - org.springframework.web.client.ResourceAccessException
-          - java.net.ConnectException
       # Product Service 호출 Circuit Breaker
       productService:
         sliding-window-type: COUNT_BASED

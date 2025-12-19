@@ -3,6 +3,7 @@ package com.bidket.auction.infrastructure.notification;
 import com.bidket.auction.application.outbox.service.OutboxService;
 import com.bidket.auction.domain.outbox.model.AuctionOutbox;
 import com.bidket.auction.infrastructure.kafka.event.AuctionClosedEvent;
+import com.bidket.auction.infrastructure.kafka.event.AuctionReopenedEvent;
 import com.bidket.auction.infrastructure.kafka.event.OutbidEvent;
 import com.bidket.auction.infrastructure.kafka.event.StandardEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,6 +29,8 @@ import java.util.UUID;
  *    - 패찰자: result="LOST"
  * 2. 상회 입찰 알림 (OUTBID)
  *    - 이전 최고 입찰자에게 발행
+ * 3. 경매 재오픈 알림 (AUCTION_REOPENED)
+ *    - 결제 타임아웃 또는 주문 취소로 경매가 재오픈되었을 때 발행
  */
 @Slf4j
 @Component
@@ -157,6 +160,54 @@ public class NotificationEventProducer {
 
         log.info("상회 입찰 알림 OutBox 저장 완료: outboxId={}, previousBidderId={}, auctionId={}",
                 outbox.getId(), previousBidderId, auctionId);
+        return outbox;
+    }
+
+    /**
+     * 경매 재오픈 알림 이벤트를 OutBox에 저장
+     *
+     * @param auctionId 경매 ID
+     * @param productSizeId 상품 사이즈 ID
+     * @param previousWinnerId 이전 낙찰자 ID
+     * @param reason 재오픈 사유
+     * @param newEndTime 새로운 종료 시간
+     * @param correlationId 상관 ID (Saga ID)
+     * @return 저장된 OutBox 엔티티
+     */
+    @Transactional
+    public AuctionOutbox publishAuctionReopenedNotification(
+            UUID auctionId,
+            UUID productSizeId,
+            UUID previousWinnerId,
+            String reason,
+            LocalDateTime newEndTime,
+            UUID correlationId
+    ) {
+        log.info("경매 재오픈 알림 이벤트 발행: auctionId={}, previousWinnerId={}, reason={}",
+                auctionId, previousWinnerId, reason);
+
+        // 경매 재오픈 알림 이벤트 생성
+        StandardEvent event = AuctionReopenedEvent.create(
+                auctionId,
+                productSizeId,
+                previousWinnerId,
+                reason,
+                newEndTime,
+                correlationId
+        );
+
+        // StandardEvent를 Map으로 변환하여 OutBox에 저장
+        Map<String, Object> payload = convertToMap(event);
+
+        AuctionOutbox outbox = outboxService.saveNotificationEvent(
+                event.eventType(),
+                auctionId,
+                payload,
+                correlationId
+        );
+
+        log.info("경매 재오픈 알림 OutBox 저장 완료: outboxId={}, auctionId={}, previousWinnerId={}",
+                outbox.getId(), auctionId, previousWinnerId);
         return outbox;
     }
 

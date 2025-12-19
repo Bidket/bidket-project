@@ -98,6 +98,7 @@ class BidControllerIntegrationTest {
         // When & Then
         mockMvc.perform(post("/api/v1/bids")
                         .header("X-User-Id", bidderId.toString())
+                        .header("X-Queue-Verified", "true")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -141,7 +142,8 @@ class BidControllerIntegrationTest {
     void shouldBuyNow() throws Exception {
         // When & Then
         mockMvc.perform(post("/api/v1/bids/auction/" + auctionId + "/buy-now")
-                        .header("X-User-Id", bidderId.toString()))
+                        .header("X-User-Id", bidderId.toString())
+                        .header("X-Queue-Verified", "true"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("즉시 구매가 완료되었습니다"))

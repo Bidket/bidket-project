@@ -2,7 +2,7 @@ package com.bidket.auction.infrastructure.config;
 
 import com.bidket.auction.application.compensation.CompensationExecutor;
 import com.bidket.auction.application.compensation.actions.CancelOrderCompensationAction;
-import com.bidket.auction.application.compensation.actions.ReleaseStockCompensationAction;
+import com.bidket.auction.application.compensation.actions.CancelPaymentCompensationAction;
 import com.bidket.auction.application.compensation.actions.ReopenAuctionCompensationAction;
 import com.bidket.auction.application.compensation.actions.RevertBidStatusCompensationAction;
 import com.bidket.auction.domain.compensation.model.CompensationType;
@@ -26,7 +26,7 @@ public class CompensationConfig {
     private final ReopenAuctionCompensationAction reopenAuctionAction;
     private final CancelOrderCompensationAction cancelOrderAction;
     private final RevertBidStatusCompensationAction revertBidStatusAction;
-    private final ReleaseStockCompensationAction releaseStockAction;
+    private final CancelPaymentCompensationAction cancelPaymentAction;
 
     @PostConstruct
     public void registerCompensationActions() {
@@ -50,14 +50,11 @@ public class CompensationConfig {
                 revertBidStatusAction
         );
 
-        // 4. 재고 복원
+        // 4. 결제 취소
         compensationExecutor.registerCompensationAction(
-                CompensationType.RESTORE_STOCK,
-                releaseStockAction
+                CompensationType.CANCEL_PAYMENT,
+                cancelPaymentAction
         );
-
-        // TODO: 추가 보상 액션 등록
-        // - CANCEL_PAYMENT: 결제 취소
 
         log.info("[CompensationConfig] 보상 액션 등록 완료: count={}",
                 4);

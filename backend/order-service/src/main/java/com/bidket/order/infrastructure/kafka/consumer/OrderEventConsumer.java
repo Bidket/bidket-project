@@ -159,11 +159,11 @@ public class OrderEventConsumer {
                     correlationId
             );
 
-            log.info("[OrderEventConsumer] 주문 생성 완료: orderId={}, sagaId={}", orderInfo.id(), sagaId);
+            log.info("[OrderEventConsumer] 주문 생성 완료: orderId={}, sagaId={}", orderInfo.getOrderId(), sagaId);
 
             // ORDER_CREATED 이벤트 발행
             auctionEventProducer.publishOrderCreated(
-                    orderInfo.id(),
+                    orderInfo.getOrderId(),
                     sagaId,
                     auctionId,
                     userId,

@@ -6,11 +6,6 @@ package com.bidket.auction.domain.compensation.model;
  */
 public enum CompensationType {
     /**
-     * 재고 복원
-     */
-    RESTORE_STOCK("재고 복원"),
-
-    /**
      * 주문 취소
      */
     CANCEL_ORDER("주문 취소"),

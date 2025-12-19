@@ -38,17 +38,93 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 
 /**
- * 경매 종료 Saga Orchestrator
- * BACKLOG.md SAGA-001 (line 707-762) 구현
+ * [Senior's Guide: 역할]
+ * 이 클래스는 경매가 종료된 후의 복잡한 후속 처리를 "Saga 패턴"으로 조율하는 지휘자(Orchestrator)입니다.
+ * [경매 종료 → 주문 생성 → 낙찰 처리 → 알림 발행] 흐름을 4단계로 나누어 실행하며,
+ * 중간에 실패하면 보상 트랜잭션(Compensation)을 역순으로 실행하여 일관성을 복구합니다.
  *
- * Saga Flow:
- * 1. CREATE_ORDER: Order Service에 주문 생성 요청
- * 2. MARK_WINNING_BID: 낙찰 입찰 상태를 WON으로 변경
- * 3. FINALIZE_AUCTION: 경매 상태를 SUCCESS로 변경
- * 4. PUBLISH_END_EVENT: AUCTION_ENDED 이벤트 발행
+ * [도메인 흐름에서의 위치]
+ * 경매 라이프사이클의 [종료 및 낙찰 단계]에 속하며, AuctionScheduler가 경매를 종료한 직후 시작됩니다.
+ * - 트리거: AuctionScheduler.endExpiredAuctions() → auction.end() → startAuctionEndSaga()
+ * - 목표: 낙찰자에게 주문을 생성하고, 경매를 확정하며, 모든 참여자에게 알립니다
+ * - 예외 처리: 주문 생성 실패 시 경매를 재오픈하여 공정성을 보장합니다
  *
- * Compensation:
- * - ORDER_CREATION_FAILED 시 경매 재오픈 (ACTIVE, endTime + 24h)
+ * [왜 Saga 패턴을 사용했을까?]
+ *
+ * 1. 분산 트랜잭션 문제
+ *    - Auction Service와 Order Service는 별도의 마이크로서비스이며, 각자 다른 DB를 사용합니다
+ *    - 일반적인 @Transactional로는 두 서비스를 하나의 트랜잭션으로 묶을 수 없습니다
+ *    - 예: 경매 종료 후 주문 생성 요청 → Order Service 장애 → 경매는 종료됐지만 주문은 없음 (데이터 불일치!)
+ *
+ * 2. Saga 패턴의 해결책
+ *    - 각 단계를 작은 "로컬 트랜잭션"으로 쪼개고, 상태(SagaContext)를 DB에 저장하여 진행 상황을 추적합니다
+ *    - 중간에 실패하면 이미 완료된 단계를 "보상 트랜잭션"으로 되돌립니다 (Compensating Transaction)
+ *    - 예: Step 1 성공 → Step 2 실패 → Step 1 보상 실행 → 원래 상태로 복구
+ *
+ * 3. @CircuitBreaker, @Retry, @Bulkhead (Resilience4j)
+ *    - @CircuitBreaker: Order Service가 계속 실패하면 Circuit을 열어서 빠르게 실패하고 보상 시작
+ *    - @Retry: 일시적 네트워크 오류는 재시도로 해결 (최대 3회)
+ *    - @Bulkhead: 동시 실행 Saga 개수 제한하여 리소스 고갈 방지 (최대 10개)
+ *    - @TimeLimiter: Saga 전체가 30초 이상 걸리면 타임아웃 (Zombie Saga 방지)
+ *
+ * [Saga 단계별 설명]
+ *
+ * Step 1: CREATE_ORDER (주문 생성 요청)
+ *    - Order Service에 Kafka로 CREATE_ORDER_REQUESTED 이벤트 발행
+ *    - 보상 로그: REOPEN_AUCTION (주문 생성 실패 시 경매 재오픈)
+ *    - 왜 먼저?: 주문이 생성되어야 낙찰자가 결제할 수 있습니다
+ *
+ * Step 2: MARK_WINNING_BID (낙찰 입찰 표시)
+ *    - 최고가 입찰의 상태를 ACTIVE → WON으로 변경
+ *    - 보상 로그: REVERT_BID_STATUS (WON → ACTIVE로 복원)
+ *    - 왜 필요?: 낙찰자가 누구인지 명확히 하고, 입찰 취소를 방지합니다
+ *
+ * Step 3: FINALIZE_AUCTION (경매 확정)
+ *    - 경매 상태를 ACTIVE → SUCCESS로 변경
+ *    - 낙찰자 정보(winnerId, winningBidId, finalPrice) 저장
+ *    - 보상 로그: 없음 (이 시점에서 실패하면 재시도만 함)
+ *
+ * Step 4: PUBLISH_END_EVENT (종료 이벤트 발행)
+ *    - AUCTION_ENDED 이벤트를 Kafka로 발행 (낙찰자에게 축하 알림)
+ *    - 보상 로그: 없음 (알림은 실패해도 재발행하지 않음)
+ *
+ * [보상 트랜잭션 (Compensation)]
+ *
+ * 언제 실행되나요?
+ * - Order Service가 ORDER_CREATION_FAILED 이벤트를 보낼 때
+ * - AuctionEndSagaMessageHandler.handleOrderCreationFailed() → executeCompensations()
+ *
+ * 무엇을 복구하나요?
+ * 1. REOPEN_AUCTION: 경매를 ACTIVE 상태로 되돌리고 endTime을 +24시간 연장
+ * 2. REVERT_BID_STATUS: 낙찰 입찰을 WON → ACTIVE로 복원 (다시 입찰 가능)
+ * 3. CANCEL_ORDER: Order Service에 주문 취소 요청 (이미 생성된 경우)
+ *
+ * 역순 실행 (LIFO):
+ * - Step 3 보상 → Step 2 보상 → Step 1 보상 (생성의 역순으로 되돌림)
+ *
+ * [서비스 재시작 시 복구 (Saga Recovery)]
+ *
+ * 1. SagaRecoveryService가 @PostConstruct에서 미완료 Saga를 자동 복구합니다
+ * 2. PENDING 상태: 처음부터 재실행
+ * 3. IN_PROGRESS 상태: 현재 단계(currentStep)부터 재개
+ * 4. Zombie Saga (10분 이상 멈춤): 보상 트랜잭션 실행 후 FAILED 상태로 변경
+ *
+ * [어디서 이 클래스를 사용하나요?]
+ * - 트리거: {@link com.bidket.auction.application.auction.scheduler.AuctionScheduler}
+ * - 이벤트 수신: {@link AuctionEndSagaMessageHandler} (ORDER_CREATED, ORDER_CREATION_FAILED)
+ * - 보상 실행: {@link com.bidket.auction.application.compensation.CompensationExecutor}
+ * - 복구: {@link SagaRecoveryService}
+ *
+ * [신입 개발자 주의사항]
+ * - Saga는 "결과적 일관성(Eventual Consistency)"을 제공합니다 (즉시 일관성 아님)
+ * - 각 단계는 멱등성(Idempotency)을 보장해야 합니다 (중복 실행되어도 안전해야 함)
+ * - SagaContext 상태를 먼저 저장한 후 비즈니스 로직을 실행하세요 (장애 시 복구 가능)
+ * - Circuit이 열리면 빠르게 보상으로 진행하므로, 불필요한 재시도를 줄입니다
+ * - Saga 실행 중 예외 발생 시 자동으로 보상이 시작됩니다 (catch에서 compensate() 호출)
+ *
+ * [BACKLOG.md 참조]
+ * - SAGA-001 (line 707-762): 경매 종료 Saga 상세 스펙
+ * - COMP-001~003: 보상 트랜잭션 구현 스펙
  */
 @Slf4j
 @Service

@@ -1,6 +1,7 @@
 package com.bidket.auction.infrastructure.order;
 
 import com.bidket.auction.application.outbox.service.OutboxService;
+import com.bidket.auction.infrastructure.kafka.event.CancelOrderRequestedEvent;
 import com.bidket.auction.infrastructure.kafka.event.CreateOrderRequestedEvent;
 import com.bidket.auction.infrastructure.kafka.event.StandardEvent;
 import com.bidket.auction.domain.outbox.model.AuctionOutbox;
@@ -69,6 +70,47 @@ public class OrderEventProducer {
         );
 
         log.info("주문 생성 요청 OutBox 저장 완료: outboxId={}, sagaId={}", outbox.getId(), sagaId);
+        return outbox;
+    }
+
+    /**
+     * 주문 취소 요청 이벤트를 OutBox에 저장
+     *
+     * @param orderId 취소할 주문 ID
+     * @param auctionId 경매 ID
+     * @param reason 취소 사유
+     * @param correlationId 상관 ID
+     * @return 저장된 OutBox 엔티티
+     */
+    @Transactional
+    public AuctionOutbox publishCancelOrderRequest(
+            UUID orderId,
+            UUID auctionId,
+            String reason,
+            UUID correlationId
+    ) {
+        log.info("주문 취소 요청 이벤트 발행: orderId={}, auctionId={}, reason={}",
+                orderId, auctionId, reason);
+
+        // 주문 취소 요청 이벤트 생성
+        StandardEvent event = CancelOrderRequestedEvent.create(
+                orderId,
+                auctionId,
+                reason,
+                correlationId
+        );
+
+        // StandardEvent를 Map으로 변환하여 OutBox에 저장
+        Map<String, Object> payload = convertToMap(event);
+
+        AuctionOutbox outbox = outboxService.saveOrderEvent(
+                event.eventType(),
+                orderId,
+                payload,
+                correlationId
+        );
+
+        log.info("주문 취소 요청 OutBox 저장 완료: outboxId={}, orderId={}", outbox.getId(), orderId);
         return outbox;
     }
 

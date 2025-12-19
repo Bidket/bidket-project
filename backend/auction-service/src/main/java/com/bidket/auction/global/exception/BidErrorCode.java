@@ -24,7 +24,10 @@ public enum BidErrorCode implements BaseErrorCode {
     
     // 403 Forbidden
     CANNOT_CANCEL_HIGHEST_BID(HttpStatus.FORBIDDEN, "BID_403", "최고가 입찰은 취소할 수 없습니다"),
-    NOT_BID_OWNER(HttpStatus.FORBIDDEN, "BID_404", "본인의 입찰만 취소할 수 있습니다");
+    NOT_BID_OWNER(HttpStatus.FORBIDDEN, "BID_404", "본인의 입찰만 취소할 수 있습니다"),
+
+    // 403 Forbidden - Queue 관련 (Gateway에서 검증 실패)
+    QUEUE_ACCESS_DENIED(HttpStatus.FORBIDDEN, "BID_405", "대기열 검증에 실패했습니다. Gateway를 통해 접근해주세요");
 
     private final HttpStatus status;
     private final String code;

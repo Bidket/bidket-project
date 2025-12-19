@@ -361,4 +361,51 @@ class SagaRecoveryServiceTest {
 
         return outbox;
     }
+
+    @Test
+    @DisplayName("PaymentTimeoutSaga 복구 시 모든 유효한 단계를 처리할 수 있어야 한다")
+    void recoverPaymentTimeoutSaga_ShouldHandleAllValidSteps() {
+        // given: 모든 유효한 PaymentTimeoutSagaStep에 대해 테스트
+        for (PaymentTimeoutSagaStep step : PaymentTimeoutSagaStep.values()) {
+            UUID sagaId = UUID.randomUUID();
+            UUID auctionId = UUID.randomUUID();
+            UUID orderId = UUID.randomUUID();
+
+            PaymentTimeoutSagaContext saga = createPaymentTimeoutSaga(sagaId, auctionId, orderId, SagaStatus.IN_PROGRESS);
+            PaymentTimeoutSagaContext spySaga = spy(saga);
+            when(spySaga.getCurrentStep()).thenReturn(step);
+            when(spySaga.getUpdatedAt()).thenReturn(now.minusMinutes(5));
+            when(spySaga.getCreatedAt()).thenReturn(now.minusMinutes(10));
+
+            when(paymentTimeoutSagaRepository.findByStatus(SagaStatus.IN_PROGRESS))
+                    .thenReturn(List.of(spySaga));
+
+            // when: 복구 실행
+            try {
+                sagaRecoveryService.recoverPaymentTimeoutSagas();
+
+                // then: 예외가 발생하지 않아야 함 (컴파일 에러가 없어야 함)
+                // 각 단계에 맞는 메서드가 호출되어야 함
+                switch (step) {
+                    case REOPEN_AUCTION:
+                        verify(paymentTimeoutOrchestrator, times(1)).executeReopenAuctionStep(spySaga);
+                        break;
+                    case REVERT_BID_STATUS:
+                        verify(paymentTimeoutOrchestrator, times(1)).executeRevertBidStatusStep(spySaga);
+                        break;
+                    case CANCEL_ORDER:
+                        verify(paymentTimeoutOrchestrator, times(1)).executeCancelOrderStep(spySaga);
+                        break;
+                    case PUBLISH_REOPEN_EVENT:
+                        verify(paymentTimeoutOrchestrator, times(1)).executePublishReopenEventStep(spySaga);
+                        break;
+                }
+            } catch (Exception e) {
+                throw new AssertionError("복구 중 예외 발생: step=" + step, e);
+            }
+
+            // 다음 테스트를 위해 mock 리셋
+            reset(paymentTimeoutSagaRepository, paymentTimeoutOrchestrator);
+        }
+    }
 }

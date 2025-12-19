@@ -418,9 +418,6 @@ public class SagaRecoveryService {
                 case REVERT_BID_STATUS:
                     paymentTimeoutOrchestrator.executeRevertBidStatusStep(saga);
                     break;
-                case RELEASE_STOCK:
-                    paymentTimeoutOrchestrator.executeReleaseStockStep(saga);
-                    break;
                 case CANCEL_ORDER:
                     paymentTimeoutOrchestrator.executeCancelOrderStep(saga);
                     break;

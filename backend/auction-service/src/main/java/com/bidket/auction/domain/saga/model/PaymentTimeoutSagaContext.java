@@ -57,7 +57,7 @@ public class PaymentTimeoutSagaContext extends BaseEntity {
     private UUID winningBidId;
 
     /**
-     * 상품 사이즈 ID (재고 복원용)
+     * 상품 사이즈 ID (경매 식별용)
      */
     @Column(nullable = false, name = "product_size_id")
     private UUID productSizeId;

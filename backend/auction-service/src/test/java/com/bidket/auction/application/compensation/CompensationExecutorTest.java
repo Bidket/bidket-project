@@ -180,8 +180,8 @@ class CompensationExecutorTest {
     @Test
     @DisplayName("등록되지 않은 보상 타입 실행 시 예외")
     void executeCompensation_UnregisteredType_ThrowsException() {
-        // given: 등록되지 않은 보상 타입
-        CompensationLog log = createCompensationLog(sagaId, CompensationType.RESTORE_STOCK, 1);
+        // given: 등록되지 않은 보상 타입 (CANCEL_ORDER를 등록하지 않음)
+        CompensationLog log = createCompensationLog(sagaId, CompensationType.CANCEL_ORDER, 1);
 
         when(compensationLogRepository.save(any(CompensationLog.class)))
                 .thenReturn(log);
