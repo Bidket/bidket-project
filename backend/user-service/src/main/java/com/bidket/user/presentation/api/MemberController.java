@@ -13,11 +13,13 @@ import com.bidket.user.application.service.MyInfoService;
 import com.bidket.user.application.service.PermissionsService;
 import com.bidket.user.application.service.PointBalanceService;
 import com.bidket.user.application.service.PointHistoryService;
+import com.bidket.user.application.service.MemberDeactivationService;
 import com.bidket.user.application.service.PasswordChangeService;
 import com.bidket.user.application.service.ProfileUpdateService;
 import com.bidket.user.application.service.SignupService;
 import com.bidket.user.presentation.dto.request.BlacklistRegisterRequest;
 import com.bidket.user.presentation.dto.request.LoginRequest;
+import com.bidket.user.presentation.dto.request.MemberDeactivationRequest;
 import com.bidket.user.presentation.dto.request.PasswordChangeRequest;
 import com.bidket.user.presentation.dto.request.ProfileUpdateRequest;
 import com.bidket.user.presentation.dto.request.SignupRequest;
@@ -32,6 +34,7 @@ import com.bidket.user.presentation.dto.response.NicknameCheckResponse;
 import com.bidket.user.presentation.dto.response.MyInfoResponse;
 import com.bidket.user.presentation.dto.response.PermissionsResponse;
 import com.bidket.user.presentation.dto.response.PointBalanceResponse;
+import com.bidket.user.presentation.dto.response.MemberDeactivationResponse;
 import com.bidket.user.presentation.dto.response.PasswordChangeResponse;
 import com.bidket.user.presentation.dto.response.PointHistoryResponse;
 import com.bidket.user.presentation.dto.response.ProfileUpdateResponse;
@@ -83,6 +86,7 @@ public class MemberController {
     private final PointHistoryService pointHistoryService;
     private final ProfileUpdateService profileUpdateService;
     private final PasswordChangeService passwordChangeService;
+    private final MemberDeactivationService memberDeactivationService;
 
     /**
      * 이메일 중복 체크 API
@@ -300,6 +304,51 @@ public class MemberController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.success("비밀번호 변경에 성공했습니다.", response));
+    }
+
+    /**
+     * 회원 탈퇴(비활성화) API
+     * DELETE /v1/members/me
+     * @param request 회원 탈퇴 요청 정보 (reason - 선택사항)
+     * @return 회원 탈퇴 응답 (memberId, status, deactivatedAt)
+     */
+    @Operation(
+            summary = "회원 탈퇴(비활성화)",
+            description = "현재 로그인한 사용자의 계정을 비활성화 처리합니다. 논리삭제 방식으로 데이터는 유지되며, 탈퇴 후 모든 기능이 제한됩니다.",
+            tags = {"02. 회원 정보"},
+            security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "회원 탈퇴 성공",
+                    content = @Content(schema = @Schema(implementation = MemberDeactivationResponse.class))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "400",
+                    description = "잘못된 요청"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "401",
+                    description = "인증 필요 (토큰 누락/만료/위조 등)"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "409",
+                    description = "이미 탈퇴한 사용자"
+            )
+    })
+    @DeleteMapping("/me")
+    public ResponseEntity<ApiResponse<MemberDeactivationResponse>> deactivateMember(
+            @RequestBody(required = false) MemberDeactivationRequest request) {
+        // request가 null인 경우 빈 객체로 처리
+        MemberDeactivationRequest deactivationRequest = request != null 
+                ? request 
+                : new MemberDeactivationRequest(null);
+        
+        MemberDeactivationResponse response = memberDeactivationService.deactivateMember(deactivationRequest);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success("회원 탈퇴가 완료되었습니다.", response));
     }
 
     /**
