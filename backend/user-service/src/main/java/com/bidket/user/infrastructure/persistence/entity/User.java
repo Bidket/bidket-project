@@ -85,6 +85,22 @@ public class User extends BaseEntity {
         this.phone = phone;
     }
 
+    /**
+     * 프로필 수정 (nickname, phone, email)
+     * 각 필드는 null이 아닌 경우에만 업데이트
+     */
+    public void updateProfileFields(String nickname, String phone, String email) {
+        if (nickname != null && !nickname.isBlank()) {
+            this.nickname = nickname;
+        }
+        if (phone != null && !phone.isBlank()) {
+            this.phone = phone;
+        }
+        if (email != null && !email.isBlank()) {
+            this.email = email;
+        }
+    }
+
     public void updateLastLoginAt() {
         this.lastLoginAt = LocalDateTime.now();
     }

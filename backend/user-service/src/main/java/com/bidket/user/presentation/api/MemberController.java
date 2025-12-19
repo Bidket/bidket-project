@@ -13,9 +13,11 @@ import com.bidket.user.application.service.MyInfoService;
 import com.bidket.user.application.service.PermissionsService;
 import com.bidket.user.application.service.PointBalanceService;
 import com.bidket.user.application.service.PointHistoryService;
+import com.bidket.user.application.service.ProfileUpdateService;
 import com.bidket.user.application.service.SignupService;
 import com.bidket.user.presentation.dto.request.BlacklistRegisterRequest;
 import com.bidket.user.presentation.dto.request.LoginRequest;
+import com.bidket.user.presentation.dto.request.ProfileUpdateRequest;
 import com.bidket.user.presentation.dto.request.SignupRequest;
 import com.bidket.user.presentation.dto.response.BidEligibilityResponse;
 import com.bidket.user.presentation.dto.response.BlacklistListResponse;
@@ -29,6 +31,7 @@ import com.bidket.user.presentation.dto.response.MyInfoResponse;
 import com.bidket.user.presentation.dto.response.PermissionsResponse;
 import com.bidket.user.presentation.dto.response.PointBalanceResponse;
 import com.bidket.user.presentation.dto.response.PointHistoryResponse;
+import com.bidket.user.presentation.dto.response.ProfileUpdateResponse;
 import com.bidket.user.presentation.dto.response.SignupResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -43,6 +46,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -74,6 +78,7 @@ public class MemberController {
     private final BidEligibilityService bidEligibilityService;
     private final PointBalanceService pointBalanceService;
     private final PointHistoryService pointHistoryService;
+    private final ProfileUpdateService profileUpdateService;
 
     /**
      * 이메일 중복 체크 API
@@ -217,6 +222,45 @@ public class MemberController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.success("내 정보 조회에 성공했습니다.", response));
+    }
+
+    /**
+     * 프로필 수정 API
+     * @param request 프로필 수정 요청 정보 (nickname, phone, email 중 최소 1개 필수)
+     * @return 프로필 수정 응답 (userId, nickname, phone, email, updatedAt)
+     */
+    @Operation(
+            summary = "프로필 수정",
+            description = "현재 로그인한 사용자의 프로필 정보를 수정합니다. 최소 1개 필드는 포함되어야 합니다.",
+            tags = {"02. 회원 정보"},
+            security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "수정 성공",
+                    content = @Content(schema = @Schema(implementation = ProfileUpdateResponse.class))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "400",
+                    description = "잘못된 요청 (최소 1개 필드 미포함, 형식 오류 등)"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "401",
+                    description = "인증 필요"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "409",
+                    description = "중복된 이메일 또는 닉네임"
+            )
+    })
+    @PatchMapping("/profile")
+    public ResponseEntity<ApiResponse<ProfileUpdateResponse>> updateProfile(
+            @RequestBody @Valid ProfileUpdateRequest request) {
+        ProfileUpdateResponse response = profileUpdateService.updateProfile(request);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success("프로필 수정에 성공했습니다.", response));
     }
 
     /**
