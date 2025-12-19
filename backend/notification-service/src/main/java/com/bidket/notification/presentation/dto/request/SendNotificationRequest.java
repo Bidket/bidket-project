@@ -17,8 +17,8 @@ public record SendNotificationRequest(
         @Schema(description = "알림 타입", example = "SLACK", requiredMode = Schema.RequiredMode.REQUIRED, allowableValues = {"EMAIL", "SMS", "IN_APP", "SLACK"})
         String type, // EMAIL, SMS, IN_APP, SLACK
 
-        @Schema(description = "대상 회원 ID (EMAIL, IN_APP 타입일 때 필수, SLACK 타입일 때 선택)", example = "7c4d3a1b-2f9d-4c62-9b4a-1d2f34e5a678")
-        UUID userId, // 대상 회원 ID (EMAIL, IN_APP일 때 필수, SLACK일 때 선택)
+        @Schema(description = "대상 회원 ID (EMAIL, IN_APP 타입일 때 필수, SLACK 타입일 때 선택 - null이면 시스템 사용자 UUID 사용)", example = "7c4d3a1b-2f9d-4c62-9b4a-1d2f34e5a678")
+        UUID userId, // 대상 회원 ID (EMAIL, IN_APP일 때 필수, SLACK일 때 선택 - null이면 시스템 사용자 UUID 사용)
 
         @NotBlank(message = "알림 제목은 필수입니다.")
         @Schema(description = "알림 제목", example = "경매 시작 알림", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -31,8 +31,8 @@ public record SendNotificationRequest(
         @Schema(description = "알림 타입별 대상 주소: EMAIL 타입일 경우 수신자 이메일 주소 (필수), SLACK 타입일 경우 무시됨 (항상 기본 webhook URL 사용)", example = "user@example.com")
         String target, // EMAIL 타입일 경우 이메일 주소, SLACK 타입일 경우 무시됨
 
-        @Schema(description = "알림 카테고리", example = "AUCTION_START", allowableValues = {"AUCTION_START", "BID_SUCCESS", "PAYMENT_EXPIRE", "QUEUE_CALL", "PAYMENT_DONE", "SYSTEM"})
-        String category, // 알림 카테고리 (AUCTION_START, BID_SUCCESS, PAYMENT_EXPIRE 등, 선택사항)
+        @Schema(description = "알림 카테고리", example = "QUEUE", allowableValues = {"QUEUE", "AUCTION", "ORDER"})
+        String category, // 알림 카테고리 (QUEUE, AUCTION, ORDER, 선택사항)
 
         @Schema(description = "추가 데이터(JSON)", example = "{\"auctionId\":\"550e8400-e29b-41d4-a716-446655440000\",\"shoeId\":\"660e8400-e29b-41d4-a716-446655440001\"}")
         Map<String, Object> payload, // 추가 데이터(JSON), 클라이언트에서 딥링크/상세페이지 이동 등에 사용 (선택사항)
