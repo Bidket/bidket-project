@@ -6,6 +6,7 @@ on:
   #    - Build & Push Gateway Service Image
   #    - Build & Push User Service Image
   #    - Build & Push Product Service Image
+  #    - Build & Push Order Service Image
   #  types:
   #    - completed
 
@@ -64,6 +65,7 @@ jobs:
             sed -i "s/^GATEWAY_IMAGE_TAG=.*/GATEWAY_IMAGE_TAG=latest/" /opt/bidket/app/.env.app
             sed -i "s/^USER_IMAGE_TAG=.*/USER_IMAGE_TAG=latest/" /opt/bidket/app/.env.app
             sed -i "s/^PRODUCT_IMAGE_TAG=.*/PRODUCT_IMAGE_TAG=latest/" /opt/bidket/app/.env.app
+            sed -i "s/^ORDER_IMAGE_TAG=.*/ORDER_IMAGE_TAG=latest/" /opt/bidket/app/.env.app
             chmod +x /opt/bidket/app/run-app.sh
             bash /opt/bidket/app/run-app.sh
           '
