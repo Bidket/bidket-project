@@ -8,6 +8,7 @@ on:
   #    - Build & Push Product Service Image
   #    - Build & Push Order Service Image
   #    - Build & Push Auction Service Image
+  #    - Build & Push Notification Service Image
   #  types:
   #    - completed
 
@@ -68,6 +69,7 @@ jobs:
             sed -i "s/^PRODUCT_IMAGE_TAG=.*/PRODUCT_IMAGE_TAG=latest/" /opt/bidket/app/.env.app
             sed -i "s/^ORDER_IMAGE_TAG=.*/ORDER_IMAGE_TAG=latest/" /opt/bidket/app/.env.app
             sed -i "s/^AUCTION_IMAGE_TAG=.*/AUCTION_IMAGE_TAG=latest/" /opt/bidket/app/.env.app
+            sed -i "s/^NOTIFICATION_IMAGE_TAG=.*/NOTIFICATION_IMAGE_TAG=latest/" /opt/bidket/app/.env.app
             chmod +x /opt/bidket/app/run-app.sh
             bash /opt/bidket/app/run-app.sh
           '
