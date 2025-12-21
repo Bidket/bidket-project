@@ -10,6 +10,7 @@ import com.bidket.user.application.service.EmailCheckService;
 import com.bidket.user.application.service.LoginService;
 import com.bidket.user.application.service.LogoutService;
 import com.bidket.user.application.service.NicknameCheckService;
+import com.bidket.user.application.service.TokenRefreshService;
 import com.bidket.user.application.service.MyInfoService;
 import com.bidket.user.application.service.PermissionsService;
 import com.bidket.user.application.service.PointBalanceService;
@@ -21,6 +22,7 @@ import com.bidket.user.application.service.SignupService;
 import com.bidket.user.presentation.dto.request.BlacklistRegisterRequest;
 import com.bidket.user.presentation.dto.request.LoginRequest;
 import com.bidket.user.presentation.dto.request.MemberDeactivationRequest;
+import com.bidket.user.presentation.dto.request.TokenRefreshRequest;
 import com.bidket.user.presentation.dto.request.PasswordChangeRequest;
 import com.bidket.user.presentation.dto.request.ProfileUpdateRequest;
 import com.bidket.user.presentation.dto.request.SignupRequest;
@@ -33,6 +35,7 @@ import com.bidket.user.presentation.dto.response.EmailCheckResponse;
 import com.bidket.user.presentation.dto.response.LoginResponse;
 import com.bidket.user.presentation.dto.response.LogoutResponse;
 import com.bidket.user.presentation.dto.response.NicknameCheckResponse;
+import com.bidket.user.presentation.dto.response.TokenRefreshResponse;
 import com.bidket.user.presentation.dto.response.MyInfoResponse;
 import com.bidket.user.presentation.dto.response.PermissionsResponse;
 import com.bidket.user.presentation.dto.response.PointBalanceResponse;
@@ -76,6 +79,7 @@ public class MemberController {
     private final SignupService signupService;
     private final LoginService loginService;
     private final LogoutService logoutService;
+    private final TokenRefreshService tokenRefreshService;
     private final MyInfoService myInfoService;
     private final EmailCheckService emailCheckService;
     private final NicknameCheckService nicknameCheckService;
@@ -207,6 +211,43 @@ public class MemberController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.success("로그인에 성공했습니다.", response));
+    }
+
+    /**
+     * 토큰 재발급 API
+     * POST /v1/members/token/refresh
+     * @param request 토큰 재발급 요청 정보 (refreshToken)
+     * @return 토큰 재발급 응답 (accessToken, refreshToken, tokenType, expiresIn)
+     */
+    @Operation(
+            summary = "토큰 재발급",
+            description = "유효한 Refresh Token을 사용하여 새로운 Access Token과 Refresh Token을 발급받습니다. 재발급 성공 시 Refresh Token은 회전되며, 기존 RT는 즉시 무효화됩니다. 인증/권한 불필요하며, 유효한 Refresh Token만으로 재발급 가능합니다.",
+            tags = {"01. 회원 인증"}
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "토큰 재발급 성공",
+                    content = @Content(
+                            schema = @Schema(implementation = TokenRefreshResponse.class)
+                    )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "400",
+                    description = "refreshToken 누락/빈값"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "401",
+                    description = "refreshToken 만료/위조/서명 불일치/DB에 없음(무효화됨)"
+            )
+    })
+    @PostMapping("/token/refresh")
+    public ResponseEntity<ApiResponse<TokenRefreshResponse>> refreshToken(
+            @RequestBody @Valid TokenRefreshRequest request) {
+        TokenRefreshResponse response = tokenRefreshService.refreshToken(request);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success("토큰 재발급에 성공했습니다.", response));
     }
 
     /**
