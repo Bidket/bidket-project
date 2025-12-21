@@ -13,10 +13,12 @@ import com.bidket.user.application.service.MyInfoService;
 import com.bidket.user.application.service.PermissionsService;
 import com.bidket.user.application.service.PointBalanceService;
 import com.bidket.user.application.service.PointHistoryService;
+import com.bidket.user.application.service.PasswordChangeService;
 import com.bidket.user.application.service.ProfileUpdateService;
 import com.bidket.user.application.service.SignupService;
 import com.bidket.user.presentation.dto.request.BlacklistRegisterRequest;
 import com.bidket.user.presentation.dto.request.LoginRequest;
+import com.bidket.user.presentation.dto.request.PasswordChangeRequest;
 import com.bidket.user.presentation.dto.request.ProfileUpdateRequest;
 import com.bidket.user.presentation.dto.request.SignupRequest;
 import com.bidket.user.presentation.dto.response.BidEligibilityResponse;
@@ -30,6 +32,7 @@ import com.bidket.user.presentation.dto.response.NicknameCheckResponse;
 import com.bidket.user.presentation.dto.response.MyInfoResponse;
 import com.bidket.user.presentation.dto.response.PermissionsResponse;
 import com.bidket.user.presentation.dto.response.PointBalanceResponse;
+import com.bidket.user.presentation.dto.response.PasswordChangeResponse;
 import com.bidket.user.presentation.dto.response.PointHistoryResponse;
 import com.bidket.user.presentation.dto.response.ProfileUpdateResponse;
 import com.bidket.user.presentation.dto.response.SignupResponse;
@@ -79,6 +82,7 @@ public class MemberController {
     private final PointBalanceService pointBalanceService;
     private final PointHistoryService pointHistoryService;
     private final ProfileUpdateService profileUpdateService;
+    private final PasswordChangeService passwordChangeService;
 
     /**
      * 이메일 중복 체크 API
@@ -164,7 +168,7 @@ public class MemberController {
             )
     })
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<SignupResponse>> signup(@RequestBody @Valid SignupRequest request) {
+    public ResponseEntity<ApiResponse<SignupResponse>> signup(@RequestBody(required = true) @Valid SignupRequest request) {
         SignupResponse response = signupService.signup(request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -191,7 +195,7 @@ public class MemberController {
             )
     })
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody @Valid LoginRequest request) {
+    public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody(required = true) @Valid LoginRequest request) {
         LoginResponse response = loginService.login(request);
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -256,11 +260,46 @@ public class MemberController {
     })
     @PatchMapping("/profile")
     public ResponseEntity<ApiResponse<ProfileUpdateResponse>> updateProfile(
-            @RequestBody @Valid ProfileUpdateRequest request) {
+            @RequestBody(required = true) @Valid ProfileUpdateRequest request) {
         ProfileUpdateResponse response = profileUpdateService.updateProfile(request);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.success("프로필 수정에 성공했습니다.", response));
+    }
+
+    /**
+     * 비밀번호 변경 API
+     * @param request 비밀번호 변경 요청 정보 (currentPassword, newPassword)
+     * @return 비밀번호 변경 응답 (success, changedAt)
+     */
+    @Operation(
+            summary = "비밀번호 변경",
+            description = "현재 로그인한 사용자의 비밀번호를 변경합니다.",
+            tags = {"02. 회원 정보"},
+            security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "비밀번호 변경 성공",
+                    content = @Content(schema = @Schema(implementation = PasswordChangeResponse.class))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "400",
+                    description = "잘못된 요청 (현재 비밀번호 불일치, 비밀번호 강도 부족, 새 비밀번호가 현재 비밀번호와 동일 등)"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "401",
+                    description = "인증 필요 (토큰 누락/만료/위조 등)"
+            )
+    })
+    @PatchMapping("/password")
+    public ResponseEntity<ApiResponse<PasswordChangeResponse>> changePassword(
+            @RequestBody(required = true) @Valid PasswordChangeRequest request) {
+        PasswordChangeResponse response = passwordChangeService.changePassword(request);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success("비밀번호 변경에 성공했습니다.", response));
     }
 
     /**
@@ -326,7 +365,7 @@ public class MemberController {
     @PostMapping("/{memberId}/blacklist")
     public ResponseEntity<BlacklistRegisterResponse> registerBlacklist(
             @PathVariable UUID memberId,
-            @RequestBody @Valid BlacklistRegisterRequest request) {
+            @RequestBody(required = true) @Valid BlacklistRegisterRequest request) {
         BlacklistRegisterResponse response = blacklistRegisterService.registerBlacklist(memberId, request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
