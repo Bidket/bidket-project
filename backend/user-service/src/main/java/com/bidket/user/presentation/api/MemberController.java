@@ -8,6 +8,7 @@ import com.bidket.user.application.service.BlacklistReleaseService;
 import com.bidket.user.application.service.BlacklistStatusService;
 import com.bidket.user.application.service.EmailCheckService;
 import com.bidket.user.application.service.LoginService;
+import com.bidket.user.application.service.LogoutService;
 import com.bidket.user.application.service.NicknameCheckService;
 import com.bidket.user.application.service.MyInfoService;
 import com.bidket.user.application.service.PermissionsService;
@@ -30,6 +31,7 @@ import com.bidket.user.presentation.dto.response.BlacklistReleaseResponse;
 import com.bidket.user.presentation.dto.response.BlacklistStatusResponse;
 import com.bidket.user.presentation.dto.response.EmailCheckResponse;
 import com.bidket.user.presentation.dto.response.LoginResponse;
+import com.bidket.user.presentation.dto.response.LogoutResponse;
 import com.bidket.user.presentation.dto.response.NicknameCheckResponse;
 import com.bidket.user.presentation.dto.response.MyInfoResponse;
 import com.bidket.user.presentation.dto.response.PermissionsResponse;
@@ -73,6 +75,7 @@ public class MemberController {
 
     private final SignupService signupService;
     private final LoginService loginService;
+    private final LogoutService logoutService;
     private final MyInfoService myInfoService;
     private final EmailCheckService emailCheckService;
     private final NicknameCheckService nicknameCheckService;
@@ -204,6 +207,37 @@ public class MemberController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.success("로그인에 성공했습니다.", response));
+    }
+
+    /**
+     * 로그아웃 API
+     * POST /v1/members/logout
+     * 현재 로그인 세션을 종료하고 Refresh Token을 무효화
+     * 멱등성 보장: 이미 로그아웃된 상태여도 동일하게 성공 응답을 반환
+     * @return 로그아웃 응답 (success)
+     */
+    @Operation(
+            summary = "로그아웃",
+            description = "현재 로그인 세션을 종료하고 Refresh Token을 무효화합니다. Authorization 헤더(Bearer JWT 토큰)가 필수이며, 이를 통해 사용자를 식별하여 해당 사용자의 모든 Refresh Token을 무효화합니다. 멱등성 보장: 이미 로그아웃된 상태여도 성공 응답을 반환합니다.",
+            tags = {"01. 회원 인증"},
+            security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "로그아웃 처리 완료(또는 이미 로그아웃 상태 포함)"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "401",
+                    description = "Authorization 누락 또는 유효하지 않은 토큰"
+            )
+    })
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<LogoutResponse>> logout() {
+        LogoutResponse response = logoutService.logout();
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success("로그아웃이 완료되었습니다.", response));
     }
 
     /**
