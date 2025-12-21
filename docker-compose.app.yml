@@ -83,6 +83,52 @@ services:
         
       # Kafka
       - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+
+      # Order Event Types
+      - EVENT_TYPE_ORDER_CREATED=${EVENT_TYPE_ORDER_CREATED}
+      - EVENT_TYPE_ORDER_CANCELLED=${EVENT_TYPE_ORDER_CANCELLED}
+    restart: unless-stopped
+    networks:
+      - bidket-app-net
+
+  auction-service:
+    image: bidket/auction-service:${AUCTION_IMAGE_TAG}
+    container_name: auction-service
+    environment:
+      - TZ=Asia/Seoul
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_SERVER_URL=${EUREKA_SERVER_URL}
+
+      # JWT
+      - JWT_SECRET=${JWT_SECRET}
+
+      # DB (auction-service)
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - AUCTION_DB=${AUCTION_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+
+      # Redis
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+
+      # Kafka
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+
+      # Auction Event Types
+      - EVENT_TYPE_AUCTION_CREATED=${EVENT_TYPE_AUCTION_CREATED}
+      - EVENT_TYPE_AUCTION_STARTED=${EVENT_TYPE_AUCTION_STARTED}
+      - EVENT_TYPE_AUCTION_ENDED=${EVENT_TYPE_AUCTION_ENDED}
+      - EVENT_TYPE_AUCTION_CANCELLED=${EVENT_TYPE_AUCTION_CANCELLED}
+      - EVENT_TYPE_AUCTION_PRICE_UPDATED=${EVENT_TYPE_AUCTION_PRICE_UPDATED}
+
+      # Bid Event Types
+      - EVENT_TYPE_BID_PLACED=${EVENT_TYPE_BID_PLACED}
+      - EVENT_TYPE_BID_CANCELLED=${EVENT_TYPE_BID_CANCELLED}
+      - EVENT_TYPE_BID_OUTBID=${EVENT_TYPE_BID_OUTBID}
+      - EVENT_TYPE_BID_WON=${EVENT_TYPE_BID_WON}
+      - EVENT_TYPE_HIGHEST_BID_CHANGED=${EVENT_TYPE_HIGHEST_BID_CHANGED}
     restart: unless-stopped
     networks:
       - bidket-app-net
