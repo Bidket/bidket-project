@@ -23,6 +23,11 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     Optional<RefreshToken> findByToken(String token);
     
     /**
+     * 사용자 ID로 리프레시 토큰 조회
+     */
+    Optional<RefreshToken> findByUserId(UUID userId);
+
+    /**
      * 사용자 ID로 리프레시 토큰 삭제
      * @Modifying과 @Query를 사용하여 명시적인 삭제 쿼리로 실행되도록 보장
      * 서비스 메서드에 @Transactional이 있어야 정상 동작
