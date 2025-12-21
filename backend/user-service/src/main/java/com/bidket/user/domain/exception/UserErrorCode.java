@@ -41,6 +41,7 @@ public enum UserErrorCode {
     EMAIL_DUPLICATE(HttpStatus.CONFLICT, "EMAIL_DUPLICATE", "이미 사용 중인 이메일입니다."),
     LOGIN_ID_DUPLICATE(HttpStatus.CONFLICT, "LOGIN_ID_DUPLICATE", "이미 사용 중인 로그인 아이디입니다."),
     NICKNAME_DUPLICATE(HttpStatus.CONFLICT, "NICKNAME_DUPLICATE", "이미 사용 중인 닉네임입니다."),
+    ALREADY_WITHDRAWN(HttpStatus.CONFLICT, "ALREADY_WITHDRAWN", "이미 탈퇴한 회원입니다."),
     
     // 500 Internal Server Error
     SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "SERVER_ERROR", "서버에서 오류가 발생했습니다. 다시 시도해주세요.");

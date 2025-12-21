@@ -61,6 +61,9 @@ public class User extends BaseEntity {
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
+    @Column(name = "deactivated_at")
+    private LocalDateTime deactivatedAt;
+
     @Builder
     public User(String loginId, Provider provider, String providerId, String name, 
                   String password, String email, String nickname, String phone, UserStatus status) {
@@ -115,6 +118,7 @@ public class User extends BaseEntity {
 
     public void withdraw() {
         this.status = UserStatus.WITHDRAWN;
+        this.deactivatedAt = LocalDateTime.now();
     }
 
     public boolean isLocalProvider() {
