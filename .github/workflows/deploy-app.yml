@@ -4,6 +4,7 @@ on:
   #workflow_run:
   #  workflows:
   #    - Build & Push Gateway Service Image
+  #    - Build & Push User Service Image
   #  types:
   #    - completed
 
