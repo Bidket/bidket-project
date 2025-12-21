@@ -133,6 +133,30 @@ services:
     networks:
       - bidket-app-net
 
+  notification-service:
+    image: bidket/notification-service:${NOTIFICATION_IMAGE_TAG}
+    container_name: notification-service
+    environment:
+      - TZ=Asia/Seoul
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_SERVER_URL=${EUREKA_SERVER_URL}
+
+      # Slack Webhook
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+
+      # Email
+      - EMAIL_USERNAME=${EMAIL_USERNAME}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+
+      # Kafka
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+
+      # Notification Event Types
+      - EVENT_TYPE_SEND_NOTIFICATION=${EVENT_TYPE_SEND_NOTIFICATION}
+    restart: unless-stopped
+    networks:
+      - bidket-app-net
+
 networks:
   bidket-app-net:
     driver: bridge
