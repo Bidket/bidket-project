@@ -15,22 +15,22 @@ import java.util.UUID;
 
 @Builder
 @Table("p_queue_outbox")
-public class QueueOutboxEntity implements Persistable<String> {
+public class QueueOutboxEntity implements Persistable<UUID> {
     @Id
     @Column("id")
-    private String id;
+    private UUID id;
     @Column("aggregate_id")
     private UUID aggregateId;
     @Column("aggregate_type")
     private String aggregateType;
     @Column("topic")
     private String topic;
-    @Column("key")
+    @Column("partition_key")
     private String key;
     @Column("payload")
     private String payload;
     @Column("event_type")
-    private EventType eventType;
+    private String eventType;
     @Column("correlation_id")
     private UUID correlationId;
     @Column("retry_count")
@@ -45,19 +45,20 @@ public class QueueOutboxEntity implements Persistable<String> {
     @Transient
     private boolean isNew = true;
 
-    public QueueOutboxEntity from(QueueOutboxModel model) {
+    public static QueueOutboxEntity from(QueueOutboxModel model) {
         return QueueOutboxEntity.builder()
                 .id(model.id())
                 .aggregateId(model.aggregateId())
                 .aggregateType(model.aggregateType())
                 .topic(model.topic())
                 .payload(model.payload())
-                .eventType(model.eventType())
+                .eventType(model.eventType().name())
                 .correlationId(model.correlationId())
                 .retryCount(model.retryCount())
                 .errorMessage(model.errorMessage())
                 .publishedAt(model.publishedAt())
                 .status(model.status())
+                .isNew(true)
                 .build();
     }
 
@@ -68,7 +69,7 @@ public class QueueOutboxEntity implements Persistable<String> {
                 .aggregateType(aggregateType)
                 .topic(topic)
                 .payload(payload)
-                .eventType(eventType)
+                .eventType(EventType.valueOf(eventType))
                 .correlationId(correlationId)
                 .retryCount(retryCount)
                 .errorMessage(errorMessage)
@@ -78,7 +79,7 @@ public class QueueOutboxEntity implements Persistable<String> {
     }
 
     @Override
-    public String getId() {
+    public UUID getId() {
         return id;
     }
 

@@ -117,7 +117,7 @@ public class QueueScheduler {
 
                                                             return kafkaSender.send(records)
                                                                     .doOnNext(r -> log.debug("이벤트 발행 성공: correctionId = {}", r.correlationMetadata()))
-                                                                    .then();
+                                                                    .then(Mono.just(userIds.size()));
 
                                                         }))
                                                         .doOnSuccess(isSuccess -> {

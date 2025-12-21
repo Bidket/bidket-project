@@ -7,14 +7,19 @@ import com.bidket.queue.domain.model.HeartbeatStatus;
 import com.bidket.queue.domain.model.QueueErrorCode;
 import com.bidket.queue.domain.model.QueueTrafficStatus;
 import com.bidket.queue.domain.model.UserStatus;
+import com.bidket.queue.domain.model.outbox.EventType;
+import com.bidket.queue.domain.model.outbox.QueueOutboxModel;
 import com.bidket.queue.domain.repository.QueueManagementRepository;
+import com.bidket.queue.domain.repository.QueueOutboxRepository;
 import com.bidket.queue.domain.repository.QueueTrafficRepository;
 import com.bidket.queue.global.annotation.CheckQueueConfig;
 import com.bidket.queue.global.util.jwt.TokenProvider;
+import com.bidket.queue.infrastructure.persistence.entity.QueueOutboxEntity;
 import com.bidket.queue.presentation.dto.response.QueueAccommodatableResponse;
 import com.bidket.queue.presentation.dto.response.QueueEnterResponse;
 import com.bidket.queue.presentation.dto.response.QueueHeartbeatResponse;
 import com.bidket.queue.presentation.dto.response.QueueStatusResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +45,7 @@ public class QueueTrafficService {
     private final TokenProvider tokenProvider;
     private final KafkaSender<String, EventTemplate> kafkaSender;
     private final ObjectMapper objectMapper;
+    private final QueueOutboxRepository outboxRepository;
 
     private final String EVENT_SOURCE = "queue-service";
 
@@ -95,30 +101,42 @@ public class QueueTrafficService {
                                     .message("현재 대기 인원 " + rank + "명 남았습니다.")
                                     .build();
 
-                            if (rank <= 10) {
+                            return Mono.just(response);
+                        })
+                        .flatMap(response -> {
+                            if(response.rank() <= 10) {
                                 QueueNearTurnEvent eventData = QueueNearTurnEvent.builder()
                                         .auctionId(auctionId)
                                         .userId(userId)
-                                        .rank(rank)
+                                        .rank(response.rank())
                                         .build();
 
-                                EventTemplate event = EventTemplate.builder()
-                                        .eventId(UUID.randomUUID())
-                                        .occurredAt(LocalDateTime.now())
-                                        .userId(userId)
-                                        .source(EVENT_SOURCE)
-                                        .data(objectMapper.convertValue(eventData, Map.class))
-                                        .build();
+                                EventTemplate event = EventTemplate.of(userId,
+                                        EVENT_SOURCE,
+                                        EventType.QUEUE_NEAR_TURN.name(),
+                                        objectMapper.convertValue(eventData, Map.class));
 
-                                SenderRecord<String, EventTemplate, UUID> record = SenderRecord.create(
-                                        new ProducerRecord<>(queueNearTurnTopic, event.eventId().toString(), event),
-                                        event.eventId()
-                                );
+                                return mapToString(event)
+                                        .flatMap(payload -> {
+                                            QueueOutboxModel outboxModel = QueueOutboxModel.builder()
+                                                    .id(UUID.randomUUID())
+                                                    .aggregateId(response.userId())
+                                                    .aggregateType("QUEUE")
+                                                    .topic(queueNearTurnTopic)
+                                                    .key(response.userId().toString())
+                                                    .payload(payload)
+                                                    .eventType(EventType.QUEUE_NEAR_TURN)
+                                                    .correlationId(userId)
+                                                    .retryCount(3)
+                                                    .publishedAt(LocalDateTime.now())
+                                                    .build();
 
-                                return kafkaSender.send(Mono.just(record))
-                                        .next()
-                                        .doOnError(e -> log.error("알림 전송 실패", e))
-                                        .then(Mono.just(response));
+                                            return outboxRepository.save(QueueOutboxEntity.from(outboxModel))
+                                                    .doOnSuccess(entity -> log.info("저장 성공: id[{}]", entity.getId()))
+                                                    .onErrorMap(e -> new QueueException(QueueErrorCode.OUTBOX_SAVE_FAILED, e.getMessage()));
+                                        })
+                                        .thenReturn(response);
+
                             }
 
                             return Mono.just(response);
@@ -174,5 +192,10 @@ public class QueueTrafficService {
                                 .build()
                 )
                 .switchIfEmpty(Mono.error(new QueueException(QueueErrorCode.TOKEN_NOT_FOUND)));
+    }
+
+    private Mono<String> mapToString(Object object) {
+        return Mono.fromCallable(() -> objectMapper.writeValueAsString(object))
+                .onErrorMap(e -> new RuntimeException("JSON 변환 실패", e));
     }
 }

@@ -7,7 +7,7 @@ import java.util.UUID;
 
 @Builder
 public record QueueOutboxModel(
-        String id,
+        UUID id,
         UUID aggregateId,
         String aggregateType,
         String topic,
@@ -20,4 +20,5 @@ public record QueueOutboxModel(
         LocalDateTime publishedAt,
         OutboxStatus status
 ) {
+
 }

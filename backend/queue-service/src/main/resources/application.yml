@@ -2,15 +2,12 @@ server:
   port: 8400
 
 spring:
-  profiles:
-    active: local
   application:
     name: queue-service
   config:
     import: optional:file:.env[.properties]
-
-  datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${QUEUE_DB:bidket_queue}
+  r2dbc:
+    url: r2dbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${QUEUE_DB:bidket_queue}
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
 

@@ -25,7 +25,9 @@ public enum QueueErrorCode implements BaseErrorCode {
     INVALID_UPDATE_FIELD(HttpStatus.INTERNAL_SERVER_ERROR, "수정 필드는 전부 null일 수 없습니다."),
 
     QUEUE_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "대기열 삭제 에러 발생"),
-    NOTIFICATION_EVENT_PUBLISH_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "대기열 이벤트 발행 실패");
+    NOTIFICATION_EVENT_PUBLISH_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "대기열 이벤트 발행 실패"),
+
+    OUTBOX_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "Outbox 데이터 저장 실패");
 
     private final HttpStatus status;
     private final String message;
