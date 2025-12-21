@@ -19,6 +19,29 @@ services:
     networks:
       - bidket-app-net
 
+  user-service:
+    image: bidket/user-service:${USER_IMAGE_TAG}
+    container_name: user-service
+    environment:
+      - TZ=Asia/Seoul
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_SERVER_URL=${EUREKA_SERVER_URL}
+
+      # JWT
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ACCESS_TOKEN_EXPIRATION=${JWT_ACCESS_TOKEN_EXPIRATION}
+      - JWT_REFRESH_TOKEN_EXPIRATION=${JWT_REFRESH_TOKEN_EXPIRATION}
+
+      # DB (user-service)
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - USER_DB=${USER_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    restart: unless-stopped
+    networks:
+        - bidket-app-net
+
 networks:
   bidket-app-net:
     driver: bridge
