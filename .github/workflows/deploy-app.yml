@@ -4,6 +4,8 @@ on:
   #workflow_run:
   #  workflows:
   #    - Build & Push Gateway Service Image
+  #    - Build & Push User Service Image
+  #    - Build & Push Product Service Image
   #  types:
   #    - completed
 
@@ -61,6 +63,7 @@ jobs:
           ssh -p 2222 ubuntu@${{ secrets.EC2_APP_HOST }} '
             sed -i "s/^GATEWAY_IMAGE_TAG=.*/GATEWAY_IMAGE_TAG=latest/" /opt/bidket/app/.env.app
             sed -i "s/^USER_IMAGE_TAG=.*/USER_IMAGE_TAG=latest/" /opt/bidket/app/.env.app
+            sed -i "s/^PRODUCT_IMAGE_TAG=.*/PRODUCT_IMAGE_TAG=latest/" /opt/bidket/app/.env.app
             chmod +x /opt/bidket/app/run-app.sh
             bash /opt/bidket/app/run-app.sh
           '
