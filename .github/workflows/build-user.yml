@@ -4,8 +4,9 @@ on:
   push:
     branches:
       - cicd-test
-    paths:
-      - backend/user-service/**
+    #paths:
+    #  - backend/user-service/**
+  workflow_dispatch: {}
 
 jobs:
   build-and-push:
