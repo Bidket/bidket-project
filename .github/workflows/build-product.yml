@@ -1,4 +1,4 @@
-ame: Build & Push Product Service Image
+name: Build & Push Product Service Image
 
 on:
   # 임시 트리거
