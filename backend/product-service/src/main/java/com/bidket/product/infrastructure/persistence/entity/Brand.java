@@ -57,4 +57,23 @@ public class Brand extends BaseEntity {
         brand.status = BrandStatus.ACTIVE;
         return brand;
     }
+
+    public void updateInfo(String name, String nameKr, String originCountry, String websiteUrl) {
+        if (name != null) {
+            this.name = name;
+        }
+        if (nameKr != null) {
+            this.nameKr = nameKr;
+        }
+        if (originCountry != null) {
+            this.originCountry = originCountry;
+        }
+        if (websiteUrl != null) {
+            this.websiteUrl = websiteUrl;
+        }
+    }
+
+    public void changeStatus(BrandStatus status) {
+        this.status = status;
+    }
 }

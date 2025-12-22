@@ -8,28 +8,32 @@ import com.bidket.product.application.service.ProductAdminService;
 import com.bidket.product.application.service.ShoesDetailService;
 import com.bidket.product.application.service.SizeService;
 import com.bidket.product.presentation.dto.request.brand.BrandCreateRequest;
+import com.bidket.product.presentation.dto.request.brand.BrandStatusChangeRequest;
+import com.bidket.product.presentation.dto.request.brand.BrandUpdateRequest;
 import com.bidket.product.presentation.dto.request.category.CategoryCreateRequest;
 import com.bidket.product.presentation.dto.request.product.ProductCategoryCreateRequest;
 import com.bidket.product.presentation.dto.request.product.ProductCreateRequest;
-import com.bidket.product.presentation.dto.request.shoesdetail.ProductShoesDetailCreateRequest;
 import com.bidket.product.presentation.dto.request.product.ProductTypeCreateRequest;
 import com.bidket.product.presentation.dto.request.product.ProductWithShoesCreateRequest;
+import com.bidket.product.presentation.dto.request.product.SkuCreateRequest;
+import com.bidket.product.presentation.dto.request.shoesdetail.ProductShoesDetailCreateRequest;
 import com.bidket.product.presentation.dto.request.size.SizeCreateRequest;
 import com.bidket.product.presentation.dto.request.size.SizeTypeCreateRequest;
-import com.bidket.product.presentation.dto.request.product.SkuCreateRequest;
 import com.bidket.product.presentation.dto.response.brand.BrandCreateResponse;
 import com.bidket.product.presentation.dto.response.category.CategoryCreateResponse;
 import com.bidket.product.presentation.dto.response.product.ProductCategoryCreateResponse;
 import com.bidket.product.presentation.dto.response.product.ProductCreateResponse;
-import com.bidket.product.presentation.dto.response.shoesdetail.ProductShoesDetailCreateResponse;
 import com.bidket.product.presentation.dto.response.product.ProductTypeCreateResponse;
 import com.bidket.product.presentation.dto.response.product.ProductWithShoesCreateResponse;
+import com.bidket.product.presentation.dto.response.product.SkuCreateResponse;
+import com.bidket.product.presentation.dto.response.shoesdetail.ProductShoesDetailCreateResponse;
 import com.bidket.product.presentation.dto.response.size.SizeCreateResponse;
 import com.bidket.product.presentation.dto.response.size.SizeTypeCreateResponse;
-import com.bidket.product.presentation.dto.response.product.SkuCreateResponse;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -121,5 +125,30 @@ public class ProductAdminController {
         return ApiResponse.success(
                 productAdminFacade.createProductWithShoes(req)
         );
+    }
+    @Operation(
+            summary = "브랜드 수정",
+            description = "변경이 필요한 브랜드 정보를 부분 수정합니다."
+    )
+    @PatchMapping("/brands/{brandId}")
+    public ApiResponse<Void> updateBrand(
+            @PathVariable UUID brandId,
+            @Valid @RequestBody BrandUpdateRequest req
+    ) {
+        brandService.updateBrand(brandId, req);
+        return ApiResponse.success("브랜드 정보가 수정 되었습니다.", null);
+    }
+
+    @Operation(
+            summary = "브랜드 상태 수정",
+            description = "브랜드의 상태를 ACTIVE 또는 INACTIVE로 수정합니다."
+    )
+    @PatchMapping("/brands/{brandId}/status")
+    public ApiResponse<Void> changeBrandStatus(
+            @PathVariable UUID brandId,
+            @RequestBody BrandStatusChangeRequest req
+    ) {
+        brandService.changeBrandStatus(brandId, req.status());
+        return ApiResponse.success("브랜드 상태가 수정되었습니다.", null);
     }
 }
