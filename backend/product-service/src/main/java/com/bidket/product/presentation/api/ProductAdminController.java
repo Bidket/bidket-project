@@ -20,6 +20,7 @@ import com.bidket.product.presentation.dto.request.product.ProductTypeCreateRequ
 import com.bidket.product.presentation.dto.request.product.ProductUpdateRequest;
 import com.bidket.product.presentation.dto.request.product.ProductWithShoesCreateRequest;
 import com.bidket.product.presentation.dto.request.product.SkuCreateRequest;
+import com.bidket.product.presentation.dto.request.product.SkuStatusChangeRequest;
 import com.bidket.product.presentation.dto.request.shoesdetail.ProductShoesDetailCreateRequest;
 import com.bidket.product.presentation.dto.request.size.SizeCreateRequest;
 import com.bidket.product.presentation.dto.request.size.SizeTypeCreateRequest;
@@ -206,5 +207,19 @@ public class ProductAdminController {
     ) {
         productAdminService.updateProduct(productId, request);
         return ApiResponse.success("상품 정보가 수정되었습니다.", null);
+    }
+
+    @Operation(
+            summary = "SKU 상태 수정",
+            description = "SKU의 상태를 ACTIVE 또는 INACTIVE로 수정합니다."
+    )
+    @PatchMapping("/products/{productId}/skus/{skuId}/status")
+    public ApiResponse<Void> changeSkuStatus(
+            @PathVariable UUID productId,
+            @PathVariable UUID skuId,
+            @Valid @RequestBody SkuStatusChangeRequest req
+    ) {
+        productAdminService.changeSkuStatus(productId, skuId, req.status());
+        return ApiResponse.success("SKU 상태가 수정되었습니다.", null);
     }
 }

@@ -68,4 +68,9 @@ public class ProductSku extends BaseEntity {
         sku.status = status;
         return sku;
     }
+
+    public void changeStatus(SkuStatus status) {
+        if (status == null) return;
+        this.status = status;
+    }
 }

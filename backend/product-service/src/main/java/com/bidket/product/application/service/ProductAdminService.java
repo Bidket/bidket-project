@@ -217,4 +217,15 @@ public class ProductAdminService {
             productCategoryRepository.save(pc);
         }
     }
+
+    public void changeSkuStatus(UUID productId, UUID skuId, SkuStatus status) {
+
+        ProductSku productSku = productSkuRepository
+                .findByIdAndProduct_Id(skuId, productId)
+                .orElseThrow(() ->
+                        new ProductException(ProductErrorCode.SKU_NOT_FOUND)
+                );
+
+        productSku.changeStatus(status);
+    }
 }

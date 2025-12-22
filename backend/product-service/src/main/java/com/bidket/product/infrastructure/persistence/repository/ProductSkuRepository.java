@@ -50,4 +50,6 @@ public interface ProductSkuRepository extends JpaRepository<ProductSku, UUID> {
             @Param("productId") UUID productId,
             @Param("status") SkuStatus status
     );
+
+    Optional<ProductSku> findByIdAndProduct_Id(UUID skuId, UUID productId);
 }
