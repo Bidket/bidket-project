@@ -19,4 +19,8 @@ public interface ProductCategoryRepository extends JpaRepository<ProductCategory
     List<ProductCategory> findAllByProduct_Id(UUID product_id);
 
     List<ProductCategory> findAllByProduct_IdAndIsPrimaryTrue(UUID productId);
+
+    void deleteAllByProduct(Product product);
+
+    List<ProductCategory> findAllByProduct(Product product);
 }

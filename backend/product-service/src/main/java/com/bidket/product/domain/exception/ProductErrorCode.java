@@ -23,6 +23,10 @@ public enum ProductErrorCode implements BaseErrorCode {
     SKU_NOT_FOUND(HttpStatus.NOT_FOUND, "SKU를 찾을 수 없습니다."),
     SHOES_DETAIL_NOT_FOUND(HttpStatus.NOT_FOUND, "신발 상품을 찾을 수 없습니다."),
     PARENT_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "부모 카테고리를 찾을 수 없습니다."),
+    PRODUCT_DETAIL_RESOLVER_NOT_FOUND(
+            HttpStatus.NOT_FOUND,
+            "상품 상세 resolver를 찾을 수 없습니다."
+    ),
 
     BRAND_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 브랜드입니다."),
     SKU_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 SKU code입니다."),

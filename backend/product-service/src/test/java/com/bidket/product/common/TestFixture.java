@@ -4,8 +4,24 @@ import com.bidket.product.domain.model.Gender;
 import com.bidket.product.domain.model.ProductStatus;
 import com.bidket.product.domain.model.Silhouette;
 import com.bidket.product.domain.model.SkuStatus;
-import com.bidket.product.infrastructure.persistence.entity.*;
-import com.bidket.product.infrastructure.persistence.repository.*;
+import com.bidket.product.infrastructure.persistence.entity.Brand;
+import com.bidket.product.infrastructure.persistence.entity.Category;
+import com.bidket.product.infrastructure.persistence.entity.Product;
+import com.bidket.product.infrastructure.persistence.entity.ProductCategory;
+import com.bidket.product.infrastructure.persistence.entity.ProductShoesDetail;
+import com.bidket.product.infrastructure.persistence.entity.ProductSku;
+import com.bidket.product.infrastructure.persistence.entity.ProductType;
+import com.bidket.product.infrastructure.persistence.entity.Size;
+import com.bidket.product.infrastructure.persistence.entity.SizeType;
+import com.bidket.product.infrastructure.persistence.repository.BrandRepository;
+import com.bidket.product.infrastructure.persistence.repository.CategoryRepository;
+import com.bidket.product.infrastructure.persistence.repository.ProductCategoryRepository;
+import com.bidket.product.infrastructure.persistence.repository.ProductRepository;
+import com.bidket.product.infrastructure.persistence.repository.ProductShoesDetailRepository;
+import com.bidket.product.infrastructure.persistence.repository.ProductSkuRepository;
+import com.bidket.product.infrastructure.persistence.repository.ProductTypeRepository;
+import com.bidket.product.infrastructure.persistence.repository.SizeRepository;
+import com.bidket.product.infrastructure.persistence.repository.SizeTypeRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
@@ -25,14 +41,22 @@ public class TestFixture {
     private final ProductCategoryRepository productCategoryRepository;
     private final ProductSkuRepository skuRepository;
 
+    private ProductType cachedProductType;
+
     // 상품타입 생성
     public ProductType createProductType() {
+        if (cachedProductType != null) {
+            return cachedProductType;
+        }
+
         ProductType type = ProductType.of(
                 "SHOES",
                 "신발",
                 "신발 상품 타입"
         );
-        return productTypeRepository.save(type);
+
+        cachedProductType = productTypeRepository.save(type);
+        return cachedProductType;
     }
 
     // 브랜드 생성

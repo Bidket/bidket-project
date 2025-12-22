@@ -1,7 +1,6 @@
 package com.bidket.product.infrastructure.persistence.entity;
 
 import com.bidket.common.infra.BaseEntity;
-import com.bidket.product.domain.model.BrandStatus;
 import com.bidket.product.domain.model.Gender;
 import com.bidket.product.domain.model.ProductStatus;
 import jakarta.persistence.Column;
@@ -107,7 +106,30 @@ public class Product extends BaseEntity {
        return product;
     }
 
+    public void updateInfo(
+            String name,
+            String nameKr,
+            String modelCode,
+            Gender gender,
+            String description,
+            LocalDate releaseDate,
+            BigDecimal releasePrice
+    ) {
+        if (name != null) this.name = name;
+        if (nameKr != null) this.nameKr = nameKr;
+        if (modelCode != null) this.modelCode = modelCode;
+        if (gender != null) this.gender = gender;
+        if (description != null) this.description = description;
+        if (releaseDate != null) this.releaseDate = releaseDate;
+        if (releasePrice != null) this.releasePrice = releasePrice;
+    }
+
     public void changeStatus(ProductStatus status) {
         this.status = status;
+    }
+
+    public void changeBrand(Brand brand) {
+        if (brand == null) return;
+        this.brand = brand;
     }
 }

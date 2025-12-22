@@ -17,6 +17,7 @@ import com.bidket.product.presentation.dto.request.product.ProductCategoryCreate
 import com.bidket.product.presentation.dto.request.product.ProductCreateRequest;
 import com.bidket.product.presentation.dto.request.product.ProductStatusChangeRequest;
 import com.bidket.product.presentation.dto.request.product.ProductTypeCreateRequest;
+import com.bidket.product.presentation.dto.request.product.ProductUpdateRequest;
 import com.bidket.product.presentation.dto.request.product.ProductWithShoesCreateRequest;
 import com.bidket.product.presentation.dto.request.product.SkuCreateRequest;
 import com.bidket.product.presentation.dto.request.shoesdetail.ProductShoesDetailCreateRequest;
@@ -192,5 +193,18 @@ public class ProductAdminController {
     ) {
         productAdminService.changeProductStatus(productId, req.status());
         return ApiResponse.success("상품 상태가 수정되었습니다.", null);
+    }
+
+    @Operation(
+            summary = "상품과 상품 상세 수정",
+            description = "상품과 상품 상세 정보를 부분 수정합니다."
+    )
+    @PatchMapping("/products/{productId}")
+    public ApiResponse<Void> updateProduct(
+            @PathVariable UUID productId,
+            @Valid @RequestBody ProductUpdateRequest request
+    ) {
+        productAdminService.updateProduct(productId, request);
+        return ApiResponse.success("상품 정보가 수정되었습니다.", null);
     }
 }
