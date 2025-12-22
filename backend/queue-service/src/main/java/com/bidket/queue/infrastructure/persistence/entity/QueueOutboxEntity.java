@@ -47,18 +47,18 @@ public class QueueOutboxEntity implements Persistable<UUID> {
 
     public static QueueOutboxEntity from(QueueOutboxModel model) {
         return QueueOutboxEntity.builder()
-                .id(model.id())
-                .aggregateId(model.aggregateId())
-                .aggregateType(model.aggregateType())
-                .topic(model.topic())
-                .payload(model.payload())
-                .eventType(model.eventType().name())
-                .correlationId(model.correlationId())
-                .retryCount(model.retryCount())
-                .errorMessage(model.errorMessage())
-                .publishedAt(model.publishedAt())
-                .status(model.status())
-                .isNew(true)
+                .id(model.getId())
+                .aggregateId(model.getAggregateId())
+                .aggregateType(model.getAggregateType())
+                .topic(model.getTopic())
+                .payload(model.getPayload())
+                .eventType(model.getEventType().name())
+                .correlationId(model.getCorrelationId())
+                .retryCount(model.getRetryCount())
+                .errorMessage(model.getErrorMessage())
+                .publishedAt(model.getPublishedAt())
+                .status(model.getStatus())
+                .isNew(model.isNew())
                 .build();
     }
 
@@ -75,6 +75,7 @@ public class QueueOutboxEntity implements Persistable<UUID> {
                 .errorMessage(errorMessage)
                 .publishedAt(publishedAt)
                 .status(status)
+                .isNew(isNew)
                 .build();
     }
 

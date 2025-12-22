@@ -122,7 +122,8 @@ public class QueueScheduler {
                                                                                             .payload(payload)
                                                                                             .eventType(EventType.QUEUE_ENTERED)
                                                                                             .correlationId(userId)
-                                                                                            .retryCount(3)
+                                                                                            .retryCount(0)
+                                                                                            .isNew(true)
                                                                                             .build();
 
                                                                                     return outboxRepository.save(QueueOutboxEntity.from(outboxModel))

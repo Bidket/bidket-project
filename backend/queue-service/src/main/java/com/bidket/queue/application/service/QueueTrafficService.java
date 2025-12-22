@@ -8,6 +8,7 @@ import com.bidket.queue.domain.model.QueueErrorCode;
 import com.bidket.queue.domain.model.QueueTrafficStatus;
 import com.bidket.queue.domain.model.UserStatus;
 import com.bidket.queue.domain.model.outbox.EventType;
+import com.bidket.queue.domain.model.outbox.OutboxStatus;
 import com.bidket.queue.domain.model.outbox.QueueOutboxModel;
 import com.bidket.queue.domain.repository.QueueManagementRepository;
 import com.bidket.queue.domain.repository.QueueOutboxRepository;
@@ -19,19 +20,15 @@ import com.bidket.queue.presentation.dto.response.QueueAccommodatableResponse;
 import com.bidket.queue.presentation.dto.response.QueueEnterResponse;
 import com.bidket.queue.presentation.dto.response.QueueHeartbeatResponse;
 import com.bidket.queue.presentation.dto.response.QueueStatusResponse;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.kafka.sender.KafkaSender;
-import reactor.kafka.sender.SenderRecord;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.UUID;
@@ -104,7 +101,7 @@ public class QueueTrafficService {
                             return Mono.just(response);
                         })
                         .flatMap(response -> {
-                            if(response.rank() <= 10) {
+                            if (response.rank() <= 10) {
                                 QueueNearTurnEvent eventData = QueueNearTurnEvent.builder()
                                         .auctionId(auctionId)
                                         .userId(userId)
@@ -127,7 +124,9 @@ public class QueueTrafficService {
                                                     .payload(payload)
                                                     .eventType(EventType.QUEUE_NEAR_TURN)
                                                     .correlationId(userId)
-                                                    .retryCount(3)
+                                                    .retryCount(0)
+                                                    .status(OutboxStatus.PENDING)
+                                                    .isNew(true)
                                                     .build();
 
                                             return outboxRepository.save(QueueOutboxEntity.from(outboxModel))
