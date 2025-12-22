@@ -79,6 +79,7 @@ class EventNotificationServiceTest {
                 .build();
 
         // 멱등성 체크: 존재하지 않음
+        // processNearTurnEvent에서 한 번, saveAndSendNotification에서 한 번, 총 2번 호출됨
         given(notificationRepository.existsByEventIdAndChannel(eventId, NotificationChannel.IN_APP))
                 .willReturn(false);
 
@@ -102,8 +103,8 @@ class EventNotificationServiceTest {
         eventNotificationService.processEvent(eventTemplate, topic);
 
         // then
-        // 1. 멱등성 체크 호출 확인
-        verify(notificationRepository).existsByEventIdAndChannel(eventId, NotificationChannel.IN_APP);
+        // 1. 멱등성 체크 호출 확인: processNearTurnEvent에서 1번, saveAndSendNotification에서 1번, 총 2번
+        verify(notificationRepository, times(2)).existsByEventIdAndChannel(eventId, NotificationChannel.IN_APP);
 
         // 2. 경매 정보 조회 호출 확인
         verify(auctionServiceClient).getAuctionInfo(auctionId);
@@ -170,8 +171,8 @@ class EventNotificationServiceTest {
     }
 
     @Test
-    @DisplayName("외부 발송 실패: AuctionServiceClient 예외 전파로 재시도 트리거, Repository.save() 호출되지 않음")
-    void shouldPropagateExceptionToTriggerRetryWhenExternalServiceThrowsException() {
+    @DisplayName("외부 서비스 실패: AuctionServiceClient 예외는 catch되어 처리 계속 진행")
+    void shouldContinueProcessingWhenExternalServiceThrowsException() throws Exception {
         // given
         UUID eventId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
@@ -194,35 +195,36 @@ class EventNotificationServiceTest {
                 .build();
 
         // 멱등성 체크: 존재하지 않음
+        // processNearTurnEvent에서 한 번, saveAndSendNotification에서 한 번, 총 2번 호출됨
         given(notificationRepository.existsByEventIdAndChannel(eventId, NotificationChannel.IN_APP))
                 .willReturn(false);
 
         // 경매 정보 조회 실패 (예외 throw)
-        // 현재 구현: AuctionServiceClient.getAuctionInfo()는 예외를 catch해서 null을 반환함
-        // 하지만 향후 변경/리팩토링으로 예외가 전파될 가능성을 대비한 방어적 테스트
-        // 정책: 외부 서비스 실패 시 예외를 전파하여 Kafka 재시도/DLT 트리거
+        // 현재 구현: AuctionServiceClient.getAuctionInfo()는 예외를 catch해서 처리 계속 진행
+        // 정책: 외부 서비스 실패해도 진행 (문서: "실패해도 진행")
         RuntimeException externalException = new RuntimeException("Auction Service unavailable");
         given(auctionServiceClient.getAuctionInfo(auctionId))
                 .willThrow(externalException);
         
-        // 예외가 발생하면 createPayload()는 호출되지 않아야 하지만, 
-        // 혹시 호출되더라도 예외가 먼저 전파되므로 objectMapper mock은 불필요
-        // (하지만 테스트 안정성을 위해 설정해도 무방)
+        // 예외가 catch되므로 정상적으로 처리 계속 진행
+        given(objectMapper.writeValueAsString(data))
+                .willReturn("{}");
+        given(notificationRepository.save(any(Notification.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
 
-        // when & then
-        // 예외가 전파되어 Kafka 재시도를 트리거해야 함 (processEvent의 catch 블록에서 예외 전파)
-        assertThatThrownBy(() -> eventNotificationService.processEvent(eventTemplate, topic))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessage("Auction Service unavailable");
+        // when
+        // 예외가 catch되어 정상적으로 처리 완료되어야 함
+        eventNotificationService.processEvent(eventTemplate, topic);
 
-        // 1. 멱등성 체크 호출 확인
-        verify(notificationRepository).existsByEventIdAndChannel(eventId, NotificationChannel.IN_APP);
+        // then
+        // 1. 멱등성 체크 호출 확인: processNearTurnEvent에서 1번, saveAndSendNotification에서 1번, 총 2번
+        verify(notificationRepository, times(2)).existsByEventIdAndChannel(eventId, NotificationChannel.IN_APP);
 
-        // 2. 경매 정보 조회 호출 확인
+        // 2. 경매 정보 조회 호출 확인 (예외 발생하지만 catch됨)
         verify(auctionServiceClient).getAuctionInfo(auctionId);
 
-        // 3. 예외 전파 정책: Repository.save()는 호출되지 않아야 함 (재시도/DLT 처리)
-        verify(notificationRepository, never()).save(any(Notification.class));
+        // 3. 예외가 catch되어 처리 계속 진행: Repository.save() 호출됨
+        verify(notificationRepository).save(any(Notification.class));
     }
 
     @Test

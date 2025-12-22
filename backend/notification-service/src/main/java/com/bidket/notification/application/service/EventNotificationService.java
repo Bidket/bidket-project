@@ -149,6 +149,12 @@ public class EventNotificationService {
 
         MDC.put("auctionId", auctionId.toString());
 
+        // 멱등성 체크: 이미 처리된 이벤트면 경매 정보 조회 없이 early return
+        if (notificationRepository.existsByEventIdAndChannel(eventTemplate.eventId(), NotificationChannel.IN_APP)) {
+            log.info("이미 처리된 이벤트입니다. eventId={}, channel={}", eventTemplate.eventId(), NotificationChannel.IN_APP);
+            return;
+        }
+
         // 경매 정보 조회 (실패해도 진행 - try/catch로 처리)
         try {
             AuctionServiceClient.AuctionInfo auctionInfo = auctionServiceClient.getAuctionInfo(auctionId);
