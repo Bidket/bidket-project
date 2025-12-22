@@ -21,5 +21,7 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
 
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
+
     implementation 'com.github.Bidket:bidket-common-repo:main-SNAPSHOT'
 }

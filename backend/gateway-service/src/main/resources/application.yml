@@ -28,3 +28,5 @@ eureka:
 
 jwt:
   secret: ${JWT_SECRET}
+  queue:
+    secret: ${ACTIVE_TOKEN_SECRET}
