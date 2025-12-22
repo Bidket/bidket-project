@@ -30,7 +30,24 @@ public interface ProductSkuRepository extends JpaRepository<ProductSku, UUID> {
     List<ProductSku> findAllByProduct_IdAndStatus(UUID productId, SkuStatus status);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("update ProductSku s set s.status = :status where s.product.brand.id = :brandId")
-    void updateStatusByBrandId(@Param("brandId") UUID brandId,
-                                @Param("status") SkuStatus status);
+    @Query("""
+        update ProductSku s 
+        set s.status = :status 
+        where s.product.brand.id = :brandId
+    """)
+    int updateStatusByBrandId(
+            @Param("brandId") UUID brandId,
+            @Param("status") SkuStatus status
+    );
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        update ProductSku p 
+        set p.status = :status 
+        where p.product.id = :productId
+    """)
+    int updateStatusByProductId(
+            @Param("productId") UUID productId,
+            @Param("status") SkuStatus status
+    );
 }

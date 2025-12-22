@@ -2,6 +2,8 @@ package com.bidket.product.application.service;
 
 import com.bidket.product.domain.exception.ProductErrorCode;
 import com.bidket.product.domain.exception.ProductException;
+import com.bidket.product.domain.model.ProductStatus;
+import com.bidket.product.domain.model.SkuStatus;
 import com.bidket.product.infrastructure.persistence.entity.Brand;
 import com.bidket.product.infrastructure.persistence.entity.Category;
 import com.bidket.product.infrastructure.persistence.entity.Product;
@@ -26,9 +28,11 @@ import com.bidket.product.presentation.dto.response.product.ProductTypeCreateRes
 import com.bidket.product.presentation.dto.response.product.SkuCreateResponse;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -125,5 +129,19 @@ public class ProductAdminService {
         );
 
         return SkuCreateResponse.from(productSkuRepository.save(sku));
+    }
+
+    public void changeProductStatus(UUID productId, ProductStatus status) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND));
+
+        product.changeStatus(status);
+
+        if (status == ProductStatus.INACTIVE) {
+            int updatedCount =
+            productSkuRepository.updateStatusByProductId(productId, SkuStatus.INACTIVE);
+
+            log.info("Product {} INACTIVATED: {} skus updated", productId, updatedCount);
+        }
     }
 }

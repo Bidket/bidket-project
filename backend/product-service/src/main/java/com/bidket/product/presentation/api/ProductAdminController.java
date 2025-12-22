@@ -15,6 +15,7 @@ import com.bidket.product.presentation.dto.request.category.CategoryMoveRequest;
 import com.bidket.product.presentation.dto.request.category.CategoryUpdateRequest;
 import com.bidket.product.presentation.dto.request.product.ProductCategoryCreateRequest;
 import com.bidket.product.presentation.dto.request.product.ProductCreateRequest;
+import com.bidket.product.presentation.dto.request.product.ProductStatusChangeRequest;
 import com.bidket.product.presentation.dto.request.product.ProductTypeCreateRequest;
 import com.bidket.product.presentation.dto.request.product.ProductWithShoesCreateRequest;
 import com.bidket.product.presentation.dto.request.product.SkuCreateRequest;
@@ -178,5 +179,18 @@ public class ProductAdminController {
     ) {
         categoryService.moveCategory(categoryId, request.newParentId());
         return ApiResponse.success("카테고리가 이동되었습니다.", null);
+    }
+
+    @Operation(
+            summary = "상품 상태 수정",
+            description = "상품의 상태를 ACTIVE 또는 INACTIVE로 수정합니다."
+    )
+    @PatchMapping("/products/{productId}/status")
+    public ApiResponse<Void> changeBrandStatus(
+            @PathVariable UUID productId,
+            @RequestBody ProductStatusChangeRequest req
+    ) {
+        productAdminService.changeProductStatus(productId, req.status());
+        return ApiResponse.success("상품 상태가 수정되었습니다.", null);
     }
 }

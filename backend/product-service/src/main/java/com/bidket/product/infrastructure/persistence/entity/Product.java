@@ -1,6 +1,7 @@
 package com.bidket.product.infrastructure.persistence.entity;
 
 import com.bidket.common.infra.BaseEntity;
+import com.bidket.product.domain.model.BrandStatus;
 import com.bidket.product.domain.model.Gender;
 import com.bidket.product.domain.model.ProductStatus;
 import jakarta.persistence.Column;
@@ -104,5 +105,9 @@ public class Product extends BaseEntity {
        product.releasePrice = releasePrice;
        product.status = status;
        return product;
+    }
+
+    public void changeStatus(ProductStatus status) {
+        this.status = status;
     }
 }

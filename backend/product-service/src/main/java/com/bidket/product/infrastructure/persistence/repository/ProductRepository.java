@@ -16,7 +16,13 @@ public interface ProductRepository extends
     Optional<Product> findById(UUID id);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("update Product p set p.status = :status where p.brand.id = :brandId")
-    void updateStatusByBrandId(@Param("brandId") UUID brandId,
-                                @Param("status") ProductStatus status);
+    @Query("""
+        update Product p 
+        set p.status = :status 
+        where p.brand.id = :brandId
+    """)
+    int updateStatusByBrandId(
+            @Param("brandId") UUID brandId,
+            @Param("status") ProductStatus status
+    );
 }

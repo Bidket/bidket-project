@@ -17,9 +17,11 @@ import com.bidket.product.presentation.dto.response.brand.BrandGetResponse;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BrandService {
@@ -94,8 +96,16 @@ public class BrandService {
 
         if (status == BrandStatus.INACTIVE) {
             // 브랜드 비활성화 -> 해당 브랜드의 상품, sku 비활성화
+            int productUpdatedCount =
             productRepository.updateStatusByBrandId(brandId, ProductStatus.INACTIVE);
+
+            int skuUpdatedCount =
             skuRepository.updateStatusByBrandId(brandId, SkuStatus.INACTIVE);
+
+            log.info(
+                    "Brand {} INACTIVATED: {} products, {} skus updated",
+                    brandId, productUpdatedCount, skuUpdatedCount
+            );
         }
     }
 }
