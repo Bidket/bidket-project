@@ -35,6 +35,7 @@ import com.bidket.product.presentation.dto.response.shoesdetail.ProductShoesDeta
 import com.bidket.product.presentation.dto.response.size.SizeCreateResponse;
 import com.bidket.product.presentation.dto.response.size.SizeTypeCreateResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +49,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/v1/admin")
 @RequiredArgsConstructor
+@Tag(name = "Product - 어드민 생성, 수정", description = "어드민 상품 생성, 수정 API")
 public class ProductAdminController {
 
     private final BrandService brandService;
@@ -57,6 +59,10 @@ public class ProductAdminController {
     private final ShoesDetailService shoesDetailService;
     private final ProductAdminFacade productAdminFacade;
 
+    @Operation(
+            summary = "상품 타입 생성",
+            description = "상품 타입을 생성합니다."
+    )
     @PostMapping("/product-types")
     public ApiResponse<ProductTypeCreateResponse> createProductType(
             @Valid @RequestBody ProductTypeCreateRequest req
@@ -64,6 +70,10 @@ public class ProductAdminController {
         return ApiResponse.success(productAdminService.createProductType(req));
     }
 
+    @Operation(
+            summary = "브랜드 생성",
+            description = "브랜드를 생성합니다."
+    )
     @PostMapping("/brands")
     public ApiResponse<BrandCreateResponse> createBrand(
             @Valid @RequestBody BrandCreateRequest req
@@ -71,6 +81,11 @@ public class ProductAdminController {
         return ApiResponse.success(brandService.createBrand(req));
     }
 
+    @Operation(
+            summary = "카테고리 생성",
+            description = "카테고리를 생성합니다. 상위 카테고리 정보가 있다면, "
+                    + "상위 카테고리가 말단 카테고리가 아님을 표시합니다."
+    )
     @PostMapping("/categories")
     public ApiResponse<CategoryCreateResponse> createCategory(
             @Valid @RequestBody CategoryCreateRequest req
@@ -78,6 +93,11 @@ public class ProductAdminController {
         return ApiResponse.success(categoryService.createCategory(req));
     }
 
+    @Operation(
+            summary = "사이즈타입 생성",
+            description = "사이즈타입을 생성합니다. 디폴트값이라면 "
+                    + "해당 상품 타입의 기존 디폴트를 해제 합니다."
+    )
     @PostMapping("/size-types")
     public ApiResponse<SizeTypeCreateResponse> createSizeType(
             @Valid @RequestBody SizeTypeCreateRequest req
@@ -85,6 +105,10 @@ public class ProductAdminController {
         return ApiResponse.success(sizeService.createSizeType(req));
     }
 
+    @Operation(
+            summary = "사이즈 생성",
+            description = "사이즈를 생성합니다."
+    )
     @PostMapping("/sizes")
     public ApiResponse<SizeCreateResponse> createSize(
             @Valid @RequestBody SizeCreateRequest req
@@ -92,6 +116,10 @@ public class ProductAdminController {
         return ApiResponse.success(sizeService.createSize(req));
     }
 
+    @Operation(
+            summary = "상품 생성",
+            description = "상품을 생성합니다."
+    )
     @PostMapping("/products")
     public ApiResponse<ProductCreateResponse> createProduct(
             @Valid @RequestBody ProductCreateRequest req
@@ -99,6 +127,10 @@ public class ProductAdminController {
         return ApiResponse.success(productAdminService.createProduct(req));
     }
 
+    @Operation(
+            summary = "신발 상품 상세 생성",
+            description = "신발 상품 상세를 생성합니다."
+    )
     @PostMapping("/products/{productId}/details/shoes")
     public ApiResponse<ProductShoesDetailCreateResponse> createShoesDetail(
             @PathVariable UUID productId,
@@ -107,6 +139,10 @@ public class ProductAdminController {
         return ApiResponse.success(shoesDetailService.createShoesDetail(productId, req));
     }
 
+    @Operation(
+            summary = "상품과 카테고리 매핑",
+            description = "상품과 카테고리 매핑을 생성합니다."
+    )
     @PostMapping("/products/{productId}/categories")
     public ApiResponse<ProductCategoryCreateResponse> createProductCategory(
             @PathVariable UUID productId,
@@ -115,6 +151,10 @@ public class ProductAdminController {
         return ApiResponse.success(productAdminService.createProductCategory(productId ,req));
     }
 
+    @Operation(
+            summary = "SKU 생성",
+            description = "SKU를 생성합니다."
+    )
     @PostMapping("/products/{productId}/skus")
     public ApiResponse<SkuCreateResponse> createSku(
             @PathVariable UUID productId,
@@ -123,6 +163,10 @@ public class ProductAdminController {
         return ApiResponse.success(productAdminService.createSku(productId, req));
     }
 
+    @Operation(
+            summary = "상품 + 신발 상품 상세 생성",
+            description = "상품과 신발 상품 상세를 함께 생성합니다."
+    )
     @PostMapping("/products/with-shoes")
     public ApiResponse<ProductWithShoesCreateResponse> createProductWithShoes(
             @Valid @RequestBody ProductWithShoesCreateRequest req
