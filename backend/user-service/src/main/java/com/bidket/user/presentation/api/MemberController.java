@@ -8,14 +8,23 @@ import com.bidket.user.application.service.BlacklistReleaseService;
 import com.bidket.user.application.service.BlacklistStatusService;
 import com.bidket.user.application.service.EmailCheckService;
 import com.bidket.user.application.service.LoginService;
+import com.bidket.user.application.service.LogoutService;
 import com.bidket.user.application.service.NicknameCheckService;
+import com.bidket.user.application.service.TokenRefreshService;
 import com.bidket.user.application.service.MyInfoService;
 import com.bidket.user.application.service.PermissionsService;
 import com.bidket.user.application.service.PointBalanceService;
 import com.bidket.user.application.service.PointHistoryService;
+import com.bidket.user.application.service.MemberDeactivationService;
+import com.bidket.user.application.service.PasswordChangeService;
+import com.bidket.user.application.service.ProfileUpdateService;
 import com.bidket.user.application.service.SignupService;
 import com.bidket.user.presentation.dto.request.BlacklistRegisterRequest;
 import com.bidket.user.presentation.dto.request.LoginRequest;
+import com.bidket.user.presentation.dto.request.MemberDeactivationRequest;
+import com.bidket.user.presentation.dto.request.TokenRefreshRequest;
+import com.bidket.user.presentation.dto.request.PasswordChangeRequest;
+import com.bidket.user.presentation.dto.request.ProfileUpdateRequest;
 import com.bidket.user.presentation.dto.request.SignupRequest;
 import com.bidket.user.presentation.dto.response.BidEligibilityResponse;
 import com.bidket.user.presentation.dto.response.BlacklistListResponse;
@@ -24,11 +33,16 @@ import com.bidket.user.presentation.dto.response.BlacklistReleaseResponse;
 import com.bidket.user.presentation.dto.response.BlacklistStatusResponse;
 import com.bidket.user.presentation.dto.response.EmailCheckResponse;
 import com.bidket.user.presentation.dto.response.LoginResponse;
+import com.bidket.user.presentation.dto.response.LogoutResponse;
 import com.bidket.user.presentation.dto.response.NicknameCheckResponse;
+import com.bidket.user.presentation.dto.response.TokenRefreshResponse;
 import com.bidket.user.presentation.dto.response.MyInfoResponse;
 import com.bidket.user.presentation.dto.response.PermissionsResponse;
 import com.bidket.user.presentation.dto.response.PointBalanceResponse;
+import com.bidket.user.presentation.dto.response.MemberDeactivationResponse;
+import com.bidket.user.presentation.dto.response.PasswordChangeResponse;
 import com.bidket.user.presentation.dto.response.PointHistoryResponse;
+import com.bidket.user.presentation.dto.response.ProfileUpdateResponse;
 import com.bidket.user.presentation.dto.response.SignupResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -43,6 +57,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -63,6 +78,8 @@ public class MemberController {
 
     private final SignupService signupService;
     private final LoginService loginService;
+    private final LogoutService logoutService;
+    private final TokenRefreshService tokenRefreshService;
     private final MyInfoService myInfoService;
     private final EmailCheckService emailCheckService;
     private final NicknameCheckService nicknameCheckService;
@@ -74,6 +91,9 @@ public class MemberController {
     private final BidEligibilityService bidEligibilityService;
     private final PointBalanceService pointBalanceService;
     private final PointHistoryService pointHistoryService;
+    private final ProfileUpdateService profileUpdateService;
+    private final PasswordChangeService passwordChangeService;
+    private final MemberDeactivationService memberDeactivationService;
 
     /**
      * 이메일 중복 체크 API
@@ -159,7 +179,7 @@ public class MemberController {
             )
     })
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<SignupResponse>> signup(@RequestBody @Valid SignupRequest request) {
+    public ResponseEntity<ApiResponse<SignupResponse>> signup(@RequestBody(required = true) @Valid SignupRequest request) {
         SignupResponse response = signupService.signup(request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -186,11 +206,79 @@ public class MemberController {
             )
     })
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody @Valid LoginRequest request) {
+    public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody(required = true) @Valid LoginRequest request) {
         LoginResponse response = loginService.login(request);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.success("로그인에 성공했습니다.", response));
+    }
+
+    /**
+     * 토큰 재발급 API
+     * POST /v1/members/token/refresh
+     * @param request 토큰 재발급 요청 정보 (refreshToken)
+     * @return 토큰 재발급 응답 (accessToken, refreshToken, tokenType, expiresIn)
+     */
+    @Operation(
+            summary = "토큰 재발급",
+            description = "유효한 Refresh Token을 사용하여 새로운 Access Token과 Refresh Token을 발급받습니다. 재발급 성공 시 Refresh Token은 회전되며, 기존 RT는 즉시 무효화됩니다. 인증/권한 불필요하며, 유효한 Refresh Token만으로 재발급 가능합니다.",
+            tags = {"01. 회원 인증"}
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "토큰 재발급 성공",
+                    content = @Content(
+                            schema = @Schema(implementation = TokenRefreshResponse.class)
+                    )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "400",
+                    description = "refreshToken 누락/빈값"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "401",
+                    description = "refreshToken 만료/위조/서명 불일치/DB에 없음(무효화됨)"
+            )
+    })
+    @PostMapping("/token/refresh")
+    public ResponseEntity<ApiResponse<TokenRefreshResponse>> refreshToken(
+            @RequestBody @Valid TokenRefreshRequest request) {
+        TokenRefreshResponse response = tokenRefreshService.refreshToken(request);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success("토큰 재발급에 성공했습니다.", response));
+    }
+
+    /**
+     * 로그아웃 API
+     * POST /v1/members/logout
+     * 현재 로그인 세션을 종료하고 Refresh Token을 무효화
+     * 멱등성 보장: 이미 로그아웃된 상태여도 동일하게 성공 응답을 반환
+     * @return 로그아웃 응답 (success)
+     */
+    @Operation(
+            summary = "로그아웃",
+            description = "현재 로그인 세션을 종료하고 Refresh Token을 무효화합니다. Authorization 헤더(Bearer JWT 토큰)가 필수이며, 이를 통해 사용자를 식별하여 해당 사용자의 모든 Refresh Token을 무효화합니다. 멱등성 보장: 이미 로그아웃된 상태여도 성공 응답을 반환합니다.",
+            tags = {"01. 회원 인증"},
+            security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "로그아웃 처리 완료(또는 이미 로그아웃 상태 포함)"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "401",
+                    description = "Authorization 누락 또는 유효하지 않은 토큰"
+            )
+    })
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<LogoutResponse>> logout() {
+        LogoutResponse response = logoutService.logout();
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success("로그아웃이 완료되었습니다.", response));
     }
 
     /**
@@ -217,6 +305,125 @@ public class MemberController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.success("내 정보 조회에 성공했습니다.", response));
+    }
+
+    /**
+     * 프로필 수정 API
+     * @param request 프로필 수정 요청 정보 (nickname, phone, email 중 최소 1개 필수)
+     * @return 프로필 수정 응답 (userId, nickname, phone, email, updatedAt)
+     */
+    @Operation(
+            summary = "프로필 수정",
+            description = "현재 로그인한 사용자의 프로필 정보를 수정합니다. 최소 1개 필드는 포함되어야 합니다.",
+            tags = {"02. 회원 정보"},
+            security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "수정 성공",
+                    content = @Content(schema = @Schema(implementation = ProfileUpdateResponse.class))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "400",
+                    description = "잘못된 요청 (최소 1개 필드 미포함, 형식 오류 등)"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "401",
+                    description = "인증 필요"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "409",
+                    description = "중복된 이메일 또는 닉네임"
+            )
+    })
+    @PatchMapping("/profile")
+    public ResponseEntity<ApiResponse<ProfileUpdateResponse>> updateProfile(
+            @RequestBody(required = true) @Valid ProfileUpdateRequest request) {
+        ProfileUpdateResponse response = profileUpdateService.updateProfile(request);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success("프로필 수정에 성공했습니다.", response));
+    }
+
+    /**
+     * 비밀번호 변경 API
+     * @param request 비밀번호 변경 요청 정보 (currentPassword, newPassword)
+     * @return 비밀번호 변경 응답 (success, changedAt)
+     */
+    @Operation(
+            summary = "비밀번호 변경",
+            description = "현재 로그인한 사용자의 비밀번호를 변경합니다.",
+            tags = {"02. 회원 정보"},
+            security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "비밀번호 변경 성공",
+                    content = @Content(schema = @Schema(implementation = PasswordChangeResponse.class))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "400",
+                    description = "잘못된 요청 (현재 비밀번호 불일치, 비밀번호 강도 부족, 새 비밀번호가 현재 비밀번호와 동일 등)"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "401",
+                    description = "인증 필요 (토큰 누락/만료/위조 등)"
+            )
+    })
+    @PatchMapping("/password")
+    public ResponseEntity<ApiResponse<PasswordChangeResponse>> changePassword(
+            @RequestBody(required = true) @Valid PasswordChangeRequest request) {
+        PasswordChangeResponse response = passwordChangeService.changePassword(request);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success("비밀번호 변경에 성공했습니다.", response));
+    }
+
+    /**
+     * 회원 탈퇴(비활성화) API
+     * DELETE /v1/members/me
+     * @param request 회원 탈퇴 요청 정보 (reason - 선택사항)
+     * @return 회원 탈퇴 응답 (memberId, status, deactivatedAt)
+     */
+    @Operation(
+            summary = "회원 탈퇴(비활성화)",
+            description = "현재 로그인한 사용자의 계정을 비활성화 처리합니다. 논리삭제 방식으로 데이터는 유지되며, 탈퇴 후 모든 기능이 제한됩니다.",
+            tags = {"02. 회원 정보"},
+            security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "회원 탈퇴 성공",
+                    content = @Content(schema = @Schema(implementation = MemberDeactivationResponse.class))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "400",
+                    description = "잘못된 요청"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "401",
+                    description = "인증 필요 (토큰 누락/만료/위조 등)"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "409",
+                    description = "이미 탈퇴한 사용자"
+            )
+    })
+    @DeleteMapping("/me")
+    public ResponseEntity<ApiResponse<MemberDeactivationResponse>> deactivateMember(
+            @RequestBody(required = false) MemberDeactivationRequest request) {
+        // request가 null인 경우 빈 객체로 처리
+        MemberDeactivationRequest deactivationRequest = request != null 
+                ? request 
+                : new MemberDeactivationRequest(null);
+        
+        MemberDeactivationResponse response = memberDeactivationService.deactivateMember(deactivationRequest);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success("회원 탈퇴가 완료되었습니다.", response));
     }
 
     /**
@@ -282,7 +489,7 @@ public class MemberController {
     @PostMapping("/{memberId}/blacklist")
     public ResponseEntity<BlacklistRegisterResponse> registerBlacklist(
             @PathVariable UUID memberId,
-            @RequestBody @Valid BlacklistRegisterRequest request) {
+            @RequestBody(required = true) @Valid BlacklistRegisterRequest request) {
         BlacklistRegisterResponse response = blacklistRegisterService.registerBlacklist(memberId, request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
