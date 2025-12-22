@@ -61,6 +61,9 @@ public class User extends BaseEntity {
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
+    @Column(name = "deactivated_at")
+    private LocalDateTime deactivatedAt;
+
     @Builder
     public User(String loginId, Provider provider, String providerId, String name, 
                   String password, String email, String nickname, String phone, UserStatus status) {
@@ -85,6 +88,22 @@ public class User extends BaseEntity {
         this.phone = phone;
     }
 
+    /**
+     * 프로필 수정 (nickname, phone, email)
+     * 각 필드는 null이 아닌 경우에만 업데이트
+     */
+    public void updateProfileFields(String nickname, String phone, String email) {
+        if (nickname != null && !nickname.isBlank()) {
+            this.nickname = nickname;
+        }
+        if (phone != null && !phone.isBlank()) {
+            this.phone = phone;
+        }
+        if (email != null && !email.isBlank()) {
+            this.email = email;
+        }
+    }
+
     public void updateLastLoginAt() {
         this.lastLoginAt = LocalDateTime.now();
     }
@@ -99,6 +118,7 @@ public class User extends BaseEntity {
 
     public void withdraw() {
         this.status = UserStatus.WITHDRAWN;
+        this.deactivatedAt = LocalDateTime.now();
     }
 
     public boolean isLocalProvider() {
