@@ -93,4 +93,18 @@ public class Category extends BaseEntity {
             this.depth = this.parent.getDepth() + 1;
         }
     }
+
+    public void updateInfo(String name, Long sortId) {
+        if (name != null) {
+            this.name = name;
+        }
+        if (sortId != null) {
+            this.sortId = sortId;
+        }
+    }
+
+    public void moveTo(Category newParent) {
+        this.parent = newParent;
+        updateDepth();
+    }
 }

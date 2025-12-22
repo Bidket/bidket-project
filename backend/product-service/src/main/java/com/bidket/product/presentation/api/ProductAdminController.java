@@ -11,6 +11,8 @@ import com.bidket.product.presentation.dto.request.brand.BrandCreateRequest;
 import com.bidket.product.presentation.dto.request.brand.BrandStatusChangeRequest;
 import com.bidket.product.presentation.dto.request.brand.BrandUpdateRequest;
 import com.bidket.product.presentation.dto.request.category.CategoryCreateRequest;
+import com.bidket.product.presentation.dto.request.category.CategoryMoveRequest;
+import com.bidket.product.presentation.dto.request.category.CategoryUpdateRequest;
 import com.bidket.product.presentation.dto.request.product.ProductCategoryCreateRequest;
 import com.bidket.product.presentation.dto.request.product.ProductCreateRequest;
 import com.bidket.product.presentation.dto.request.product.ProductTypeCreateRequest;
@@ -150,5 +152,31 @@ public class ProductAdminController {
     ) {
         brandService.changeBrandStatus(brandId, req.status());
         return ApiResponse.success("브랜드 상태가 수정되었습니다.", null);
+    }
+
+    @Operation(
+            summary = "카테고리 정보 수정",
+            description = "변경이 필요한 카테고리 정보를 부분 수정합니다."
+    )
+    @PatchMapping("/categories/{categoryId}")
+    public ApiResponse<Void> updateCategory(
+            @PathVariable UUID categoryId,
+            @Valid @RequestBody CategoryUpdateRequest request
+    ) {
+        categoryService.updateCategory(categoryId, request);
+        return ApiResponse.success("카테고리 정보가 수정되었습니다.", null);
+    }
+
+    @Operation(
+            summary = "카테고리 이동",
+            description = "parent 값을 변경해 카테고리를 이동합니다. null이면 최상위 카테고리로 이동합니다."
+    )
+    @PatchMapping("/categories/{categoryId}/move")
+    public ApiResponse<Void> moveCategory(
+            @PathVariable UUID categoryId,
+            @Valid @RequestBody CategoryMoveRequest request
+    ) {
+        categoryService.moveCategory(categoryId, request.newParentId());
+        return ApiResponse.success("카테고리가 이동되었습니다.", null);
     }
 }
