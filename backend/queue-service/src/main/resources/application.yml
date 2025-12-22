@@ -60,6 +60,8 @@ kafka:
         replicas: 1
         retention: 8400
   auction:
+    dlt:
+      topic: queue.auction.dlt
     topic: queue.auction
 
 springdoc:
