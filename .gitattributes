@@ -1,0 +1,2 @@
+# .sh 확장자 파일은 항상 LF 줄바꿈 사용
+*.sh text eol=lf

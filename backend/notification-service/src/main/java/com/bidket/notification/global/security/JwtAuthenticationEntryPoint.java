@@ -26,7 +26,10 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException authException) throws IOException {
         
-        log.warn("인증 실패: {} - {}", request.getRequestURI(), authException.getMessage());
+        log.warn("인증 실패: {} {} - {}", 
+                request.getMethod(),
+                request.getRequestURI(), 
+                authException.getMessage());
 
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .success(false)

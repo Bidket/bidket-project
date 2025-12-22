@@ -18,7 +18,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "p_notification", indexes = {
         @Index(name = "idx_notification_user_id", columnList = "user_id"),
-        @Index(name = "idx_notification_user_read", columnList = "user_id, read_at")
+        @Index(name = "idx_notification_user_read", columnList = "user_id, read_at"),
+        @Index(name = "idx_notification_event_id_channel", columnList = "event_id, channel", unique = true)
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -29,14 +30,17 @@ public class Notification extends BaseEntity {
     @Column(name = "id", columnDefinition = "UUID")
     private UUID id;
 
-    @Column(name = "user_id", nullable = true, columnDefinition = "UUID")
+    @Column(name = "user_id", nullable = false, columnDefinition = "UUID")
     private UUID userId;
 
+    @Column(name = "event_id", nullable = true, columnDefinition = "UUID")
+    private UUID eventId; // Kafka 이벤트 ID (멱등성 처리용, UNIQUE(event_id, channel))
+
     @Column(name = "type", nullable = false, length = 50)
-    private String type; // QUEUE_CALL, BID_SUCCESS, PAYMENT_DONE 등 (기존 호환성 유지용)
+    private String type; // Kafka eventType (near_turn, admitted, outbid, closed, payment_required, paid)
 
     @Column(name = "category", nullable = true, length = 50)
-    private String category; // AUCTION_START, BID_SUCCESS, PAYMENT_EXPIRE 등
+    private String category; // Kafka topic 기반 카테고리 (QUEUE, AUCTION, ORDER)
 
     @Enumerated(EnumType.STRING)
     @Column(name = "channel", nullable = false, length = 20)
@@ -58,17 +62,42 @@ public class Notification extends BaseEntity {
     @Column(name = "status", nullable = false, length = 20)
     private NotificationStatus status;
 
-    @Column(name = "sent_at")
+    @Column(name = "sent_at", columnDefinition = "TIMESTAMP")
     private LocalDateTime sentAt;
 
-    @Column(name = "read_at")
+    @Column(name = "read_at", columnDefinition = "TIMESTAMP")
     private LocalDateTime readAt;
 
+    // Kafka 이벤트 관련 필드
+    @Column(name = "occurred_at", nullable = false, columnDefinition = "TIMESTAMP")
+    private LocalDateTime occurredAt; // 이벤트 발생 시각 (지연/재처리 분석용)
+
+    @Column(name = "source", nullable = false, length = 50)
+    private String source; // 이벤트 발생 서비스 (예: queue-service, order-service)
+
+    @Column(name = "fail_reason", length = 50)
+    private String failReason; // 실패 사유 코드 (예: JSON_PARSE_ERROR, VALIDATION_ERROR, DB_TIMEOUT, SLACK_5XX)
+
+    @Column(name = "fail_detail", columnDefinition = "TEXT")
+    private String failDetail; // 실패 상세 메시지 (짧게/마스킹 규칙 적용 권장)
+
+    @Column(name = "retry_count", nullable = false)
+    private Integer retryCount = 0; // 재시도 누적 횟수 (최대 3회 등 정책 추적용)
+
+    @Column(name = "last_retry_at", columnDefinition = "TIMESTAMP")
+    private LocalDateTime lastRetryAt; // 마지막 재시도 수행 시각
+
+    @Column(name = "trace_id", length = 100)
+    private String traceId; // 분산 추적(Zipkin) 연결용 (선택)
+
     @Builder
-    public Notification(UUID userId, String type, String category, NotificationChannel channel,
-                       String title, String message, String linkUrl, String payload, NotificationStatus status) {
+    public Notification(UUID userId, UUID eventId, String type, String category, NotificationChannel channel,
+                       String title, String message, String linkUrl, String payload, NotificationStatus status,
+                       LocalDateTime occurredAt, String source, String failReason, String failDetail,
+                       Integer retryCount, LocalDateTime lastRetryAt, String traceId) {
         this.userId = userId;
-        this.type = type != null ? type : (category != null ? category : "SYSTEM"); // type이 없으면 category 사용, 둘 다 없으면 SYSTEM
+        this.eventId = eventId;
+        this.type = type;
         this.category = category;
         this.channel = channel != null ? channel : NotificationChannel.PUSH;
         this.title = title;
@@ -76,6 +105,13 @@ public class Notification extends BaseEntity {
         this.linkUrl = linkUrl;
         this.payload = payload;
         this.status = status != null ? status : NotificationStatus.PENDING;
+        this.occurredAt = occurredAt;
+        this.source = source;
+        this.failReason = failReason;
+        this.failDetail = failDetail;
+        this.retryCount = retryCount != null ? retryCount : 0;
+        this.lastRetryAt = lastRetryAt;
+        this.traceId = traceId;
     }
 
     /**
@@ -91,6 +127,23 @@ public class Notification extends BaseEntity {
      */
     public void markAsFailed() {
         this.status = NotificationStatus.FAILED;
+    }
+
+    /**
+     * 알림 발송 실패 처리 (상세 정보 포함)
+     */
+    public void markAsFailed(String failReason, String failDetail) {
+        this.status = NotificationStatus.FAILED;
+        this.failReason = failReason;
+        this.failDetail = failDetail;
+    }
+
+    /**
+     * 재시도 처리
+     */
+    public void incrementRetry() {
+        this.retryCount = (this.retryCount != null ? this.retryCount : 0) + 1;
+        this.lastRetryAt = LocalDateTime.now();
     }
 
     /**

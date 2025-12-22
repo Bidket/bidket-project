@@ -25,6 +25,8 @@ public class RefundEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    private UUID userId;
+
     private UUID paymentId;
 
     private Long refundAmount;
@@ -42,6 +44,7 @@ public class RefundEntity {
 
     public static RefundEntity from(Refund refund) {
         RefundEntity entity = new RefundEntity();
+        entity.userId = refund.userId();
         entity.paymentId = refund.paymentId();
         entity.refundAmount = refund.refundAmount();
         entity.refundedPointAmount = refund.refundedPointAmount();
@@ -55,6 +58,7 @@ public class RefundEntity {
     public Refund toModel() {
         return new Refund(
                 id,
+                userId,
                 paymentId,
                 refundAmount,
                 refundedPointAmount,
