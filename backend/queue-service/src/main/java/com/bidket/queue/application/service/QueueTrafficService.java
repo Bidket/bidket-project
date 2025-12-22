@@ -128,7 +128,6 @@ public class QueueTrafficService {
                                                     .eventType(EventType.QUEUE_NEAR_TURN)
                                                     .correlationId(userId)
                                                     .retryCount(3)
-                                                    .publishedAt(LocalDateTime.now())
                                                     .build();
 
                                             return outboxRepository.save(QueueOutboxEntity.from(outboxModel))

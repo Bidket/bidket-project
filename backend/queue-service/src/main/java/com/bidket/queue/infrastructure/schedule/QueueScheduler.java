@@ -2,13 +2,18 @@ package com.bidket.queue.infrastructure.schedule;
 
 import com.bidket.queue.domain.event.EventTemplate;
 import com.bidket.queue.domain.event.QueueEnteredNotificationEvent;
+import com.bidket.queue.domain.exception.QueueException;
+import com.bidket.queue.domain.model.QueueErrorCode;
+import com.bidket.queue.domain.model.outbox.EventType;
+import com.bidket.queue.domain.model.outbox.QueueOutboxModel;
 import com.bidket.queue.domain.repository.QueueManagementRepository;
+import com.bidket.queue.domain.repository.QueueOutboxRepository;
 import com.bidket.queue.domain.repository.QueueTrafficRepository;
 import com.bidket.queue.global.util.jwt.TokenProvider;
+import com.bidket.queue.infrastructure.persistence.entity.QueueOutboxEntity;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -16,7 +21,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.kafka.sender.KafkaSender;
-import reactor.kafka.sender.SenderRecord;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -34,6 +38,7 @@ public class QueueScheduler {
     private final TokenProvider tokenProvider;
     private final KafkaSender<String, EventTemplate> kafkaSender;
     private final ObjectMapper objectMapper;
+    private final QueueOutboxRepository outboxRepository;
 
     private final String EVENT_SOURCE = "queue-service";
 
@@ -93,35 +98,42 @@ public class QueueScheduler {
                                                             if (userIds.isEmpty())
                                                                 return Mono.empty();
 
-                                                            Flux<SenderRecord<String, EventTemplate, UUID>> records = Flux.fromIterable(userIds)
-                                                                    .map(userId -> {
+                                                            return Flux.fromIterable(userIds)
+                                                                    .flatMap(userId -> {
                                                                         QueueEnteredNotificationEvent eventData = QueueEnteredNotificationEvent.builder()
                                                                                 .auctionId(auctionId)
                                                                                 .userId(userId)
                                                                                 .enterTime(LocalDateTime.now())
                                                                                 .build();
 
-                                                                        EventTemplate event = EventTemplate.builder()
-                                                                                .eventId(UUID.randomUUID())
-                                                                                .occurredAt(LocalDateTime.now())
-                                                                                .source(EVENT_SOURCE)
-                                                                                .userId(userId)
-                                                                                .data(objectMapper.convertValue(eventData, Map.class))
-                                                                                .build();
+                                                                        EventTemplate event = EventTemplate.of(userId,
+                                                                                EVENT_SOURCE,
+                                                                                EventType.QUEUE_ENTERED.name(),
+                                                                                objectMapper.convertValue(eventData, Map.class));
 
-                                                                        return SenderRecord.create(
-                                                                                new ProducerRecord<>(queueEnterTopic, event.eventId().toString(), event),
-                                                                                event.eventId()
-                                                                        );
-                                                                    });
+                                                                        return mapToString(event)
+                                                                                .flatMap(payload -> {
+                                                                                    QueueOutboxModel outboxModel = QueueOutboxModel.builder()
+                                                                                            .id(UUID.randomUUID())
+                                                                                            .aggregateId(userId)
+                                                                                            .aggregateType("QUEUE")
+                                                                                            .topic(queueEnterTopic)
+                                                                                            .key(userId.toString())
+                                                                                            .payload(payload)
+                                                                                            .eventType(EventType.QUEUE_ENTERED)
+                                                                                            .correlationId(userId)
+                                                                                            .retryCount(3)
+                                                                                            .build();
 
-                                                            return kafkaSender.send(records)
-                                                                    .doOnNext(r -> log.debug("이벤트 발행 성공: correctionId = {}", r.correlationMetadata()))
-                                                                    .then(Mono.just(userIds.size()));
-
+                                                                                    return outboxRepository.save(QueueOutboxEntity.from(outboxModel))
+                                                                                            .doOnSuccess(entity -> log.info("저장 성공: id[{}]", entity.getId()))
+                                                                                            .onErrorMap(e -> new QueueException(QueueErrorCode.OUTBOX_SAVE_FAILED, e.getMessage()));
+                                                                                });
+                                                                    })
+                                                                    .then();
                                                         }))
                                                         .doOnSuccess(isSuccess -> {
-                                                            log.info("경매[{}] 알림 이벤트 발행 완료: {}명", auctionId, userIds.size());
+                                                            log.info("경매[{}] 알림 이벤트 outbox 저장 완료: {}명", auctionId, userIds.size());
                                                         });
                                             });
 
@@ -147,5 +159,10 @@ public class QueueScheduler {
                     return trafficRepository.removeActiveUsers(auctionId, expiredUserIds);
                 })
                 .then();
+    }
+
+    private Mono<String> mapToString(Object object) {
+        return Mono.fromCallable(() -> objectMapper.writeValueAsString(object))
+                .onErrorMap(e -> new RuntimeException("JSON 변환 실패", e));
     }
 }
