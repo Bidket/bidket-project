@@ -10,15 +10,21 @@ import com.bidket.user.global.security.PasswordEncoder;
 import com.bidket.user.global.security.PasswordValidator;
 import com.bidket.user.infrastructure.persistence.entity.NotificationSetting;
 import com.bidket.user.infrastructure.persistence.entity.PointAccount;
+import com.bidket.user.infrastructure.persistence.entity.RefreshToken;
 import com.bidket.user.infrastructure.persistence.entity.User;
 import com.bidket.user.infrastructure.persistence.repository.NotificationSettingRepository;
 import com.bidket.user.infrastructure.persistence.repository.PointAccountRepository;
+import com.bidket.user.infrastructure.persistence.repository.RefreshTokenRepository;
 import com.bidket.user.infrastructure.persistence.repository.UserRepository;
 import com.bidket.user.presentation.dto.request.SignupRequest;
 import com.bidket.user.presentation.dto.response.SignupResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
 
 /**
  * 회원가입 서비스
@@ -32,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
  * 6. PointAccount 생성 (balance = 0, status = ACTIVE)
  * 7. NotificationSetting 생성 (기본값 설정)
  * 8. JWT 토큰 생성 (accessToken, refreshToken)
+ * 9. Refresh Token DB 저장 (userId당 RT 1개 정책)
  */
 @Service
 @RequiredArgsConstructor
@@ -40,9 +47,13 @@ public class SignupService {
     private final UserRepository userRepository;
     private final PointAccountRepository pointAccountRepository;
     private final NotificationSettingRepository notificationSettingRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final PasswordValidator passwordValidator;
     private final JwtTokenProvider jwtTokenProvider;
+
+    @Value("${jwt.refresh-token-expiration}")
+    private long refreshTokenExpiration;
 
     /**
      * 회원가입 처리
@@ -120,6 +131,21 @@ public class SignupService {
         // JWT 토큰 생성 (accessToken, refreshToken)
         String accessToken = jwtTokenProvider.generateAccessToken(savedUser.getId());
         String refreshToken = jwtTokenProvider.generateRefreshToken(savedUser.getId());
+
+        // Refresh Token DB 저장 (userId당 RT 1개 정책)
+        LocalDateTime now = LocalDateTime.now();
+        Duration refreshTtl = Duration.ofMillis(refreshTokenExpiration);
+        LocalDateTime refreshTokenExpiresAt = now.plus(refreshTtl);
+        
+        // 기존 RT 전부 제거 (userId당 1개 유지)
+        refreshTokenRepository.deleteByUserId(savedUser.getId());
+        
+        RefreshToken refreshTokenEntity = RefreshToken.builder()
+                .userId(savedUser.getId())
+                .token(refreshToken)
+                .expiresAt(refreshTokenExpiresAt)
+                .build();
+        refreshTokenRepository.save(refreshTokenEntity);
 
         // 회원가입 응답 생성
         return SignupResponse.builder()
