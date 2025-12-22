@@ -6,8 +6,10 @@ import com.bidket.user.domain.model.Provider;
 import com.bidket.user.domain.model.UserStatus;
 import com.bidket.user.global.security.JwtTokenProvider;
 import com.bidket.user.global.security.PasswordEncoder;
+import com.bidket.user.infrastructure.persistence.entity.RefreshToken;
 import com.bidket.user.infrastructure.persistence.entity.User;
 import com.bidket.user.infrastructure.persistence.entity.UserBlacklist;
+import com.bidket.user.infrastructure.persistence.repository.RefreshTokenRepository;
 import com.bidket.user.infrastructure.persistence.repository.UserBlacklistRepository;
 import com.bidket.user.infrastructure.persistence.repository.UserRepository;
 import com.bidket.user.presentation.dto.request.LoginRequest;
@@ -17,11 +19,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 /**
  * 로그인 서비스
- * 
  * 로그인 시 다음 작업을 수행:
  * 1. loginId로 사용자 조회 (provider = LOCAL)
  * 2. 비밀번호 검증 (BCrypt)
@@ -36,11 +38,15 @@ public class LoginService {
 
     private final UserRepository userRepository;
     private final UserBlacklistRepository userBlacklistRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
     @Value("${jwt.access-token-expiration}")
     private long accessTokenExpiration;
+
+    @Value("${jwt.refresh-token-expiration}")
+    private long refreshTokenExpiration;
 
     /**
      * 로그인 처리
@@ -84,14 +90,29 @@ public class LoginService {
         String accessToken = jwtTokenProvider.generateAccessToken(user.getId());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
 
-        // 6. last_login_at 업데이트
+        // 6. Refresh Token DB 저장 (userId당 RT 1개 정책)
+        Duration refreshTtl = Duration.ofMillis(refreshTokenExpiration);
+        LocalDateTime refreshTokenExpiresAt = now.plus(refreshTtl);
+        
+        // 기존 RT 전부 제거 (userId당 1개 유지)
+        refreshTokenRepository.deleteByUserId(user.getId());
+        
+        RefreshToken refreshTokenEntity = RefreshToken.builder()
+                .userId(user.getId())
+                .token(refreshToken)
+                .expiresAt(refreshTokenExpiresAt)
+                .build();
+        refreshTokenRepository.save(refreshTokenEntity);
+
+        // 7. last_login_at 업데이트
         user.updateLastLoginAt();
-        userRepository.save(user);
+        // @Transactional + JPA 더티 체킹으로 자동 업데이트됨 (save() 불필요)
 
-        // 7. expiresIn 계산 (밀리초를 초로 변환)
-        long expiresInSeconds = accessTokenExpiration / 1000;
+        // 8. expiresIn 계산 (밀리초를 초로 변환)
+        Duration accessTtl = Duration.ofMillis(accessTokenExpiration);
+        long expiresInSeconds = accessTtl.toSeconds();
 
-        // 8. 로그인 응답 생성
+        // 9. 로그인 응답 생성
         return LoginResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
