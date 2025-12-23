@@ -1,0 +1,55 @@
+name: Deploy App Services to EC2
+
+on:
+  workflow_run:
+    workflows:
+      - Build & Push Gateway Service Image
+    types:
+      - completed
+
+  # 수동 실행용
+  workflow_dispatch: {}
+
+jobs:
+  deploy-app:
+    # cicd-test에서는 배포 안 함 (infra PR용)
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.ref == 'refs/heads/dev'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1) 저장소 Checkout
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2) GitHub Actions 환경에서 SSH 설정
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+      # 3) known_hosts 등록 (app 서버)
+      - name: Add app EC2 to known_hosts
+        run: |
+          ssh-keyscan -p 2222 -H ${{ secrets.EC2_APP_HOST }} >> ~/.ssh/known_hosts
+
+      # 4) 프로젝트 파일 업로드
+      # (infra compose, infra env 제외)
+      - name: Upload app deployment files
+        run: |
+          rsync -avz \
+            --exclude '.env.*' \
+            --exclude 'infra/' \
+            -e "ssh -p 2222" \
+            ./ ubuntu@${{ secrets.EC2_APP_HOST }}:/opt/bidket/app/
+
+      # 5) 배포 스크립트 실행 - EC2에서 run-app.sh 실행하여 배포
+      - name: Run app deployment script
+        run: |
+          ssh -p 2222 ubuntu@${{ secrets.EC2_APP_HOST }} '
+            export GATEWAY_IMAGE_TAG=latest
+            chmod +x /opt/bidket/app/run-app.sh
+            bash /opt/bidket/app/run-app.sh
+          '
