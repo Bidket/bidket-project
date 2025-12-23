@@ -35,6 +35,7 @@ public class OutboxScheduler {
 
     @Scheduled(fixedDelay = 1000)
     public void publishEvent() {
+        log.info("이벤트 발행 시작");
         outboxRepository.findAllByStatusAndRetryCountLessThan(OutboxStatus.PENDING, 5)
                 .parallel()
                 .runOn(Schedulers.boundedElastic())
@@ -61,16 +62,17 @@ public class OutboxScheduler {
     }
 
     protected Mono<QueueOutboxModel> publishEvent(QueueOutboxModel outboxModel) {
-        EventTemplate event = objectMapper.convertValue(outboxModel.getPayload(), EventTemplate.class);
 
-        SenderRecord<String, EventTemplate, UUID> record = SenderRecord.create(
-                new ProducerRecord<>(queueEnterTopic, event.eventId().toString(), event),
-                event.eventId()
-        );
+        return Mono.fromCallable(() -> {
+            EventTemplate event = objectMapper.readValue(outboxModel.getPayload(), EventTemplate.class);
 
-        return kafkaSender.send(Mono.just(record))
+            return SenderRecord.create(
+                    new ProducerRecord<>(queueEnterTopic, event.eventId().toString(), event),
+                    event.eventId()
+            );
+        })
+                .flatMap(record -> kafkaSender.send(Mono.just(record)).next())
                 .doOnNext(r -> log.debug("이벤트 발행 성공: correctionId = {}", r.correlationMetadata()))
-                .next()
                 .thenReturn(outboxModel);
     }
 
@@ -84,7 +86,7 @@ public class OutboxScheduler {
     @Transactional
     protected Mono<Integer> retry(QueueOutboxModel model) {
         model.retry();
-        if(model.getStatus().equals(OutboxStatus.FAILED))
+        if (model.getStatus().equals(OutboxStatus.FAILED))
             return Mono.error(new QueueException(QueueErrorCode.OUTBOX_MAX_RETRY));
         QueueOutboxEntity entity = QueueOutboxEntity.from(model);
         return outboxRepository.save(entity)

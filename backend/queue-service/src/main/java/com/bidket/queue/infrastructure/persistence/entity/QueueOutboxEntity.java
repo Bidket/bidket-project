@@ -5,6 +5,7 @@ import com.bidket.queue.domain.model.outbox.OutboxStatus;
 import com.bidket.queue.domain.model.outbox.QueueOutboxModel;
 import lombok.Builder;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.PersistenceCreator;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
@@ -13,7 +14,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Builder
 @Table("p_queue_outbox")
 public class QueueOutboxEntity implements Persistable<UUID> {
     @Id
@@ -44,6 +44,40 @@ public class QueueOutboxEntity implements Persistable<UUID> {
 
     @Transient
     private boolean isNew = true;
+
+    @PersistenceCreator
+    public QueueOutboxEntity(UUID id, UUID aggregateId, String aggregateType, String topic, String key, String payload, String eventType, UUID correlationId, int retryCount, String errorMessage, LocalDateTime publishedAt, OutboxStatus status) {
+        this.id = id;
+        this.aggregateId = aggregateId;
+        this.aggregateType = aggregateType;
+        this.topic = topic;
+        this.key = key;
+        this.payload = payload;
+        this.eventType = eventType;
+        this.correlationId = correlationId;
+        this.retryCount = retryCount;
+        this.errorMessage = errorMessage;
+        this.publishedAt = publishedAt;
+        this.status = status;
+        this.isNew = false;
+    }
+
+    @Builder
+    public QueueOutboxEntity(UUID id, UUID aggregateId, String aggregateType, String topic, String key, String payload, String eventType, UUID correlationId, int retryCount, String errorMessage, LocalDateTime publishedAt, OutboxStatus status, boolean isNew) {
+        this.id = id;
+        this.aggregateId = aggregateId;
+        this.aggregateType = aggregateType;
+        this.topic = topic;
+        this.key = key;
+        this.payload = payload;
+        this.eventType = eventType;
+        this.correlationId = correlationId;
+        this.retryCount = retryCount;
+        this.errorMessage = errorMessage;
+        this.publishedAt = publishedAt;
+        this.status = status;
+        this.isNew = isNew;
+    }
 
     public static QueueOutboxEntity from(QueueOutboxModel model) {
         return QueueOutboxEntity.builder()

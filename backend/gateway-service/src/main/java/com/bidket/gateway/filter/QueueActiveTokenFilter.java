@@ -15,7 +15,7 @@ import java.util.Objects;
 @Slf4j
 @Component
 public class QueueActiveTokenFilter extends AbstractGatewayFilterFactory {
-    private final String Q_ACTIVE_TOKEN_HEADER = "Q-ACTIVE-TOKEN";
+    private final String Q_ACTIVE_TOKEN_HEADER = "X-Q-ACTIVE-TOKEN";
     private final QueueTokenProvider tokenProvider;
 
     public QueueActiveTokenFilter(QueueTokenProvider tokenProvider) {

@@ -5,6 +5,7 @@ import com.bidket.queue.domain.event.QueueEnteredNotificationEvent;
 import com.bidket.queue.domain.exception.QueueException;
 import com.bidket.queue.domain.model.QueueErrorCode;
 import com.bidket.queue.domain.model.outbox.EventType;
+import com.bidket.queue.domain.model.outbox.OutboxStatus;
 import com.bidket.queue.domain.model.outbox.QueueOutboxModel;
 import com.bidket.queue.domain.repository.QueueManagementRepository;
 import com.bidket.queue.domain.repository.QueueOutboxRepository;
@@ -123,6 +124,7 @@ public class QueueScheduler {
                                                                                             .eventType(EventType.QUEUE_ENTERED)
                                                                                             .correlationId(userId)
                                                                                             .retryCount(0)
+                                                                                            .status(OutboxStatus.PENDING)
                                                                                             .isNew(true)
                                                                                             .build();
 

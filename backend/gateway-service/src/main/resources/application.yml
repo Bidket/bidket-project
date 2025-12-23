@@ -20,6 +20,13 @@ spring:
         locator:
           enabled: true
           lower-case-service-id: true
+      routes:
+        - id: bid-service-route
+          uri: lb://bid-service
+          predicates:
+            - Path=**/v1/bids/**, **/v1/queues/{auctionId}/heartbeat/**
+          filters:
+            - QueueActiveTokenFilter
   data:
     redis:
       host: ${REDIS_HOST}
@@ -34,11 +41,3 @@ jwt:
   secret: ${JWT_SECRET}
   queue:
     secret: ${ACTIVE_TOKEN_SECRET}
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-  endpoint:
-    gateway:
-      enabled: true
