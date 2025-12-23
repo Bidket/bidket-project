@@ -131,7 +131,7 @@ public class QueueScheduler {
                                                                                             .onErrorMap(e -> new QueueException(QueueErrorCode.OUTBOX_SAVE_FAILED, e.getMessage()));
                                                                                 });
                                                                     })
-                                                                    .then();
+                                                                    .then(Mono.just(true));
                                                         }))
                                                         .doOnSuccess(isSuccess -> {
                                                             log.info("경매[{}] 알림 이벤트 outbox 저장 완료: {}명", auctionId, userIds.size());
