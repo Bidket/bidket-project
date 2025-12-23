@@ -27,4 +27,9 @@ public interface OrderRepository {
     boolean existsByAuctionId(UUID auctionId);
 
     void softDelete(UUID orderId, UUID userId);
+
+    // admin
+    Page<Order> findAll(Pageable pageable);
+
+    Page<Order> findAllByStatus(OrderStatus status, Pageable pageable);
 }

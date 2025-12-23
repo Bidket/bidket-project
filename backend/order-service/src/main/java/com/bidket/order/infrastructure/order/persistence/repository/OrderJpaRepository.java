@@ -35,4 +35,9 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, UUID> {
             Pageable pageable);
 
     boolean existsByAuctionIdAndDeletedAtIsNull(UUID auctionId);
+
+    // admin
+    Page<OrderEntity> findAllByDeletedAtIsNull(Pageable pageable);
+
+    Page<OrderEntity> findByStatusAndDeletedAtIsNull(OrderStatus status, Pageable pageable);
 }

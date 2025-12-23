@@ -91,6 +91,19 @@ public class OrderRepositoryImpl implements OrderRepository {
         orderJpaRepository.save(entity);
     }
 
+    // admin
+    @Override
+    public Page<Order> findAll(Pageable pageable) {
+        return orderJpaRepository.findAllByDeletedAtIsNull(pageable)
+                .map(this::toDomain);
+    }
+
+    @Override
+    public Page<Order> findAllByStatus(OrderStatus status, Pageable pageable) {
+        return orderJpaRepository.findByStatusAndDeletedAtIsNull(status, pageable)
+                .map(this::toDomain);
+    }
+
     private OrderEntity toEntity(Order order) {
         return OrderEntity.create(
                 order.userId(),
