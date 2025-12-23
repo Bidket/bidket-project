@@ -42,6 +42,13 @@ public class PaymentRepositoryImpl implements PaymentRepository {
     }
 
     @Override
+    public Page<Payment> findByUserIdAndStatus(UUID userId, PaymentStatus status,
+            Pageable pageable) {
+        return paymentJpaRepository.findByUserIdAndStatus(userId, status, pageable)
+                .map(PaymentEntity::toModel);
+    }
+
+    @Override
     public boolean existsByOrderIdAndStatus(UUID orderId, PaymentStatus status) {
         return paymentJpaRepository.existsByOrderIdAndStatus(orderId, status);
     }

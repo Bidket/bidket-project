@@ -14,8 +14,10 @@ public interface PaymentRepository {
     Page<Payment> findByUserId(UUID userId, Pageable pageable);
 
     Optional<Payment> findById(UUID paymentId);
-    
+
     Optional<Payment> findByOrderId(UUID orderId);
+
+    Page<Payment> findByUserIdAndStatus(UUID userId, PaymentStatus status, Pageable pageable);
 
     boolean existsByOrderIdAndStatus(UUID orderId, PaymentStatus status);
 }

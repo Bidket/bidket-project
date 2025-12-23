@@ -4,6 +4,7 @@ import com.bidket.common.presentation.response.ApiResponse;
 import com.bidket.common.presentation.response.PageResponse;
 import com.bidket.order.application.payment.facade.PaymentFacade;
 import com.bidket.order.application.payment.info.PaymentSummaryInfo;
+import com.bidket.order.domain.payment.model.PaymentStatus;
 import com.bidket.order.presentation.payment.dto.request.PaymentConfirmRequest;
 import com.bidket.order.presentation.payment.dto.request.PaymentCreateRequest;
 import com.bidket.order.presentation.payment.dto.request.PaymentFailRequest;
@@ -11,6 +12,7 @@ import com.bidket.order.presentation.payment.dto.response.PaymentCreateResponse;
 import com.bidket.order.presentation.payment.dto.response.PaymentStatusResponse;
 import com.bidket.order.presentation.payment.dto.response.PaymentSummaryResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.UUID;
@@ -118,12 +120,13 @@ public class PaymentController {
     public ApiResponse<PageResponse<PaymentSummaryResponse>> getMyPayments(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam String userId // TODO: 인증 적용 예정
+            @Parameter(description = "회원 ID") @RequestParam String userId, // TODO: 인증 적용 예정
+            @Parameter(description = "결제 상태 필터") @RequestParam(required = false) PaymentStatus status
     ) {
         UUID userUuid = UUID.fromString(userId);
         Pageable pageable = PageRequest.of(page, size);
 
-        Page<PaymentSummaryInfo> payments = paymentFacade.getMyPayments(userUuid, pageable);
+        Page<PaymentSummaryInfo> payments = paymentFacade.getMyPayments(userUuid, status, pageable);
 
         List<PaymentSummaryResponse> content = payments.getContent().stream()
                 .map(PaymentSummaryResponse::from)
@@ -136,6 +139,10 @@ public class PaymentController {
                 payments.getTotalElements()
         );
 
-        return ApiResponse.success("결제 내역을 조회했습니다.", response);
+        String message = (status == null)
+                ? "결제 내역을 조회했습니다."
+                : status.name() + " 결제 내역을 조회했습니다.";
+
+        return ApiResponse.success(message, response);
     }
 }

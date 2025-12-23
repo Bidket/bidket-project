@@ -2,8 +2,6 @@ package com.bidket.order.application.payment.facade;
 
 import com.bidket.order.application.payment.info.PaymentSummaryInfo;
 import com.bidket.order.domain.order.model.Order;
-import com.bidket.order.domain.order.repository.OrderRepository;
-import com.bidket.order.domain.order.model.Order;
 import com.bidket.order.domain.order.model.OrderStatus;
 import com.bidket.order.domain.order.repository.OrderRepository;
 import com.bidket.order.domain.payment.model.Payment;
@@ -72,15 +70,14 @@ public class PaymentFacade {
     }
 
     /**
-     * 결제 성공 시 후속 처리
-     * 1. 주문 상태를 PAID로 변경
-     * 2. PAYMENT_COMPLETED 이벤트 발행
+     * 결제 성공 시 후속 처리 1. 주문 상태를 PAID로 변경 2. PAYMENT_COMPLETED 이벤트 발행
      */
     private void handlePaymentSuccess(Payment payment) {
         try {
             // 1. 주문 조회
             Order order = orderRepository.findById(payment.orderId())
-                    .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다: " + payment.orderId()));
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "주문을 찾을 수 없습니다: " + payment.orderId()));
 
             // 2. 주문 상태를 PAID로 변경
             LocalDateTime now = LocalDateTime.now(clock);
@@ -169,6 +166,15 @@ public class PaymentFacade {
     public Page<PaymentSummaryInfo> getMyPayments(UUID userId, Pageable pageable) {
         return paymentRepository.findByUserId(userId, pageable)
                 .map(PaymentSummaryInfo::from);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PaymentSummaryInfo> getMyPayments(UUID userId, PaymentStatus status,
+            Pageable pageable) {
+        return (status == null)
+                ? paymentRepository.findByUserId(userId, pageable).map(PaymentSummaryInfo::from)
+                : paymentRepository.findByUserIdAndStatus(userId, status, pageable)
+                        .map(PaymentSummaryInfo::from);
     }
 
     private void validatePayableOrder(Order order, UUID userId) {
