@@ -44,6 +44,7 @@ public class RefundEntity {
 
     public static RefundEntity from(Refund refund) {
         RefundEntity entity = new RefundEntity();
+        entity.id = refund.id();
         entity.userId = refund.userId();
         entity.paymentId = refund.paymentId();
         entity.refundAmount = refund.refundAmount();

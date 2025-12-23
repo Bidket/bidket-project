@@ -2,6 +2,7 @@ package com.bidket.product.application.service;
 
 import com.bidket.common.presentation.response.PageResponse;
 import com.bidket.product.application.mapper.CategoryMapper;
+import com.bidket.product.application.mapper.ProductCardMapper;
 import com.bidket.product.application.mapper.SkuMapper;
 import com.bidket.product.domain.exception.ProductErrorCode;
 import com.bidket.product.domain.exception.ProductException;
@@ -11,12 +12,14 @@ import com.bidket.product.infrastructure.persistence.entity.Product;
 import com.bidket.product.infrastructure.persistence.entity.ProductCategory;
 import com.bidket.product.infrastructure.persistence.entity.ProductSku;
 import com.bidket.product.infrastructure.persistence.repository.ProductCategoryRepository;
+import com.bidket.product.infrastructure.persistence.repository.ProductPublicSpecification;
 import com.bidket.product.infrastructure.persistence.repository.ProductRepository;
 import com.bidket.product.infrastructure.persistence.repository.ProductSkuRepository;
 import com.bidket.product.infrastructure.persistence.repository.ProductSpecification;
 import com.bidket.product.presentation.dto.request.PageRequestDto;
 import com.bidket.product.presentation.dto.request.product.SkuGetRequest;
 import com.bidket.product.presentation.dto.response.category.CategoryGetResponse;
+import com.bidket.product.presentation.dto.response.product.ProductCardGetResponse;
 import com.bidket.product.presentation.dto.response.product.SkuGetDetailResponse;
 import com.bidket.product.presentation.dto.response.product.SkuGetResponse;
 import java.util.List;
@@ -24,6 +27,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +42,7 @@ public class ProductQueryService {
     private final ProductSkuRepository skuRepository;
     private final SkuMapper skuMapper;
     private final CategoryMapper categoryMapper;
+    private final ProductCardMapper productCardMapper;
 
     /** 상품 단건 조회 */
     public Product getActiveProduct(UUID productId) {
@@ -121,5 +126,34 @@ public class ProductQueryService {
                 .stream()
                 .map(skuMapper::toSimpleResponse)
                 .toList();
+    }
+
+    /** 상품 목록 조회 */
+    public PageResponse<ProductCardGetResponse> getActiveProducts(
+            UUID brandId,
+            UUID categoryId,
+            PageRequestDto pageRequest
+    ) {
+        Pageable pageable = pageRequest.toPageable(
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+
+        Specification<Product> spec =
+                ProductPublicSpecification.isActive()
+                        .and(ProductPublicSpecification.hasBrand(brandId))
+                        .and(ProductPublicSpecification.hasPrimaryCategory(categoryId));
+
+        Page<Product> page = productRepository.findAll(spec, pageable);
+
+        List<ProductCardGetResponse> result = page.getContent().stream()
+                .map(productCardMapper::toDto)
+                .toList();
+
+        return PageResponse.of(
+                result,
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements()
+        );
     }
 }

@@ -22,15 +22,16 @@ public class NotificationEventConsumer {
     private final EventNotificationService eventNotificationService;
 
     /**
-     * notification.queue.near_turn 토픽 리스너
-     * - 대기 순번 임박 알림 이벤트 처리
+     * notification.queue 토픽 리스너
+     * - 대기 순번 임박 알림 (near_turn)
+     * - 경매 참여 가능 알림 (admitted)
      */
     @KafkaListener(
-            topics = "notification.queue.near_turn",
+            topics = "notification.queue",
             groupId = "notification-service",
             containerFactory = "kafkaListenerContainerFactory"
     )
-    public void consumeNearTurnEvent(
+    public void consumeQueueEvent(
             @Payload EventTemplate eventTemplate,
             @Header(KafkaHeaders.RECEIVED_KEY) String userId,
             @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
@@ -38,62 +39,99 @@ public class NotificationEventConsumer {
             @Header(KafkaHeaders.OFFSET) long offset,
             Acknowledgment acknowledgment
     ) {
-        log.info("Kafka 이벤트 수신: topic={}, partition={}, offset={}, eventId={}, eventType={}, userId={}",
-                topic, partition, offset, eventTemplate.eventId(), 
-                eventTemplate.eventType() != null ? eventTemplate.eventType() : "near_turn", userId);
-
-        try {
-            // eventType이 없을 경우 topic 이름에서 추론
-            String eventType = eventTemplate.eventType();
-            if (eventType == null || eventType.isEmpty()) {
-                if (topic.contains("near_turn")) {
-                    eventType = "near_turn";
-                } else if (topic.contains("admitted")) {
-                    eventType = "admitted";
-                }
-            }
-
-            // 이벤트 타입별 분기 처리
-            if ("near_turn".equals(eventType)) {
-                // eventType이 없는 경우를 대비해 eventTemplate에 eventType 추가
-                EventTemplate enrichedEvent = enrichEventTemplate(eventTemplate, eventType);
-                // topic에서 category 추출 (notification.queue.near_turn -> QUEUE)
-                eventNotificationService.processEvent(enrichedEvent, topic);
-            } else {
-                log.error("지원하지 않는 이벤트 타입입니다. eventType={}, eventId={}", 
-                        eventType, eventTemplate.eventId());
-                throw new IllegalArgumentException("지원하지 않는 이벤트 타입입니다: " + eventType);
-            }
-
-            // 수동 커밋 (enable-auto-commit=false)
-            // processEvent()가 예외 없이 정상 반환된 경우에만 커밋
-            if (acknowledgment != null) {
-                acknowledgment.acknowledge();
-            }
-
-        } catch (Exception e) {
-            log.error("이벤트 처리 실패: topic={}, partition={}, offset={}, eventId={}, error={}",
-                    topic, partition, offset, eventTemplate.eventId(), e.getMessage(), e);
-            // 예외를 다시 던져서 Kafka 재시도 트리거
-            throw e;
-        }
+        consumeEvent(topic, partition, offset, userId, eventTemplate, acknowledgment);
     }
 
     /**
-     * eventType이 없는 경우를 대비해 EventTemplate을 보강
+     * notification.auction 토픽 리스너
+     * - 상회 입찰 알림 (outbid)
+     * - 경매 종료 알림 (closed)
      */
-    private EventTemplate enrichEventTemplate(EventTemplate original, String eventType) {
-        if (original.eventType() != null && !original.eventType().isEmpty()) {
-            return original;
-        }
-        return new EventTemplate(
-                original.eventId(),
-                eventType,
-                original.occurredAt(),
-                original.source(),
-                original.userId(),
-                original.data()
-        );
+    @KafkaListener(
+            topics = "notification.auction",
+            groupId = "notification-service",
+            containerFactory = "kafkaListenerContainerFactory"
+    )
+    public void consumeAuctionEvent(
+            @Payload EventTemplate eventTemplate,
+            @Header(KafkaHeaders.RECEIVED_KEY) String userId,
+            @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
+            @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
+            @Header(KafkaHeaders.OFFSET) long offset,
+            Acknowledgment acknowledgment
+    ) {
+        consumeEvent(topic, partition, offset, userId, eventTemplate, acknowledgment);
     }
+
+    /**
+     * notification.order 토픽 리스너
+     * - 결제 필요 알림 (payment_required)
+     * - 결제 완료 알림 (paid)
+     */
+    @KafkaListener(
+            topics = "notification.order",
+            groupId = "notification-service",
+            containerFactory = "kafkaListenerContainerFactory"
+    )
+    public void consumeOrderEvent(
+            @Payload EventTemplate eventTemplate,
+            @Header(KafkaHeaders.RECEIVED_KEY) String userId,
+            @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
+            @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
+            @Header(KafkaHeaders.OFFSET) long offset,
+            Acknowledgment acknowledgment
+    ) {
+        consumeEvent(topic, partition, offset, userId, eventTemplate, acknowledgment);
+    }
+
+    /**
+     * 공통 이벤트 처리 메서드
+     * - 리스너 역할: 최소한의 검증만 수행
+     * - 성공한 경우에만 ack, 실패 시 예외를 던져서 DLT/ErrorHandler가 처리하도록 함
+     */
+    private void consumeEvent(
+            String topic,
+            int partition,
+            long offset,
+            String userId,
+            EventTemplate eventTemplate,
+            Acknowledgment acknowledgment
+    ) {
+        // null-safe 로그
+        log.info("Kafka 이벤트 수신: topic={}, partition={}, offset={}, eventId={}, eventType={}, userId={}",
+                topic, partition, offset,
+                eventTemplate != null ? eventTemplate.eventId() : null,
+                eventTemplate != null ? eventTemplate.eventType() : null,
+                userId);
+
+        // eventTemplate null 방어 (NPE 방지)
+        if (eventTemplate == null) {
+            log.error("payload가 null입니다. topic={}, partition={}, offset={}, userId={}",
+                    topic, partition, offset, userId);
+            throw new IllegalArgumentException("payload는 필수입니다");
+        }
+
+        // eventType null/blank 체크
+        String eventType = eventTemplate.eventType();
+        if (eventType == null || eventType.isBlank()) {
+            log.error("eventType이 null이거나 비어있습니다. eventId={}, topic={}",
+                    eventTemplate.eventId(), topic);
+            throw new IllegalArgumentException("eventType은 필수입니다");
+        }
+
+        // 나머지는 service에 맡김
+        // 성공한 경우에만 ack, 실패 시 예외를 던져서 DLT/ErrorHandler가 처리하도록 함
+        try {
+            eventNotificationService.processEvent(eventTemplate, topic);
+            if (acknowledgment != null) {
+                acknowledgment.acknowledge();
+            }
+        } catch (Exception e) {
+            log.error("이벤트 처리 실패: topic={}, partition={}, offset={}, eventId={}, error={}",
+                    topic, partition, offset, eventTemplate.eventId(), e.getMessage(), e);
+            throw e; // 예외를 던져서 DLT/ErrorHandler가 처리하도록 함
+        }
+    }
+
 }
 

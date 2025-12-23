@@ -16,6 +16,9 @@ public enum UserErrorCode {
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED", "입력값 검증에 실패했습니다."),
     INVALID_EMAIL_FORMAT(HttpStatus.BAD_REQUEST, "INVALID_EMAIL_FORMAT", "잘못된 이메일 형식입니다."),
     WEAK_PASSWORD(HttpStatus.BAD_REQUEST, "WEAK_PASSWORD", "비밀번호 강도가 부족합니다."),
+    PASSWORD_CHANGE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "PASSWORD_CHANGE_NOT_ALLOWED", "소셜 로그인 사용자는 비밀번호를 변경할 수 없습니다."),
+    INVALID_CURRENT_PASSWORD(HttpStatus.BAD_REQUEST, "INVALID_CURRENT_PASSWORD", "현재 비밀번호가 올바르지 않습니다."),
+    INVALID_REQUEST(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "provider와 인증 토큰(idToken)을 확인해주세요."),
     
     // 401 Unauthorized
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "이메일 또는 비밀번호가 올바르지 않습니다."),
@@ -23,6 +26,7 @@ public enum UserErrorCode {
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "INVALID_TOKEN", "유효하지 않은 토큰입니다."),
     TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "TOKEN_EXPIRED", "토큰이 만료되었습니다."),
     USER_NOT_FOUND(HttpStatus.UNAUTHORIZED, "USER_NOT_FOUND", "사용자를 찾을 수 없습니다."),
+    SOCIAL_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "SOCIAL_TOKEN_INVALID", "소셜 인증 토큰이 유효하지 않습니다."),
     
     // 403 Forbidden
     INACTIVE_MEMBER(HttpStatus.FORBIDDEN, "INACTIVE_MEMBER", "비활성화된 계정입니다."),
@@ -39,6 +43,7 @@ public enum UserErrorCode {
     EMAIL_DUPLICATE(HttpStatus.CONFLICT, "EMAIL_DUPLICATE", "이미 사용 중인 이메일입니다."),
     LOGIN_ID_DUPLICATE(HttpStatus.CONFLICT, "LOGIN_ID_DUPLICATE", "이미 사용 중인 로그인 아이디입니다."),
     NICKNAME_DUPLICATE(HttpStatus.CONFLICT, "NICKNAME_DUPLICATE", "이미 사용 중인 닉네임입니다."),
+    ALREADY_WITHDRAWN(HttpStatus.CONFLICT, "ALREADY_WITHDRAWN", "이미 탈퇴한 회원입니다."),
     
     // 500 Internal Server Error
     SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "SERVER_ERROR", "서버에서 오류가 발생했습니다. 다시 시도해주세요.");

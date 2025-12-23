@@ -47,4 +47,21 @@ public record Refund(
                 null
         );
     }
+
+    public Refund approve(LocalDateTime now) {
+        if (this.status != RefundStatus.REQUESTED) {
+            throw new IllegalStateException("환불 승인 가능한 상태가 아닙니다.");
+        }
+        return new Refund(
+                this.id,
+                this.userId,
+                this.paymentId,
+                this.refundAmount,
+                this.refundedPointAmount,
+                RefundStatus.APPROVED,
+                this.reason,
+                this.requestedAt,
+                now
+        );
+    }
 }

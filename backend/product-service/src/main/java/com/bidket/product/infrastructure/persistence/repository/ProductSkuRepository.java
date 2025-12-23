@@ -20,4 +20,9 @@ public interface ProductSkuRepository extends JpaRepository<ProductSku, UUID> {
     Page<ProductSku> findByProductIdAndStatusAndDeletedAtIsNull(
             UUID productId, SkuStatus status, Pageable pageable);
 
+    Page<ProductSku> findAllByProduct_Id(UUID productId, Pageable pageable);
+
+    List<ProductSku> findAllByProduct_Id(UUID productId);
+
+    List<ProductSku> findAllByProduct_IdAndStatus(UUID productId, SkuStatus status);
 }
