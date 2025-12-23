@@ -5,6 +5,7 @@ import com.bidket.common.presentation.response.PageResponse;
 import com.bidket.order.application.order.facade.OrderFacade;
 import com.bidket.order.application.order.info.OrderInfo;
 import com.bidket.order.application.order.info.OrderSummaryInfo;
+import com.bidket.order.domain.order.model.OrderStatus;
 import com.bidket.order.presentation.order.dto.request.OrderCreateRequest;
 import com.bidket.order.presentation.order.dto.response.OrderCreateResponse;
 import com.bidket.order.presentation.order.dto.response.OrderSummaryResponse;
@@ -77,11 +78,12 @@ public class OrderController {
     public ApiResponse<PageResponse<OrderSummaryResponse>> getOrders(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam UUID userId // TODO: 인증 적용 예정 (토큰에서 userId 추출)
+            @RequestParam UUID userId,  // TODO: 인증 적용 예정
+            @RequestParam(required = false) OrderStatus status
     ) {
         Pageable pageable = PageRequest.of(page, size);
 
-        Page<OrderSummaryInfo> orderPage = orderFacade.getOrders(userId, pageable);
+        Page<OrderSummaryInfo> orderPage = orderFacade.getOrders(userId, status, pageable);
 
         List<OrderSummaryResponse> content = orderPage.getContent()
                 .stream()
@@ -103,6 +105,10 @@ public class OrderController {
                 orderPage.getTotalElements()
         );
 
-        return ApiResponse.success("내 주문 목록 조회 성공", response);
+        String message = (status == null)
+                ? "내 주문 목록을 조회했습니다."
+                : status.name() + " 주문 목록을 조회했습니다.";
+
+        return ApiResponse.success(message, response);
     }
 }
