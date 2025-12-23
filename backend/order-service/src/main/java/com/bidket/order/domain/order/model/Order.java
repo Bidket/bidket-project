@@ -85,14 +85,27 @@ public record Order(
         if (this.status != OrderStatus.PAID) {
             throw new IllegalStateException("환불 요청 가능한 주문 상태가 아닙니다.");
         }
-        
-    public Order markPaid(LocalDateTime now) {
+
         return new Order(
                 this.id,
                 this.userId,
                 this.auctionId,
                 this.shoeId,
                 OrderStatus.REFUND_REQUESTED,
+                this.amount,
+                this.usedPointAmount,
+                this.paymentExpiredAt,
+                this.createdAt,
+                now
+        );
+    }
+
+    public Order markPaid(LocalDateTime now) {
+        return new Order(
+                this.id,
+                this.userId,
+                this.auctionId,
+                this.shoeId,
                 OrderStatus.PAID,
                 this.amount,
                 this.usedPointAmount,
@@ -107,13 +120,26 @@ public record Order(
             throw new IllegalStateException("환불 완료로 전이 가능한 주문 상태가 아닙니다.");
         }
 
-    public Order cancelByPaymentFail(LocalDateTime now, String errorCode, String errorMessage) {
         return new Order(
                 this.id,
                 this.userId,
                 this.auctionId,
                 this.shoeId,
                 OrderStatus.REFUNDED,
+                this.amount,
+                this.usedPointAmount,
+                this.paymentExpiredAt,
+                this.createdAt,
+                now
+        );
+    }
+
+    public Order cancelByPaymentFail(LocalDateTime now, String errorCode, String errorMessage) {
+        return new Order(
+                this.id,
+                this.userId,
+                this.auctionId,
+                this.shoeId,
                 OrderStatus.CANCELED,
                 this.amount,
                 this.usedPointAmount,
@@ -122,6 +148,7 @@ public record Order(
                 now
         );
     }
+
 
     public boolean isPaymentExpired(LocalDateTime now) {
         return this.status == OrderStatus.PAYMENT
