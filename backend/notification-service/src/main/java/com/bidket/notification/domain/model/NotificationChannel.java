@@ -8,6 +8,6 @@ public enum NotificationChannel {
     EMAIL,   // 이메일
     SMS,     // SMS
     SLACK,   // Slack
-    SYSTEM   // 시스템 알림
+    IN_APP   // 인앱 알림
 }
 
