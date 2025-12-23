@@ -159,4 +159,29 @@ public class OrderFacade {
 
         return OrderInfo.from(saved);
     }
+
+    @Transactional
+    public OrderInfo cancelOrder(UUID orderId, UUID userId, String reason) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다: " + orderId));
+
+        if (!order.userId().equals(userId)) {
+            throw new IllegalArgumentException(
+                    "주문 취소 권한이 없습니다: orderId=" + orderId + ", userId=" + userId);
+        }
+
+        LocalDateTime now = LocalDateTime.now(clock);
+        Order canceledOrder = order.cancel(now);
+        Order saved = orderRepository.save(canceledOrder);
+
+        auctionEventProducer.publishOrderCanceled(
+                saved.id(),
+                saved.auctionId(),
+                saved.userId(),
+                reason,
+                UUID.randomUUID()
+        );
+
+        return OrderInfo.from(saved);
+    }
 }

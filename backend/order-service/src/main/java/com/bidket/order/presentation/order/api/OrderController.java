@@ -6,11 +6,14 @@ import com.bidket.order.application.order.facade.OrderFacade;
 import com.bidket.order.application.order.info.OrderInfo;
 import com.bidket.order.application.order.info.OrderSummaryInfo;
 import com.bidket.order.domain.order.model.OrderStatus;
+import com.bidket.order.presentation.order.dto.request.OrderCancelRequest;
 import com.bidket.order.presentation.order.dto.request.OrderCreateRequest;
+import com.bidket.order.presentation.order.dto.response.OrderCancelResponse;
 import com.bidket.order.presentation.order.dto.response.OrderCreateResponse;
 import com.bidket.order.presentation.order.dto.response.OrderDetailResponse;
 import com.bidket.order.presentation.order.dto.response.OrderSummaryResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -23,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -80,8 +84,8 @@ public class OrderController {
     public ApiResponse<PageResponse<OrderSummaryResponse>> getOrders(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam UUID userId,  // TODO: 인증 적용 예정
-            @RequestParam(required = false) OrderStatus status
+            @Parameter(description = "회원 ID") @RequestParam UUID userId,
+            @Parameter(description = "주문 상태 필터") @RequestParam(required = false) OrderStatus status
     ) {
         Pageable pageable = PageRequest.of(page, size);
 
@@ -121,6 +125,25 @@ public class OrderController {
             @RequestParam UUID userId
     ) {
         OrderInfo info = orderFacade.getOrder(userId, orderId);
-        return ApiResponse.success("주문 상세 조회 성공", OrderDetailResponse.from(info));
+        return ApiResponse.success("주문 상세 조회했습니다.", OrderDetailResponse.from(info));
+    }
+
+    @DeleteMapping("/{orderId}/cancel")
+    @Operation(summary = "주문 취소", description = "결제 대기(PAYMENT) 상태의 주문을 취소합니다.")
+    public ApiResponse<OrderCancelResponse> cancelOrder(
+            @Parameter(description = "주문 ID") @PathVariable UUID orderId,
+            @Parameter(description = "회원 ID") @RequestParam UUID userId,
+            @Valid @RequestBody OrderCancelRequest request
+    ) {
+        OrderInfo info = orderFacade.cancelOrder(orderId, userId, request.reason());
+
+        return ApiResponse.success(
+                "주문이 취소되었습니다.",
+                new OrderCancelResponse(
+                        info.getOrderId().toString(),
+                        info.getStatus().name(),
+                        info.getUpdatedAt()
+                )
+        );
     }
 }
