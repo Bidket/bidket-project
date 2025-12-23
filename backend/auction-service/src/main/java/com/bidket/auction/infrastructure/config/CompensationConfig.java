@@ -12,10 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.annotation.EnableRetry;
 
-/**
- * 보상 트랜잭션 설정
- * 각 CompensationType에 대한 액션을 등록
- */
 @Slf4j
 @Configuration
 @EnableRetry
@@ -32,25 +28,21 @@ public class CompensationConfig {
     public void registerCompensationActions() {
         log.info("[CompensationConfig] 보상 액션 등록 시작");
 
-        // 1. 경매 재오픈
         compensationExecutor.registerCompensationAction(
                 CompensationType.REOPEN_AUCTION,
                 reopenAuctionAction
         );
 
-        // 2. 주문 취소
         compensationExecutor.registerCompensationAction(
                 CompensationType.CANCEL_ORDER,
                 cancelOrderAction
         );
 
-        // 3. 입찰 상태 복원
         compensationExecutor.registerCompensationAction(
                 CompensationType.REVERT_BID_STATUS,
                 revertBidStatusAction
         );
 
-        // 4. 결제 취소
         compensationExecutor.registerCompensationAction(
                 CompensationType.CANCEL_PAYMENT,
                 cancelPaymentAction

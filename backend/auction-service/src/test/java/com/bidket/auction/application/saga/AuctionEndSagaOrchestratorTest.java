@@ -111,7 +111,7 @@ class AuctionEndSagaOrchestratorTest {
     @Test
     @DisplayName("경매 종료 Saga 시작 성공")
     void startAuctionEndSaga_Success() {
-        // given
+         
         when(auctionRepository.findById(auctionId)).thenReturn(Optional.of(auction));
         when(bidRepository.findHighestBidByAuctionId(auctionId)).thenReturn(Optional.of(winningBid));
 
@@ -141,10 +141,8 @@ class AuctionEndSagaOrchestratorTest {
                             .build();
                 });
 
-        // when
         UUID sagaId = sagaOrchestrator.startAuctionEndSaga(auctionId);
 
-        // then
         assertThat(sagaId).isNotNull();
         verify(auctionRepository, atLeastOnce()).findById(auctionId);
         verify(bidRepository).findHighestBidByAuctionId(auctionId);
@@ -155,10 +153,9 @@ class AuctionEndSagaOrchestratorTest {
     @Test
     @DisplayName("경매가 존재하지 않으면 예외 발생")
     void startAuctionEndSaga_AuctionNotFound() {
-        // given
+         
         when(auctionRepository.findById(auctionId)).thenReturn(Optional.empty());
 
-        // when & then
         assertThatThrownBy(() -> sagaOrchestrator.startAuctionEndSaga(auctionId))
                 .isInstanceOf(AuctionDomainException.class)
                 .hasFieldOrPropertyWithValue("errorCode", AuctionErrorCode.AUCTION_NOT_FOUND);
@@ -171,11 +168,10 @@ class AuctionEndSagaOrchestratorTest {
     @Test
     @DisplayName("낙찰 입찰이 없으면 예외 발생")
     void startAuctionEndSaga_NoBidsFound() {
-        // given
+         
         when(auctionRepository.findById(auctionId)).thenReturn(Optional.of(auction));
         when(bidRepository.findHighestBidByAuctionId(auctionId)).thenReturn(Optional.empty());
 
-        // when & then
         assertThatThrownBy(() -> sagaOrchestrator.startAuctionEndSaga(auctionId))
                 .isInstanceOf(AuctionDomainException.class)
                 .hasFieldOrPropertyWithValue("errorCode", AuctionErrorCode.NO_BIDS_FOUND);
@@ -188,7 +184,7 @@ class AuctionEndSagaOrchestratorTest {
     @Test
     @DisplayName("Step 1: CREATE_ORDER 실행 성공")
     void executeCreateOrderStep_Success() {
-        // given
+         
         AuctionEndSagaContext sagaContext = AuctionEndSagaContext.builder()
                 .id(UUID.randomUUID())
                 .auctionId(auctionId)
@@ -201,10 +197,8 @@ class AuctionEndSagaOrchestratorTest {
                 .correlationId(UUID.randomUUID())
                 .build();
 
-        // when
         sagaOrchestrator.executeCreateOrderStep(sagaContext);
 
-        // then
         verify(orderEventProducer).publishCreateOrderRequest(
                 any(UUID.class),
                 eq(auctionId),
@@ -218,7 +212,7 @@ class AuctionEndSagaOrchestratorTest {
     @Test
     @DisplayName("Step 2: MARK_WINNING_BID 실행 성공")
     void executeMarkWinningBidStep_Success() {
-        // given
+         
         AuctionEndSagaContext sagaContext = AuctionEndSagaContext.builder()
                 .id(UUID.randomUUID())
                 .auctionId(auctionId)
@@ -237,10 +231,8 @@ class AuctionEndSagaOrchestratorTest {
         when(auctionRepository.findById(auctionId)).thenReturn(Optional.of(auction));
         when(auctionRepository.save(any(Auction.class))).thenReturn(auction);
 
-        // when
         sagaOrchestrator.executeMarkWinningBidStep(sagaContext);
 
-        // then
         verify(bidRepository).findById(winningBidId);
         verify(bidRepository).save(winningBid);
         verify(sagaRepository, atLeastOnce()).save(sagaContext);
@@ -250,7 +242,7 @@ class AuctionEndSagaOrchestratorTest {
     @Test
     @DisplayName("Step 3: FINALIZE_AUCTION 실행 성공")
     void executeFinalizeAuctionStep_Success() {
-        // given
+         
         AuctionEndSagaContext sagaContext = AuctionEndSagaContext.builder()
                 .id(UUID.randomUUID())
                 .auctionId(auctionId)
@@ -268,10 +260,8 @@ class AuctionEndSagaOrchestratorTest {
         when(sagaRepository.save(any(AuctionEndSagaContext.class))).thenReturn(sagaContext);
         when(bidRepository.findByAuctionId(auctionId)).thenReturn(java.util.List.of(winningBid));
 
-        // when
         sagaOrchestrator.executeFinalizeAuctionStep(sagaContext);
 
-        // then
         verify(auctionRepository, atLeastOnce()).findById(auctionId);
         verify(auctionRepository, atLeastOnce()).save(auction);
         verify(sagaRepository, atLeastOnce()).save(sagaContext);
@@ -280,7 +270,7 @@ class AuctionEndSagaOrchestratorTest {
     @Test
     @DisplayName("Step 4: PUBLISH_END_EVENT 실행 성공")
     void executePublishEndEventStep_Success() {
-        // given
+         
         AuctionEndSagaContext sagaContext = AuctionEndSagaContext.builder()
                 .id(UUID.randomUUID())
                 .auctionId(auctionId)
@@ -296,10 +286,8 @@ class AuctionEndSagaOrchestratorTest {
         when(sagaRepository.save(any(AuctionEndSagaContext.class))).thenReturn(sagaContext);
         when(bidRepository.findByAuctionId(auctionId)).thenReturn(java.util.List.of(winningBid));
 
-        // when
         sagaOrchestrator.executePublishEndEventStep(sagaContext);
 
-        // then
         verify(sagaRepository).save(sagaContext);
         verify(notificationEventProducer).publishWinnerNotification(
                 eq(winnerId),
@@ -314,7 +302,7 @@ class AuctionEndSagaOrchestratorTest {
     @Test
     @DisplayName("보상 트랜잭션 실행 성공")
     void compensate_Success() {
-        // given
+         
         UUID sagaId = UUID.randomUUID();
         AuctionEndSagaContext context = AuctionEndSagaContext.builder()
                 .id(sagaId)
@@ -331,10 +319,8 @@ class AuctionEndSagaOrchestratorTest {
         when(sagaRepository.save(any(AuctionEndSagaContext.class))).thenReturn(context);
         doNothing().when(compensationExecutor).executeCompensations(any(), any());
 
-        // when
         sagaOrchestrator.compensate(sagaId, "Test failure");
 
-        // then
         verify(sagaRepository).findById(sagaId);
         verify(compensationExecutor).executeCompensations(sagaId, "Test failure");
         verify(sagaRepository, atLeast(2)).save(any(AuctionEndSagaContext.class));

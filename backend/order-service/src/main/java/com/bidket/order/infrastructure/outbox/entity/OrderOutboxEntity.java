@@ -63,7 +63,8 @@ public class OrderOutboxEntity extends BaseEntity {
     private LocalDateTime publishedAt;
 
     @Version
-    private Long version;
+    @Column(nullable = false)
+    private Long version = 0L;
 
     public OrderOutboxEntity(
             UUID id,

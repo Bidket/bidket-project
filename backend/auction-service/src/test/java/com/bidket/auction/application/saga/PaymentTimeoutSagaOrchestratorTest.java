@@ -33,10 +33,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-/**
- * PaymentTimeoutSagaOrchestrator 단위 테스트
- * BACKLOG.md SAGA-002 검증
- */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("PaymentTimeoutSagaOrchestrator 테스트")
 class PaymentTimeoutSagaOrchestratorTest {
@@ -78,7 +74,6 @@ class PaymentTimeoutSagaOrchestratorTest {
         winningBidId = UUID.randomUUID();
         productSizeId = UUID.randomUUID();
 
-        // 경매 생성 (SUCCESS 상태, 낙찰 완료)
         auction = Auction.builder()
                 .id(auctionId)
                 .productSizeId(productSizeId)
@@ -101,7 +96,6 @@ class PaymentTimeoutSagaOrchestratorTest {
                 .status(AuctionStatus.SUCCESS)
                 .build();
 
-        // 낙찰 입찰 생성 (WON 상태)
         winningBid = Bid.builder()
                 .id(winningBidId)
                 .auctionId(auctionId)
@@ -115,7 +109,7 @@ class PaymentTimeoutSagaOrchestratorTest {
     @Test
     @DisplayName("결제 타임아웃 Saga 시작 성공")
     void startPaymentTimeoutSaga_Success() {
-        // given
+         
         when(auctionRepository.findById(auctionId)).thenReturn(Optional.of(auction));
         when(sagaRepository.findByOrderId(orderId)).thenReturn(Optional.empty());
         when(bidRepository.findById(winningBidId)).thenReturn(Optional.of(winningBid));
@@ -146,15 +140,13 @@ class PaymentTimeoutSagaOrchestratorTest {
                             .build();
                 });
 
-        // when
         UUID sagaId = sagaOrchestrator.startPaymentTimeoutSaga(auctionId, orderId);
 
-        // then
         assertThat(sagaId).isNotNull();
         verify(auctionRepository, atLeastOnce()).findById(auctionId);
         verify(sagaRepository).findByOrderId(orderId);
         verify(bidRepository, atLeastOnce()).findById(winningBidId);
-        // 각 step마다 save 호출: 1(초기 생성) + 2(start) + 3~7(각 step별 proceedToNextStep 또는 complete)
+         
         verify(sagaRepository, atLeast(2)).save(any(PaymentTimeoutSagaContext.class));
         verify(auctionRepository, atLeastOnce()).save(any(Auction.class));
         verify(bidRepository, atLeastOnce()).save(any(Bid.class));
@@ -163,10 +155,9 @@ class PaymentTimeoutSagaOrchestratorTest {
     @Test
     @DisplayName("경매가 존재하지 않으면 예외 발생")
     void startPaymentTimeoutSaga_AuctionNotFound() {
-        // given
+         
         when(auctionRepository.findById(auctionId)).thenReturn(Optional.empty());
 
-        // when & then
         assertThatThrownBy(() -> sagaOrchestrator.startPaymentTimeoutSaga(auctionId, orderId))
                 .isInstanceOf(AuctionDomainException.class)
                 .hasFieldOrPropertyWithValue("errorCode", AuctionErrorCode.AUCTION_NOT_FOUND);
@@ -178,7 +169,7 @@ class PaymentTimeoutSagaOrchestratorTest {
     @Test
     @DisplayName("이미 진행 중인 Saga가 있으면 예외 발생 (Idempotency)")
     void startPaymentTimeoutSaga_SagaAlreadyExists() {
-        // given
+         
         PaymentTimeoutSagaContext existingSaga = PaymentTimeoutSagaContext.builder()
                 .id(UUID.randomUUID())
                 .auctionId(auctionId)
@@ -193,7 +184,6 @@ class PaymentTimeoutSagaOrchestratorTest {
         when(auctionRepository.findById(auctionId)).thenReturn(Optional.of(auction));
         when(sagaRepository.findByOrderId(orderId)).thenReturn(Optional.of(existingSaga));
 
-        // when & then
         assertThatThrownBy(() -> sagaOrchestrator.startPaymentTimeoutSaga(auctionId, orderId))
                 .isInstanceOf(AuctionDomainException.class)
                 .hasFieldOrPropertyWithValue("errorCode", AuctionErrorCode.SAGA_ALREADY_EXISTS);
@@ -206,12 +196,11 @@ class PaymentTimeoutSagaOrchestratorTest {
     @Test
     @DisplayName("낙찰 입찰이 없으면 예외 발생")
     void startPaymentTimeoutSaga_NoBidsFound() {
-        // given
+         
         when(auctionRepository.findById(auctionId)).thenReturn(Optional.of(auction));
         when(sagaRepository.findByOrderId(orderId)).thenReturn(Optional.empty());
         when(bidRepository.findById(winningBidId)).thenReturn(Optional.empty());
 
-        // when & then
         assertThatThrownBy(() -> sagaOrchestrator.startPaymentTimeoutSaga(auctionId, orderId))
                 .isInstanceOf(AuctionDomainException.class)
                 .hasFieldOrPropertyWithValue("errorCode", AuctionErrorCode.BID_NOT_FOUND);
@@ -222,7 +211,7 @@ class PaymentTimeoutSagaOrchestratorTest {
     @Test
     @DisplayName("Step 1: 경매 재오픈 성공")
     void executeReopenAuctionStep_Success() {
-        // given
+         
         PaymentTimeoutSagaContext context = PaymentTimeoutSagaContext.builder()
                 .id(UUID.randomUUID())
                 .auctionId(auctionId)
@@ -238,10 +227,8 @@ class PaymentTimeoutSagaOrchestratorTest {
         when(sagaRepository.save(any(PaymentTimeoutSagaContext.class))).thenReturn(context);
         when(auctionRepository.save(any(Auction.class))).thenReturn(auction);
 
-        // when
         sagaOrchestrator.executeReopenAuctionStep(context);
 
-        // then
         verify(auctionRepository).findById(auctionId);
         verify(auctionRepository).save(any(Auction.class));
         verify(sagaRepository).save(any(PaymentTimeoutSagaContext.class));
@@ -250,7 +237,7 @@ class PaymentTimeoutSagaOrchestratorTest {
     @Test
     @DisplayName("Step 2: 입찰 상태 복원 성공")
     void executeRevertBidStatusStep_Success() {
-        // given
+         
         PaymentTimeoutSagaContext context = PaymentTimeoutSagaContext.builder()
                 .id(UUID.randomUUID())
                 .auctionId(auctionId)
@@ -266,10 +253,8 @@ class PaymentTimeoutSagaOrchestratorTest {
         when(sagaRepository.save(any(PaymentTimeoutSagaContext.class))).thenReturn(context);
         when(bidRepository.save(any(Bid.class))).thenReturn(winningBid);
 
-        // when
         sagaOrchestrator.executeRevertBidStatusStep(context);
 
-        // then
         verify(bidRepository).findById(winningBidId);
         verify(bidRepository).save(any(Bid.class));
         verify(sagaRepository).save(any(PaymentTimeoutSagaContext.class));
@@ -278,7 +263,7 @@ class PaymentTimeoutSagaOrchestratorTest {
     @Test
     @DisplayName("Step 3: 주문 취소 성공 (MVP - 로깅만)")
     void executeCancelOrderStep_Success() {
-        // given
+         
         PaymentTimeoutSagaContext context = PaymentTimeoutSagaContext.builder()
                 .id(UUID.randomUUID())
                 .auctionId(auctionId)
@@ -292,17 +277,15 @@ class PaymentTimeoutSagaOrchestratorTest {
 
         when(sagaRepository.save(any(PaymentTimeoutSagaContext.class))).thenReturn(context);
 
-        // when
         sagaOrchestrator.executeCancelOrderStep(context);
 
-        // then
         verify(sagaRepository).save(any(PaymentTimeoutSagaContext.class));
     }
 
     @Test
     @DisplayName("Step 5: AUCTION_REOPENED 이벤트 발행 성공")
     void executePublishReopenEventStep_Success() {
-        // given
+         
         PaymentTimeoutSagaContext context = PaymentTimeoutSagaContext.builder()
                 .id(UUID.randomUUID())
                 .auctionId(auctionId)
@@ -317,10 +300,8 @@ class PaymentTimeoutSagaOrchestratorTest {
         when(sagaRepository.save(any(PaymentTimeoutSagaContext.class))).thenReturn(context);
         when(auctionRepository.findById(auctionId)).thenReturn(Optional.of(auction));
 
-        // when
         sagaOrchestrator.executePublishReopenEventStep(context);
 
-        // then
         verify(sagaRepository).save(any(PaymentTimeoutSagaContext.class));
         assertThat(context.getStatus()).isEqualTo(SagaStatus.COMPLETED);
     }
@@ -328,7 +309,7 @@ class PaymentTimeoutSagaOrchestratorTest {
     @Test
     @DisplayName("보상 트랜잭션 실행 성공")
     void compensate_Success() {
-        // given
+         
         UUID sagaId = UUID.randomUUID();
         PaymentTimeoutSagaContext context = PaymentTimeoutSagaContext.builder()
                 .id(sagaId)
@@ -345,10 +326,8 @@ class PaymentTimeoutSagaOrchestratorTest {
         when(sagaRepository.save(any(PaymentTimeoutSagaContext.class))).thenReturn(context);
         doNothing().when(compensationExecutor).executeCompensations(any(), any());
 
-        // when
         sagaOrchestrator.compensate(sagaId, "Test failure");
 
-        // then
         verify(sagaRepository).findById(sagaId);
         verify(compensationExecutor).executeCompensations(sagaId, "Test failure");
         verify(sagaRepository, atLeast(2)).save(any(PaymentTimeoutSagaContext.class));
@@ -357,12 +336,11 @@ class PaymentTimeoutSagaOrchestratorTest {
     @Test
     @DisplayName("Saga 실행 중 예외 발생 시 보상 트랜잭션 자동 실행")
     void startPaymentTimeoutSaga_FailureTriggersCompensation() {
-        // given
+         
         when(auctionRepository.findById(auctionId)).thenReturn(Optional.of(auction));
         when(sagaRepository.findByOrderId(orderId)).thenReturn(Optional.empty());
         when(bidRepository.findById(winningBidId)).thenReturn(Optional.of(winningBid));
 
-        // Saga Context 저장 시 ID를 가진 context 반환
         UUID sagaId = UUID.randomUUID();
 
         when(sagaRepository.save(any(PaymentTimeoutSagaContext.class)))
@@ -394,20 +372,17 @@ class PaymentTimeoutSagaOrchestratorTest {
                             .build());
                 });
 
-        // Step 1 (경매 재오픈)에서 예외 발생 시뮬레이션
         when(auctionRepository.save(any(Auction.class)))
                 .thenThrow(new RuntimeException("Database error"));
 
         doNothing().when(compensationExecutor).executeCompensations(any(), any());
 
-        // when
         try {
             sagaOrchestrator.startPaymentTimeoutSaga(auctionId, orderId);
         } catch (Exception e) {
-            // 예외 발생 예상됨
+             
         }
 
-        // then - 보상 트랜잭션이 실행되었는지 검증
         verify(compensationExecutor).executeCompensations(eq(sagaId), anyString());
     }
 }

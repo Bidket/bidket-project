@@ -202,7 +202,6 @@ public class AuctionEventProducer {
         message.put("occurredAt", event.occurredAt().toString());
         message.put("source", event.source());
         message.put("eventType", event.eventType());
-        message.put("userId", event.userId() != null ? event.userId().toString() : null);
         message.put("data", event.data());
         return message;
     }

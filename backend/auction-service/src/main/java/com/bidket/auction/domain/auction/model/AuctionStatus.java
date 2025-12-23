@@ -21,5 +21,3 @@ public enum AuctionStatus {
         return description;
     }
 }
-
-

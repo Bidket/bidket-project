@@ -102,7 +102,7 @@ class AuctionServiceTest {
         @Test
         @DisplayName("성공: 유효한 요청으로 경매 생성")
         void createAuction_Success() {
-            // Given
+             
             CreateAuctionRequest request = new CreateAuctionRequest(
                     testProductSizeId,
                     testSellerId,
@@ -116,7 +116,6 @@ class AuctionServiceTest {
                     LocalDateTime.now().plusDays(2)
             );
 
-            // testAuction에 ID 설정
             Auction savedAuction = Auction.builder()
                     .id(testAuctionId)
                     .productSizeId(testProductSizeId)
@@ -144,17 +143,14 @@ class AuctionServiceTest {
             given(auctionRepository.save(any(Auction.class)))
                     .willReturn(savedAuction);
 
-            // OutboxService 모킹
             AuctionOutbox mockOutbox = AuctionOutbox.pending(
                     "AUCTION", testAuctionId, "AUCTION_CREATED", "{}", UUID.randomUUID()
             );
             given(outboxService.saveAuctionEvent(anyString(), any(UUID.class), any(Map.class), any(UUID.class)))
                     .willReturn(mockOutbox);
 
-            // When
             AuctionResponse response = auctionService.createAuction(request);
 
-            // Then
             assertThat(response).isNotNull();
             assertThat(response.auctionTitle()).isEqualTo("[새제품] Nike Air Jordan 1");
             assertThat(response.status()).isEqualTo(AuctionStatus.CREATING);
@@ -174,11 +170,11 @@ class AuctionServiceTest {
         @Test
         @DisplayName("실패: 검증 실패 시 예외 발생")
         void createAuction_ValidationFailed() {
-            // Given
+             
             CreateAuctionRequest request = new CreateAuctionRequest(
                     testProductSizeId,
                     testSellerId,
-                    "짧음", // 5자 미만
+                    "짧음",  
                     null,
                     AuctionCondition.NEW,
                     250000L,
@@ -191,7 +187,6 @@ class AuctionServiceTest {
             doThrow(new AuctionDomainException(AuctionErrorCode.INVALID_AUCTION_STATUS))
                     .when(auctionValidator).validateCreate(request);
 
-            // When & Then
             assertThatThrownBy(() -> auctionService.createAuction(request))
                     .isInstanceOf(AuctionDomainException.class);
 
@@ -207,16 +202,14 @@ class AuctionServiceTest {
         @Test
         @DisplayName("성공: ID로 경매 조회")
         void getAuction_Success() {
-            // Given
+             
             given(auctionRepository.findById(testAuctionId))
                     .willReturn(Optional.of(testAuction));
             given(viewCountCacheService.getViewCount(any(UUID.class), any(Integer.class)))
                     .willReturn(0);
 
-            // When
             AuctionResponse response = auctionService.getAuction(testAuctionId);
 
-            // Then
             assertThat(response).isNotNull();
             assertThat(response.auctionTitle()).isEqualTo("[새제품] Nike Air Jordan 1");
 
@@ -227,11 +220,10 @@ class AuctionServiceTest {
         @Test
         @DisplayName("실패: 존재하지 않는 경매")
         void getAuction_NotFound() {
-            // Given
+             
             given(auctionRepository.findById(testAuctionId))
                     .willReturn(Optional.empty());
 
-            // When & Then
             assertThatThrownBy(() -> auctionService.getAuction(testAuctionId))
                     .isInstanceOf(AuctionDomainException.class);
 
@@ -246,15 +238,13 @@ class AuctionServiceTest {
         @Test
         @DisplayName("성공: 판매자별 경매 목록 조회")
         void getAuctionsBySeller_Success() {
-            // Given
+             
             List<Auction> auctions = List.of(testAuction);
             given(auctionRepository.findBySellerId(testSellerId))
                     .willReturn(auctions);
 
-            // When
             List<AuctionResponse> responses = auctionService.getAuctionsBySeller(testSellerId);
 
-            // Then
             assertThat(responses).hasSize(1);
             assertThat(responses.get(0).sellerId()).isEqualTo(testSellerId);
 
@@ -264,7 +254,7 @@ class AuctionServiceTest {
         @Test
         @DisplayName("성공: 상태별 경매 목록 조회")
         void getAuctionsByStatus_Success() {
-            // Given
+             
             testAuction.confirmCreation();
             testAuction.start();
             
@@ -272,11 +262,9 @@ class AuctionServiceTest {
             given(auctionRepository.findByStatus(AuctionStatus.ACTIVE))
                     .willReturn(auctions);
 
-            // When
             List<AuctionResponse> responses = auctionService
                     .getAuctionsByStatus(AuctionStatus.ACTIVE);
 
-            // Then
             assertThat(responses).hasSize(1);
             assertThat(responses.get(0).status()).isEqualTo(AuctionStatus.ACTIVE);
 
@@ -291,8 +279,8 @@ class AuctionServiceTest {
         @Test
         @DisplayName("성공: 유효한 수정 요청")
         void updateAuction_Success() {
-            // Given
-            testAuction.confirmCreation(); // PENDING 상태로 전환
+             
+            testAuction.confirmCreation();  
 
             UpdateAuctionRequest request = new UpdateAuctionRequest(
                     "[수정] 새로운 제목",
@@ -307,10 +295,8 @@ class AuctionServiceTest {
             given(auctionRepository.save(any(Auction.class)))
                     .willReturn(testAuction);
 
-            // When
             AuctionResponse response = auctionService.updateAuction(testAuctionId, request);
 
-            // Then
             assertThat(response).isNotNull();
 
             verify(auctionValidator).validateUpdate(testAuctionId, request);
@@ -321,7 +307,7 @@ class AuctionServiceTest {
         @Test
         @DisplayName("실패: 경매를 찾을 수 없음")
         void updateAuction_NotFound() {
-            // Given
+             
             UpdateAuctionRequest request = new UpdateAuctionRequest(
                     "[수정] 새로운 제목",
                     null,
@@ -333,7 +319,6 @@ class AuctionServiceTest {
             doThrow(new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_FOUND))
                     .when(auctionValidator).validateUpdate(testAuctionId, request);
 
-            // When & Then
             assertThatThrownBy(() -> auctionService.updateAuction(testAuctionId, request))
                     .isInstanceOf(AuctionDomainException.class);
 
@@ -348,16 +333,14 @@ class AuctionServiceTest {
         @Test
         @DisplayName("성공: PENDING 상태 경매 취소")
         void cancelAuction_PendingStatus_Success() {
-            // Given
-            testAuction.confirmCreation(); // PENDING 상태로 전환
+             
+            testAuction.confirmCreation();  
 
             given(auctionRepository.findById(testAuctionId))
                     .willReturn(Optional.of(testAuction));
 
-            // When
             auctionService.cancelAuction(testAuctionId);
 
-            // Then
             assertThat(testAuction.getStatus()).isEqualTo(AuctionStatus.CANCELLED);
 
             verify(auctionValidator).validateCancel(testAuctionId);
@@ -368,11 +351,10 @@ class AuctionServiceTest {
         @Test
         @DisplayName("실패: 입찰이 있는 경매 취소 시도")
         void cancelAuction_WithBids_Fail() {
-            // Given
+             
             doThrow(new AuctionDomainException(AuctionErrorCode.CANNOT_CANCEL_WITH_BIDS))
                     .when(auctionValidator).validateCancel(testAuctionId);
 
-            // When & Then
             assertThatThrownBy(() -> auctionService.cancelAuction(testAuctionId))
                     .isInstanceOf(AuctionDomainException.class);
 
@@ -387,14 +369,12 @@ class AuctionServiceTest {
         @Test
         @DisplayName("성공: CREATING -> PENDING 상태 전환")
         void confirmAuctionCreation_Success() {
-            // Given
+             
             given(auctionRepository.findById(testAuctionId))
                     .willReturn(Optional.of(testAuction));
 
-            // When
             auctionService.confirmAuctionCreation(testAuctionId);
 
-            // Then
             assertThat(testAuction.getStatus()).isEqualTo(AuctionStatus.PENDING);
 
             verify(auctionRepository).findById(testAuctionId);
@@ -404,13 +384,12 @@ class AuctionServiceTest {
         @Test
         @DisplayName("실패: CREATING 상태가 아닌 경우")
         void confirmAuctionCreation_InvalidStatus() {
-            // Given
-            testAuction.confirmCreation(); // 이미 PENDING
+             
+            testAuction.confirmCreation();  
             
             given(auctionRepository.findById(testAuctionId))
                     .willReturn(Optional.of(testAuction));
 
-            // When & Then
             assertThatThrownBy(() -> auctionService.confirmAuctionCreation(testAuctionId))
                     .isInstanceOf(AuctionDomainException.class)
                     .extracting(e -> ((AuctionDomainException) e).getErrorCode())
@@ -420,4 +399,3 @@ class AuctionServiceTest {
         }
     }
 }
-

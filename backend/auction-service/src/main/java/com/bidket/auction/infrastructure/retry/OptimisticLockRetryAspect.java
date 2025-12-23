@@ -1,6 +1,5 @@
 package com.bidket.auction.infrastructure.retry;
 
-
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -53,4 +52,3 @@ public class OptimisticLockRetryAspect {
         throw new AuctionDomainException(AuctionErrorCode.UNEXPECTED_ERROR);
     }
 }
-

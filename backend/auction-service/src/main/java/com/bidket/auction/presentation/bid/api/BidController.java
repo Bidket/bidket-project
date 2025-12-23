@@ -22,15 +22,6 @@ public class BidController {
 
     private final BidService bidService;
 
-    /**
-     * 입찰 생성
-     * Gateway에서 Queue 검증 완료 후 X-Queue-Verified: true 헤더와 함께 요청
-     *
-     * @param userId 사용자 ID (Gateway에서 전달)
-     * @param queueVerified Queue 검증 완료 여부 (Gateway에서 전달, true/false)
-     * @param request 입찰 요청 데이터
-     * @return 생성된 입찰 응답
-     */
     @PostMapping
     public ResponseEntity<ApiResponse<BidResponse>> createBid(
             @RequestHeader("X-User-Id") UUID userId,
@@ -92,15 +83,6 @@ public class BidController {
         return ResponseEntity.ok(ApiResponse.success("입찰이 취소되었습니다", null));
     }
 
-    /**
-     * 즉시 구매
-     * Gateway에서 Queue 검증 완료 후 X-Queue-Verified: true 헤더와 함께 요청
-     *
-     * @param userId 사용자 ID (Gateway에서 전달)
-     * @param queueVerified Queue 검증 완료 여부 (Gateway에서 전달, true/false)
-     * @param auctionId 경매 ID
-     * @return 생성된 입찰 (즉시 구매)
-     */
     @PostMapping("/auction/{auctionId}/buy-now")
     public ResponseEntity<ApiResponse<BidResponse>> buyNow(
             @RequestHeader("X-User-Id") UUID userId,
@@ -118,5 +100,3 @@ public class BidController {
                 .body(ApiResponse.success("즉시 구매가 완료되었습니다", response));
     }
 }
-
-

@@ -5,27 +5,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * 경매 재오픈 이벤트
- * Auction Service에서 발행
- *
- * 역할:
- * - 결제 타임아웃으로 경매가 재오픈되었음을 알림
- * - Notification Service에서 소비하여 판매자 및 2등 입찰자에게 알림
- */
 public record AuctionReopenedEvent() {
 
-    /**
-     * StandardEvent 형식으로 경매 재오픈 이벤트 생성
-     *
-     * @param auctionId 경매 ID
-     * @param productSizeId 상품 사이즈 ID
-     * @param previousWinnerId 이전 낙찰자 ID
-     * @param reason 재오픈 사유
-     * @param newEndTime 새로운 종료 시간
-     * @param correlationId 상관 ID
-     * @return StandardEvent
-     */
     public static StandardEvent create(
             UUID auctionId,
             UUID productSizeId,
@@ -47,7 +28,6 @@ public record AuctionReopenedEvent() {
                 LocalDateTime.now(),
                 "auction-service",
                 "AUCTION_REOPENED",
-                null, // userId는 시스템 이벤트이므로 null
                 data
         );
     }

@@ -32,5 +32,3 @@ public class BidMetadata {
         return idempotencyKey != null && !idempotencyKey.isBlank();
     }
 }
-
-

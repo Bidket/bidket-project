@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * AuctionEndSagaContext JPA Repository
- */
 public interface AuctionEndSagaContextJpaRepository extends JpaRepository<AuctionEndSagaContext, UUID> {
 
     Optional<AuctionEndSagaContext> findByAuctionId(UUID auctionId);

@@ -9,10 +9,6 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Payment 관련 이벤트 발행
- * OutBox 패턴을 사용하여 트랜잭션 안정성 보장
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -20,21 +16,6 @@ public class PaymentEventProducer {
 
     private final OutboxService outboxService;
 
-    /**
-     * 결제 취소 요청 이벤트 발행
-     * Payment Service로 결제 취소/환불 요청
-     *
-     * 사용 시나리오:
-     * - Saga 보상 트랜잭션에서 결제 취소 필요 시
-     * - 결제 완료 후 배송 실패 시
-     * - 사용자가 결제 완료 후 주문 취소 시
-     *
-     * @param paymentId 취소할 결제 ID
-     * @param orderId 관련 주문 ID
-     * @param auctionId 관련 경매 ID
-     * @param reason 취소 사유 (예: SAGA_COMPENSATION, DELIVERY_FAILURE, USER_CANCELLATION)
-     * @param correlationId 분산 트레이싱용 상관관계 ID
-     */
     public void publishCancelPaymentRequest(
             UUID paymentId,
             UUID orderId,
@@ -73,9 +54,6 @@ public class PaymentEventProducer {
         }
     }
 
-    /**
-     * 사용자 ID 포함하는 결제 취소 요청 이벤트 발행
-     */
     public void publishCancelPaymentRequestWithUser(
             UUID paymentId,
             UUID orderId,
@@ -122,7 +100,6 @@ public class PaymentEventProducer {
                 "occurredAt", event.occurredAt().toString(),
                 "source", event.source(),
                 "eventType", event.eventType(),
-                "userId", event.userId() != null ? event.userId() : "",
                 "data", event.data()
         );
     }

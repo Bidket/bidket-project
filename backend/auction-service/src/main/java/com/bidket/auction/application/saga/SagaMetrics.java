@@ -9,16 +9,6 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 
-/**
- * Saga 실행 메트릭 수집기
- * SAGA-005: Saga Orchestration Enhancements
- *
- * 역할:
- * - Saga 실행 시간 및 성공/실패 추적
- * - Circuit Breaker 상태 모니터링
- * - Retry 횟수 및 Timeout 발생 추적
- * - Prometheus와 연동하여 메트릭 노출
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -26,13 +16,6 @@ public class SagaMetrics {
 
     private final MeterRegistry meterRegistry;
 
-    /**
-     * Saga 실행 시간 및 상태 기록
-     *
-     * @param sagaType Saga 타입 (AUCTION_END, PAYMENT_TIMEOUT)
-     * @param status   실행 상태 (COMPLETED, FAILED, COMPENSATED)
-     * @param duration 실행 시간
-     */
     public void recordSagaExecution(String sagaType, String status, Duration duration) {
         try {
             Timer.builder("saga.execution")
@@ -50,13 +33,6 @@ public class SagaMetrics {
         }
     }
 
-    /**
-     * Saga Step 실행 시간 기록
-     *
-     * @param sagaType Saga 타입
-     * @param step     Saga 단계명
-     * @param duration 실행 시간
-     */
     public void recordStepExecution(String sagaType, String step, Duration duration) {
         try {
             Timer.builder("saga.step.execution")
@@ -74,12 +50,6 @@ public class SagaMetrics {
         }
     }
 
-    /**
-     * Circuit Breaker 상태 전환 기록
-     *
-     * @param serviceName Circuit Breaker 이름 (orderService, productService)
-     * @param state       Circuit Breaker 상태 (OPEN, CLOSED, HALF_OPEN)
-     */
     public void recordCircuitBreakerStateTransition(String serviceName, String state) {
         try {
             Counter.builder("saga.circuit_breaker.state_transitions")
@@ -96,13 +66,6 @@ public class SagaMetrics {
         }
     }
 
-    /**
-     * Retry 발생 횟수 기록
-     *
-     * @param sagaType    Saga 타입
-     * @param step        Saga 단계명
-     * @param retryCount  재시도 횟수
-     */
     public void recordRetry(String sagaType, String step, int retryCount) {
         try {
             Counter.builder("saga.retry")
@@ -119,12 +82,6 @@ public class SagaMetrics {
         }
     }
 
-    /**
-     * Timeout 발생 횟수 기록
-     *
-     * @param sagaType Saga 타입
-     * @param step     Saga 단계명
-     */
     public void recordTimeout(String sagaType, String step) {
         try {
             Counter.builder("saga.timeout")
@@ -141,12 +98,6 @@ public class SagaMetrics {
         }
     }
 
-    /**
-     * 보상 트랜잭션 실행 기록
-     *
-     * @param sagaType Saga 타입
-     * @param success  보상 성공 여부
-     */
     public void recordCompensation(String sagaType, boolean success) {
         try {
             Counter.builder("saga.compensation")
@@ -163,11 +114,6 @@ public class SagaMetrics {
         }
     }
 
-    /**
-     * Bulkhead 거부 횟수 기록
-     *
-     * @param bulkheadName Bulkhead 이름
-     */
     public void recordBulkheadRejection(String bulkheadName) {
         try {
             Counter.builder("saga.bulkhead.rejection")
@@ -183,12 +129,6 @@ public class SagaMetrics {
         }
     }
 
-    /**
-     * 현재 진행 중인 Saga 개수 기록 (Gauge)
-     *
-     * @param sagaType Saga 타입
-     * @param count    진행 중인 Saga 수
-     */
     public void recordInProgressSagaCount(String sagaType, int count) {
         try {
             meterRegistry.gauge("saga.in_progress",
@@ -202,12 +142,6 @@ public class SagaMetrics {
         }
     }
 
-    /**
-     * Idempotency Key 중복 감지 횟수 기록
-     *
-     * @param sagaType Saga 타입
-     * @param step     Saga 단계명
-     */
     public void recordIdempotencyKeyDuplication(String sagaType, String step) {
         try {
             Counter.builder("saga.idempotency.duplication")
@@ -224,22 +158,10 @@ public class SagaMetrics {
         }
     }
 
-    /**
-     * Saga 실행 시간 측정을 위한 Timer Sample 시작
-     *
-     * @return Timer.Sample 객체
-     */
     public Timer.Sample startTimer() {
         return Timer.start(meterRegistry);
     }
 
-    /**
-     * Timer Sample 종료 및 기록
-     *
-     * @param sample   Timer.Sample 객체
-     * @param sagaType Saga 타입
-     * @param status   실행 상태
-     */
     public void stopTimer(Timer.Sample sample, String sagaType, String status) {
         try {
             sample.stop(Timer.builder("saga.execution")

@@ -40,11 +40,12 @@ public class OrderCanceledEvent {
         if (correlationId == null) throw new IllegalArgumentException("correlationId는 필수입니다");
 
         Map<String, Object> data = new LinkedHashMap<>();
+        data.put("userId", userId.toString()); // userId를 data에 포함
         data.put("orderId", orderId.toString());
         data.put("auctionId", auctionId.toString());
         data.put("reason", reason);
         data.put("correlationId", correlationId.toString());
 
-        return StandardEvent.of(SOURCE, TYPE, userId, data);
+        return StandardEvent.of(SOURCE, TYPE, data);
     }
 }

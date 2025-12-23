@@ -10,9 +10,9 @@ spring:
     time-zone: Asia/Seoul
 
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${AUCTION_DB:bidket_auction}
-    username: ${POSTGRES_USER:bidket}
-    password: ${POSTGRES_PASSWORD:bidket}
+    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${AUCTION_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -28,8 +28,8 @@ spring:
 
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
       timeout: 2000ms
 
   cache:
@@ -38,7 +38,7 @@ spring:
       time-to-live: 600000 # 10분 (ms)
 
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -58,12 +58,12 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+      defaultZone: ${EUREKA_SERVER_URL}
 
 # Feign Client 설정
 feign:
   product-service:
-    url: ${PRODUCT_SERVICE_URL:http://localhost:8200}
+    url: ${PRODUCT_SERVICE_URL}
 
 # Outbox 폴링 설정
 outbox:
@@ -146,11 +146,21 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,metrics,circuitbreakers,circuitbreakerevents
+        include: health,metrics,prometheus,circuitbreakers,circuitbreakerevents,info
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
   health:
     circuitbreakers:
       enabled: true
   metrics:
+    tags:
+      application: ${spring.application.name}
     export:
       prometheus:
         enabled: true
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true

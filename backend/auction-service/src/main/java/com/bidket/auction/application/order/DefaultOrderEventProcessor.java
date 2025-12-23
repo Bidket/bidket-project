@@ -8,20 +8,6 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Order Service 이벤트를 처리하는 기본 구현체
- * 표준 이벤트 구조를 파싱하여 적절한 Saga 핸들러로 라우팅
- *
- * 표준 이벤트 구조:
- * {
- *   "eventId": "...",
- *   "occurredAt": "...",
- *   "source": "order-service",
- *   "type": "ORDER_CREATED",
- *   "userId": "...",
- *   "data": { ... } // 핵심 정보만
- * }
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -65,7 +51,7 @@ public class DefaultOrderEventProcessor implements OrderEventProcessor {
 
     private void handleOrderCreated(Map<String, Object> payload) {
         try {
-            // 표준 이벤트 구조에서 data 추출
+             
             Map<String, Object> data = getDataMap(payload);
 
             UUID sagaId = parseUuid(data, "sagaId");
@@ -84,7 +70,7 @@ public class DefaultOrderEventProcessor implements OrderEventProcessor {
 
     private void handleOrderCreationFailed(Map<String, Object> payload) {
         try {
-            // 표준 이벤트 구조에서 data 추출
+             
             Map<String, Object> data = getDataMap(payload);
 
             UUID sagaId = parseUuid(data, "sagaId");
@@ -134,9 +120,6 @@ public class DefaultOrderEventProcessor implements OrderEventProcessor {
         }
     }
 
-    /**
-     * 표준 이벤트 구조에서 data 필드를 추출합니다.
-     */
     @SuppressWarnings("unchecked")
     private Map<String, Object> getDataMap(Map<String, Object> payload) {
         Object dataObj = payload.get("data");

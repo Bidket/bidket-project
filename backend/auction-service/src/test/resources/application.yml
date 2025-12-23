@@ -59,6 +59,10 @@ eureka:
     register-with-eureka: false
     fetch-registry: false
 
+feign:
+  product-service:
+    url: http://localhost:8082
+
 # Saga Recovery 설정 (테스트용)
 bidket:
   saga:
@@ -75,4 +79,19 @@ bidket:
 outbox:
   publisher:
     fixed-delay-ms: 5000 # 5초마다 폴링 (기본값: 1000ms)
+
+# Resilience4j 설정 (테스트용)
+resilience4j:
+  bulkhead:
+    instances:
+      auctionEndSaga:
+        max-concurrent-calls: 100  # 테스트용으로 충분히 큰 값
+        max-wait-duration: 0  # 대기 시간 없음
+  circuitbreaker:
+    instances:
+      auctionEndSaga:
+        enabled: false  # 테스트에서는 Circuit Breaker 비활성화
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10000
+        sliding-window-size: 10
 

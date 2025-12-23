@@ -10,9 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * CompensationLogRepository 구현체
- */
 @Repository
 @RequiredArgsConstructor
 public class CompensationLogRepositoryImpl implements CompensationLogRepository {

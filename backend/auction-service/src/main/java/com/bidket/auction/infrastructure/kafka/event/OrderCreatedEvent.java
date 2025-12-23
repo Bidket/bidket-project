@@ -5,26 +5,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Order Service로부터 주문 생성 성공 결과를 수신하는 이벤트
- * Topic: auction.order (Auction이 소비, Order가 생산)
- * Type: ORDER_CREATED
- *
- * 표준 이벤트 구조:
- * - eventId: 멱등성 체크용
- * - occurredAt: 이벤트 발생 시각
- * - source: "order-service"
- * - type: "ORDER_CREATED"
- * - userId: 주문자 ID
- * - data: 핵심 정보만 포함
- *   - orderId: 생성된 주문 ID
- *   - sagaId: Saga 추적 ID
- *   - auctionId: 경매 ID
- *   - productSizeId: 상품 사이즈 ID
- *   - amount: 주문 금액
- *   - paymentDeadline: 결제 기한
- *   - correlationId: 상관 ID (Saga 추적)
- */
 public class OrderCreatedEvent {
 
     private static final String SOURCE = "order-service";
@@ -49,6 +29,7 @@ public class OrderCreatedEvent {
         if (paymentDeadline == null) throw new IllegalArgumentException("paymentDeadline must not be null");
 
         Map<String, Object> data = new LinkedHashMap<>();
+        data.put("userId", userId.toString());  
         data.put("orderId", orderId.toString());
         data.put("sagaId", sagaId.toString());
         data.put("auctionId", auctionId.toString());
@@ -59,6 +40,6 @@ public class OrderCreatedEvent {
             data.put("correlationId", correlationId.toString());
         }
 
-        return StandardEvent.of(SOURCE, TYPE, userId, data);
+        return StandardEvent.of(SOURCE, TYPE, data);
     }
 }

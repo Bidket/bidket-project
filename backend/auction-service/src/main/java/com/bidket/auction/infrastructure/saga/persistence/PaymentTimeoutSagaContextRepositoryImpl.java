@@ -10,9 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * PaymentTimeoutSagaContext Repository 구현체
- */
 @Repository
 @RequiredArgsConstructor
 public class PaymentTimeoutSagaContextRepositoryImpl implements PaymentTimeoutSagaContextRepository {

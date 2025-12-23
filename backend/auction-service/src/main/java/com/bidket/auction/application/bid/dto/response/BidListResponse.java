@@ -16,5 +16,3 @@ public record BidListResponse(
         return new BidListResponse(bids, totalCount, currentPage, totalPages);
     }
 }
-
-

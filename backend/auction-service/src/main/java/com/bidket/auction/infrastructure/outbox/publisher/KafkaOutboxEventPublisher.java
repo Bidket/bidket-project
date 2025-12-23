@@ -31,13 +31,13 @@ public class KafkaOutboxEventPublisher implements OutboxEventPublisher {
         Map<String, Object> message = buildEnvelope(outbox);
 
         try {
-            ProducerRecord<String, Object> record = new ProducerRecord<>( // ProducerRecord 란 Kafka에 데이터를 보낼 때 사용하는 객체이다.
-                    topic, // 토픽 이름
-                    outbox.getAggregateId().toString(), // 키
-                    message // 메시지 내용
+            ProducerRecord<String, Object> record = new ProducerRecord<>(  
+                    topic,  
+                    outbox.getAggregateId().toString(),  
+                    message  
             );
             
-            // 헤더에 메타데이터 추가
+             
             record.headers().add("eventId", outbox.getId().toString().getBytes());
             record.headers().add("eventType", outbox.getEventType().getBytes());
             if (outbox.getCorrelationId() != null) {
@@ -56,6 +56,13 @@ public class KafkaOutboxEventPublisher implements OutboxEventPublisher {
     }
 
     private Map<String, Object> buildEnvelope(AuctionOutbox outbox) {
+         
+        if ("ORDER".equalsIgnoreCase(outbox.getAggregateType())) {
+            Map<String, Object> payload = readPayload(outbox.getPayload());
+             
+            return payload;
+        }
+
         Map<String, Object> envelope = new HashMap<>();
         envelope.put("eventId", outbox.getId());
         envelope.put("eventType", outbox.getEventType());
@@ -75,13 +82,6 @@ public class KafkaOutboxEventPublisher implements OutboxEventPublisher {
         }
     }
 
-    /**
-     * aggregateType에 따라 적절한 토픽을 결정합니다.
-     *
-     * - ORDER: Order 서비스로 보내는 이벤트 (Auction 생산 → Order 소비) → order.auction
-     * - AUCTION: Auction 내부 또는 다른 서비스로 보내는 이벤트 → auction.events
-     * - NOTIFICATION: Notification 서비스로 보내는 이벤트 (Auction 생산 → Notification 소비) → notification.auction
-     */
     private String resolveTopic(String aggregateType) {
         return switch (aggregateType.toUpperCase()) {
             case "ORDER", "SAGA" -> KafkaTopics.ORDER_AUCTION;

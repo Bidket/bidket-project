@@ -9,14 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
-/**
- * 주문 취소 보상 액션
- * Order Service와 연동하여 주문 취소 요청
- *
- * 사용 시나리오:
- * - AuctionEndSaga 실패 시 생성된 주문 취소
- * - 보상 트랜잭션의 일부로 실행
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -36,10 +28,10 @@ public class CancelOrderCompensationAction implements CompensationAction {
         }
 
         try {
-            // Order Service에 주문 취소 요청 이벤트 발행
+             
             orderEventProducer.publishCancelOrderRequest(
                     orderId,
-                    null, // auctionId는 payload에서 추출 가능하지만 Order Service에서 조회 가능
+                    null,  
                     "SAGA_COMPENSATION",
                     sagaId
             );

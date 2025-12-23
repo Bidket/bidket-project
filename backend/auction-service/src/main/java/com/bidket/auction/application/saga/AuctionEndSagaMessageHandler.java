@@ -14,12 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Order Service 이벤트를 Saga Orchestrator로 라우팅하는 핸들러
- * 표준 이벤트 구조를 파싱하여 Saga 로직 실행
- *
- * @ConditionalOnBean: AuctionEndSagaOrchestrator가 있을 때만 활성화
- */
 @Slf4j
 @Component
 @ConditionalOnBean(AuctionEndSagaOrchestrator.class)
@@ -32,7 +26,7 @@ public class AuctionEndSagaMessageHandler implements OrderSagaMessageHandler {
     @Override
     @Transactional
     public void handleOrderCreated(Map<String, Object> payload) {
-        // 표준 이벤트 구조에서 data 추출
+         
         Map<String, Object> data = getDataMap(payload);
 
         UUID sagaId = parseUuid(data, "sagaId");
@@ -42,10 +36,8 @@ public class AuctionEndSagaMessageHandler implements OrderSagaMessageHandler {
         log.info("[AuctionEndSagaMessageHandler] ORDER_CREATED 수신: sagaId={}, orderId={}, auctionId={}",
                 sagaId, orderId, auctionId);
 
-        // Saga Context 조회
         AuctionEndSagaContext sagaContext = findSagaContext(sagaId);
 
-        // orderId 저장
         sagaContext.recordOrderId(orderId);
         sagaContext.proceedToNextStep();
         sagaRepository.save(sagaContext);
@@ -53,14 +45,13 @@ public class AuctionEndSagaMessageHandler implements OrderSagaMessageHandler {
         log.info("[AuctionEndSagaMessageHandler] orderId 저장 완료: sagaId={}, orderId={}, nextStep={}",
                 sagaId, orderId, sagaContext.getCurrentStep());
 
-        // Step 2: 낙찰 입찰 표시
         orchestrator.executeMarkWinningBidStep(sagaContext);
     }
 
     @Override
     @Transactional
     public void handleOrderCreationFailed(Map<String, Object> payload) {
-        // 표준 이벤트 구조에서 data 추출
+         
         Map<String, Object> data = getDataMap(payload);
 
         UUID sagaId = parseUuid(data, "sagaId");
@@ -70,7 +61,6 @@ public class AuctionEndSagaMessageHandler implements OrderSagaMessageHandler {
         log.warn("[AuctionEndSagaMessageHandler] ORDER_CREATION_FAILED 수신: sagaId={}, auctionId={}, reason={}",
                 sagaId, auctionId, failureReason);
 
-        // 보상 트랜잭션 실행
         orchestrator.compensate(sagaId, failureReason);
 
         log.info("[AuctionEndSagaMessageHandler] 보상 트랜잭션 완료: sagaId={}, auctionId={}",

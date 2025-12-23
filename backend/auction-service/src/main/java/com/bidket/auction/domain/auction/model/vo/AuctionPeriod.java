@@ -90,5 +90,3 @@ public class AuctionPeriod {
         return LocalDateTime.now().isAfter(this.endTime);
     }
 }
-
-

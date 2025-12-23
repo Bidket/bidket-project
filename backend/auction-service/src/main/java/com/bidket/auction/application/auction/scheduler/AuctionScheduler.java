@@ -28,7 +28,7 @@ import static java.util.stream.Collectors.toSet;
 public class AuctionScheduler {
 
     private final AuctionRepository auctionRepository;
-    //private final ViewCountCacheService viewCountCacheService;
+     
 
     @Autowired(required = false)
     private AuctionEndSagaOrchestrator sagaOrchestrator;
@@ -90,10 +90,6 @@ public class AuctionScheduler {
         }
     }
 
-    /**
-     * 경매 자동 종료 Scheduler
-     * SAGA-001: 낙찰자가 있으면 경매 종료 Saga 시작, 없으면 EXPIRED 처리
-     */
     @Scheduled(fixedDelay = 30000)
     @Transactional
     public void endActiveAuctions() {
@@ -113,12 +109,12 @@ public class AuctionScheduler {
                 boolean hasBids = auction.getStats().getTotalBidsCount() > 0;
 
                 if (hasBids && sagaOrchestrator != null) {
-                    // 낙찰자 있음 -> Saga 시작 (주문 생성 -> 낙찰 확정)
+                     
                     UUID sagaId = sagaOrchestrator.startAuctionEndSaga(auction.getId());
                     log.info("경매 종료 Saga 시작: auctionId={}, sagaId={}", auction.getId(), sagaId);
 
                 } else {
-                    // 낙찰자 없음 -> EXPIRED 처리
+                     
                     auction.end(false);
                     auctionRepository.save(auction);
                     log.info("경매 종료: {} ({}) - 상태: EXPIRED (입찰 없음)",
@@ -133,27 +129,4 @@ public class AuctionScheduler {
         log.info("경매 자동 종료 완료: {} 건", activeAuctions.size());
     }
 
-    // @Scheduled(fixedDelay = 300000)
-    // @Transactional
-    // public void syncViewCounts() {
-    //     log.info("조회수 캐시 동기화 시작");
-
-    //     try {
-    //         int syncedCount = viewCountCacheService.syncViewCountsToDatabase();
-
-    //         if (syncedCount > 0) {
-    //             log.info("조회수 캐시 동기화 완료: {} 건", syncedCount);
-    //         } else {
-    //             log.debug("동기화할 조회수 없음");
-    //         }
-
-    //         ViewCountCacheService.CacheStats stats = viewCountCacheService.getCacheStats();
-    //         log.debug("현재 캐시 상태: {}", stats);
-
-    //     } catch (Exception e) {
-    //         log.error("조회수 캐시 동기화 중 오류 발생", e);
-    //     }
-    // }
 }
-
-

@@ -107,10 +107,19 @@ public class OrderEventConsumer {
      */
     private void handleCreateOrderRequested(Map<String, Object> payload) {
         try {
-            // payload에서 필수 데이터 추출
-            UUID userId = parseUuid(extractString(payload, "userId"));
-            Map<String, Object> data = extractMap(payload, "data");
+            // Kafka 메시지 구조: payload -> payload(inner) -> data
+            // 먼저 inner payload를 추출
+            Map<String, Object> innerPayload = extractMap(payload, "payload");
+            if (innerPayload == null) {
+                // fallback: payload에 data가 직접 있는 경우 (이전 방식 호환)
+                innerPayload = payload;
+            }
 
+            // innerPayload에서 data 추출
+            Map<String, Object> data = extractMap(innerPayload, "data");
+
+            // data에서 필수 데이터 추출 (userId도 data 내부에 포함)
+            UUID userId = parseUuid(extractString(data, "userId"));
             UUID sagaId = parseUuid(extractString(data, "sagaId"));
             UUID auctionId = parseUuid(extractString(data, "auctionId"));
             UUID productSizeId = parseUuid(extractString(data, "productSizeId"));
@@ -176,9 +185,9 @@ public class OrderEventConsumer {
             // 실패 이벤트 발행
             try {
                 Map<String, Object> data = extractMap(payload, "data");
+                UUID userId = parseUuid(extractString(data, "userId"));
                 UUID sagaId = parseUuid(extractString(data, "sagaId"));
                 UUID auctionId = parseUuid(extractString(data, "auctionId"));
-                UUID userId = parseUuid(extractString(payload, "userId"));
                 UUID correlationId = parseUuid(extractString(data, "correlationId"));
 
                 auctionEventProducer.publishOrderCreationFailed(
@@ -208,7 +217,7 @@ public class OrderEventConsumer {
         if (value instanceof Map) {
             return (Map<String, Object>) value;
         }
-        return new java.util.HashMap<>();
+        return null;
     }
 
     private Long extractLong(Map<String, Object> map, String key) {
