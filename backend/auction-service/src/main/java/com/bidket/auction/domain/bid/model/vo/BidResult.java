@@ -34,5 +34,3 @@ public class BidResult {
         return orderId != null;
     }
 }
-
-

@@ -59,5 +59,3 @@ public record CreateAuctionRequest(
                 .build();
     }
 }
-
-

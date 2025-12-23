@@ -49,8 +49,32 @@ public class KafkaConfig {
     }
 
     @Bean
-    public NewTopic sagaCompensationTopic() {
-        return TopicBuilder.name("saga.compensation")
+    public NewTopic orderAuctionTopic() {
+        return TopicBuilder.name("order.auction")
+            .partitions(3)
+            .replicas(1)
+            .build();
+    }
+
+    @Bean
+    public NewTopic auctionOrderTopic() {
+        return TopicBuilder.name("auction.order")
+            .partitions(3)
+            .replicas(1)
+            .build();
+    }
+
+    @Bean
+    public NewTopic auctionOrderDlqTopic() {
+        return TopicBuilder.name("auction.order.dlq")
+            .partitions(3)
+            .replicas(1)
+            .build();
+    }
+
+    @Bean
+    public NewTopic orderAuctionDlqTopic() {
+        return TopicBuilder.name("order.auction.dlq")
             .partitions(3)
             .replicas(1)
             .build();
@@ -68,8 +92,8 @@ public class KafkaConfig {
     public ConcurrentKafkaListenerContainerFactory<String, Object> idempotentKafkaListenerContainerFactory(
             ConsumerFactory<String, Object> consumerFactory,
             KafkaTemplate<String, Object> kafkaTemplate) {
-        // ConsumerFactory는 Spring Boot가 자동으로 생성하는 빈을 주입받음
-        // ConcurrentKafkaListenerContainerFactory를 새로 만들 때는 반드시 ConsumerFactory가 필요함
+         
+         
         ConcurrentKafkaListenerContainerFactory<String, Object> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);
@@ -78,9 +102,9 @@ public class KafkaConfig {
                         new TopicPartition(r.topic() + ".dlq", r.partition())),
                 backoff()
         );
-        // 역직렬화 실패 시 재시도하지 않고 즉시 건너뛰기
+         
         errorHandler.addNotRetryableExceptions(DeserializationException.class);
-        // 역직렬화 실패 시 seek를 최소화하기 위해 즉시 건너뛰기
+         
         errorHandler.setSeekAfterError(false);
         factory.setCommonErrorHandler(errorHandler);
         return factory;
@@ -94,4 +118,3 @@ public class KafkaConfig {
         return backOff;
     }
 }
-

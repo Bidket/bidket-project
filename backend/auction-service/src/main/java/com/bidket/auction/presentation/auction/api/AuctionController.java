@@ -134,5 +134,3 @@ public class AuctionController {
         return ResponseEntity.ok(ApiResponse.success("경매가 확정되었습니다", null));
     }
 }
-
-

@@ -34,5 +34,3 @@ public record BidResponse(
         );
     }
 }
-
-

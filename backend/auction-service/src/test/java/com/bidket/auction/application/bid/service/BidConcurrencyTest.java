@@ -85,7 +85,7 @@ class BidConcurrencyTest {
     @Test
     @DisplayName("동시에 여러 입찰이 발생해도 정확히 하나의 최고가만 존재한다")
     void shouldHandleConcurrentBids() throws Exception {
-        // Given
+         
         int threadCount = 10;
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
         AtomicInteger successCount = new AtomicInteger(0);
@@ -93,7 +93,6 @@ class BidConcurrencyTest {
 
         List<CompletableFuture<Void>> futures = new ArrayList<>();
 
-        // When
         for (int i = 0; i < threadCount; i++) {
             final int bidderIndex = i;
             final Long bidAmount = 310000L + (bidderIndex * 10000L);
@@ -114,7 +113,6 @@ class BidConcurrencyTest {
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
         executorService.shutdown();
 
-        // Then
         List<Bid> allBids = bidRepository.findByAuctionId(auctionId);
         long highestBidCount = allBids.stream()
                 .filter(Bid::isHighest)
@@ -134,7 +132,7 @@ class BidConcurrencyTest {
     @Test
     @DisplayName("동일한 금액으로 동시 입찰 시 하나만 성공한다")
     void shouldHandleConcurrentBidsWithSameAmount() throws Exception {
-        // Given
+         
         int threadCount = 5;
         Long sameAmount = 350000L;
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
@@ -142,7 +140,6 @@ class BidConcurrencyTest {
 
         List<CompletableFuture<Void>> futures = new ArrayList<>();
 
-        // When
         for (int i = 0; i < threadCount; i++) {
             CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                 try {
@@ -150,7 +147,7 @@ class BidConcurrencyTest {
                     bidService.placeBid(auctionId, bidderId, sameAmount);
                     successCount.incrementAndGet();
                 } catch (Exception e) {
-                    // 동시성 실패는 예상된 동작
+                     
                 }
             }, executorService);
 
@@ -160,7 +157,6 @@ class BidConcurrencyTest {
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
         executorService.shutdown();
 
-        // Then
         List<Bid> allBids = bidRepository.findByAuctionId(auctionId);
         long highestBidCount = allBids.stream()
                 .filter(Bid::isHighest)
@@ -172,23 +168,18 @@ class BidConcurrencyTest {
     @Test
     @DisplayName("Optimistic Lock으로 동시성을 제어한다")
     void shouldUseOptimisticLock() {
-        // Given
+         
         UUID bidderId1 = UUID.randomUUID();
         UUID bidderId2 = UUID.randomUUID();
 
         Bid firstBid = bidService.placeBid(auctionId, bidderId1, 310000L);
 
-        // When & Then
-        // Version을 확인하여 Optimistic Lock이 적용되어 있는지 검증
         assertThat(firstBid.getVersion()).isNotNull();
 
-        // 두 번째 입찰이 첫 번째를 밀어낼 때
         bidService.placeBid(auctionId, bidderId2, 320000L);
 
-        // 첫 번째 입찰의 상태가 OUTBID로 변경되었는지 확인
         Bid updatedFirstBid = bidRepository.findById(firstBid.getId()).orElseThrow();
         assertThat(updatedFirstBid.getStatus()).isEqualTo(BidStatus.OUTBID);
         assertThat(updatedFirstBid.getVersion()).isGreaterThan(firstBid.getVersion());
     }
 }
-

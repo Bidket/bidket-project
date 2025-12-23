@@ -10,6 +10,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
+import com.bidket.auction.infrastructure.kafka.config.KafkaTopics;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -30,13 +31,13 @@ public class KafkaOutboxEventPublisher implements OutboxEventPublisher {
         Map<String, Object> message = buildEnvelope(outbox);
 
         try {
-            ProducerRecord<String, Object> record = new ProducerRecord<>( // ProducerRecord 란 Kafka에 데이터를 보낼 때 사용하는 객체이다.
-                    topic, // 토픽 이름
-                    outbox.getAggregateId().toString(), // 키
-                    message // 메시지 내용
+            ProducerRecord<String, Object> record = new ProducerRecord<>(  
+                    topic,  
+                    outbox.getAggregateId().toString(),  
+                    message  
             );
             
-            // 헤더에 메타데이터 추가
+             
             record.headers().add("eventId", outbox.getId().toString().getBytes());
             record.headers().add("eventType", outbox.getEventType().getBytes());
             if (outbox.getCorrelationId() != null) {
@@ -55,6 +56,13 @@ public class KafkaOutboxEventPublisher implements OutboxEventPublisher {
     }
 
     private Map<String, Object> buildEnvelope(AuctionOutbox outbox) {
+         
+        if ("ORDER".equalsIgnoreCase(outbox.getAggregateType())) {
+            Map<String, Object> payload = readPayload(outbox.getPayload());
+             
+            return payload;
+        }
+
         Map<String, Object> envelope = new HashMap<>();
         envelope.put("eventId", outbox.getId());
         envelope.put("eventType", outbox.getEventType());
@@ -75,9 +83,11 @@ public class KafkaOutboxEventPublisher implements OutboxEventPublisher {
     }
 
     private String resolveTopic(String aggregateType) {
-        if ("AUCTION".equalsIgnoreCase(aggregateType)) {
-            return "auction.events";
-        }
-        return "auction.events";
+        return switch (aggregateType.toUpperCase()) {
+            case "ORDER", "SAGA" -> KafkaTopics.ORDER_AUCTION;
+            case "AUCTION" -> KafkaTopics.AUCTION_EVENTS;
+            case "NOTIFICATION" -> KafkaTopics.NOTIFICATION_AUCTION;
+            default -> KafkaTopics.AUCTION_EVENTS;
+        };
     }
 }

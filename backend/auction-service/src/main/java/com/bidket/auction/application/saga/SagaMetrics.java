@@ -1,0 +1,176 @@
+package com.bidket.auction.application.saga;
+
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import java.time.Duration;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class SagaMetrics {
+
+    private final MeterRegistry meterRegistry;
+
+    public void recordSagaExecution(String sagaType, String status, Duration duration) {
+        try {
+            Timer.builder("saga.execution")
+                    .description("Saga execution time")
+                    .tag("saga_type", sagaType)
+                    .tag("status", status)
+                    .register(meterRegistry)
+                    .record(duration);
+
+            log.debug("[SagaMetrics] Saga 실행 기록: type={}, status={}, duration={}ms",
+                    sagaType, status, duration.toMillis());
+
+        } catch (Exception e) {
+            log.error("[SagaMetrics] 메트릭 기록 실패: saga={}, status={}", sagaType, status, e);
+        }
+    }
+
+    public void recordStepExecution(String sagaType, String step, Duration duration) {
+        try {
+            Timer.builder("saga.step.execution")
+                    .description("Saga step execution time")
+                    .tag("saga_type", sagaType)
+                    .tag("step", step)
+                    .register(meterRegistry)
+                    .record(duration);
+
+            log.debug("[SagaMetrics] Step 실행 기록: type={}, step={}, duration={}ms",
+                    sagaType, step, duration.toMillis());
+
+        } catch (Exception e) {
+            log.error("[SagaMetrics] Step 메트릭 기록 실패: saga={}, step={}", sagaType, step, e);
+        }
+    }
+
+    public void recordCircuitBreakerStateTransition(String serviceName, String state) {
+        try {
+            Counter.builder("saga.circuit_breaker.state_transitions")
+                    .description("Circuit Breaker state transition count")
+                    .tag("service", serviceName)
+                    .tag("state", state)
+                    .register(meterRegistry)
+                    .increment();
+
+            log.info("[SagaMetrics] Circuit Breaker 상태 전환: service={}, state={}", serviceName, state);
+
+        } catch (Exception e) {
+            log.error("[SagaMetrics] Circuit Breaker 메트릭 기록 실패: service={}, state={}", serviceName, state, e);
+        }
+    }
+
+    public void recordRetry(String sagaType, String step, int retryCount) {
+        try {
+            Counter.builder("saga.retry")
+                    .description("Saga step retry count")
+                    .tag("saga_type", sagaType)
+                    .tag("step", step)
+                    .register(meterRegistry)
+                    .increment(retryCount);
+
+            log.debug("[SagaMetrics] Retry 기록: type={}, step={}, count={}", sagaType, step, retryCount);
+
+        } catch (Exception e) {
+            log.error("[SagaMetrics] Retry 메트릭 기록 실패: saga={}, step={}", sagaType, step, e);
+        }
+    }
+
+    public void recordTimeout(String sagaType, String step) {
+        try {
+            Counter.builder("saga.timeout")
+                    .description("Saga step timeout count")
+                    .tag("saga_type", sagaType)
+                    .tag("step", step)
+                    .register(meterRegistry)
+                    .increment();
+
+            log.warn("[SagaMetrics] Timeout 발생: type={}, step={}", sagaType, step);
+
+        } catch (Exception e) {
+            log.error("[SagaMetrics] Timeout 메트릭 기록 실패: saga={}, step={}", sagaType, step, e);
+        }
+    }
+
+    public void recordCompensation(String sagaType, boolean success) {
+        try {
+            Counter.builder("saga.compensation")
+                    .description("Saga compensation execution count")
+                    .tag("saga_type", sagaType)
+                    .tag("result", success ? "success" : "failure")
+                    .register(meterRegistry)
+                    .increment();
+
+            log.info("[SagaMetrics] 보상 트랜잭션 기록: type={}, success={}", sagaType, success);
+
+        } catch (Exception e) {
+            log.error("[SagaMetrics] 보상 메트릭 기록 실패: saga={}, success={}", sagaType, success, e);
+        }
+    }
+
+    public void recordBulkheadRejection(String bulkheadName) {
+        try {
+            Counter.builder("saga.bulkhead.rejection")
+                    .description("Bulkhead rejection count")
+                    .tag("bulkhead", bulkheadName)
+                    .register(meterRegistry)
+                    .increment();
+
+            log.warn("[SagaMetrics] Bulkhead 거부 발생: bulkhead={}", bulkheadName);
+
+        } catch (Exception e) {
+            log.error("[SagaMetrics] Bulkhead 메트릭 기록 실패: bulkhead={}", bulkheadName, e);
+        }
+    }
+
+    public void recordInProgressSagaCount(String sagaType, int count) {
+        try {
+            meterRegistry.gauge("saga.in_progress",
+                    io.micrometer.core.instrument.Tags.of("saga_type", sagaType),
+                    count);
+
+            log.debug("[SagaMetrics] 진행 중인 Saga 개수: type={}, count={}", sagaType, count);
+
+        } catch (Exception e) {
+            log.error("[SagaMetrics] Saga 개수 메트릭 기록 실패: saga={}", sagaType, e);
+        }
+    }
+
+    public void recordIdempotencyKeyDuplication(String sagaType, String step) {
+        try {
+            Counter.builder("saga.idempotency.duplication")
+                    .description("Idempotency key duplication detection count")
+                    .tag("saga_type", sagaType)
+                    .tag("step", step)
+                    .register(meterRegistry)
+                    .increment();
+
+            log.info("[SagaMetrics] Idempotency Key 중복 감지: type={}, step={}", sagaType, step);
+
+        } catch (Exception e) {
+            log.error("[SagaMetrics] Idempotency 메트릭 기록 실패: saga={}, step={}", sagaType, step, e);
+        }
+    }
+
+    public Timer.Sample startTimer() {
+        return Timer.start(meterRegistry);
+    }
+
+    public void stopTimer(Timer.Sample sample, String sagaType, String status) {
+        try {
+            sample.stop(Timer.builder("saga.execution")
+                    .tag("saga_type", sagaType)
+                    .tag("status", status)
+                    .register(meterRegistry));
+
+        } catch (Exception e) {
+            log.error("[SagaMetrics] Timer 종료 실패: saga={}, status={}", sagaType, status, e);
+        }
+    }
+}

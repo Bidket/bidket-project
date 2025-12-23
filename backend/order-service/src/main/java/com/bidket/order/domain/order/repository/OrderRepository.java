@@ -1,6 +1,9 @@
 package com.bidket.order.domain.order.repository;
 
 import com.bidket.order.domain.order.model.Order;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -11,6 +14,15 @@ public interface OrderRepository {
     Order save(Order order);
 
     Page<Order> findByUserId(UUID userId, Pageable pageable);
+
+    Optional<Order> findById(UUID orderId);
+
+    /**
+     * 결제 시간이 초과된 주문 조회
+     * - status = PAYMENT
+     * - paymentExpiredAt < now
+     */
+    List<Order> findExpiredOrders(LocalDateTime now);
 
     Optional<Order> findById(UUID orderId);
 

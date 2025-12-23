@@ -25,12 +25,13 @@ public class BidController {
     @PostMapping
     public ResponseEntity<ApiResponse<BidResponse>> createBid(
             @RequestHeader("X-User-Id") UUID userId,
+            @RequestHeader(value = "X-Queue-Verified", required = false, defaultValue = "false") boolean queueVerified,
             @Valid @RequestBody CreateBidRequest request
     ) {
-        log.info("입찰 등록 요청 - 사용자: {}, 경매: {}, 금액: {}",
-                userId, request.auctionId(), request.amount());
-        
-        BidResponse response = bidService.createBid(userId, request);
+        log.info("입찰 등록 요청 - 사용자: {}, 경매: {}, 금액: {}, Queue 검증: {}",
+                userId, request.auctionId(), request.amount(), queueVerified);
+
+        BidResponse response = bidService.createBid(userId, request, queueVerified);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -85,11 +86,13 @@ public class BidController {
     @PostMapping("/auction/{auctionId}/buy-now")
     public ResponseEntity<ApiResponse<BidResponse>> buyNow(
             @RequestHeader("X-User-Id") UUID userId,
+            @RequestHeader(value = "X-Queue-Verified", required = false, defaultValue = "false") boolean queueVerified,
             @PathVariable UUID auctionId
     ) {
-        log.info("즉시 구매 요청 - 사용자: {}, 경매: {}", userId, auctionId);
+        log.info("즉시 구매 요청 - 사용자: {}, 경매: {}, Queue 검증: {}",
+                userId, auctionId, queueVerified);
 
-        var bid = bidService.buyNow(auctionId, userId);
+        var bid = bidService.buyNow(auctionId, userId, queueVerified);
         BidResponse response = BidResponse.from(bid);
 
         return ResponseEntity
@@ -97,5 +100,3 @@ public class BidController {
                 .body(ApiResponse.success("즉시 구매가 완료되었습니다", response));
     }
 }
-
-

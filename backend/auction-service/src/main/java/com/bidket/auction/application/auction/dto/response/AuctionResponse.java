@@ -119,5 +119,3 @@ public record AuctionResponse(
         );
     }
 }
-
-

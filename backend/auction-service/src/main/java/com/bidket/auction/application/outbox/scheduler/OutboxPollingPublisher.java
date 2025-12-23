@@ -50,7 +50,7 @@ public class OutboxPollingPublisher {
                 log.error("Outbox 발행 실패: id={}, eventType={}, retryCount={}",
                         outbox.getId(), outbox.getEventType(), outbox.getRetryCount(), e);
                 try {
-                    // 실패 시 최신 엔티티를 다시 조회해서 상태 업데이트
+                     
                     Optional<AuctionOutbox> latestOutboxOpt = outboxRepository.findById(outbox.getId());
                     if (latestOutboxOpt.isPresent()) {
                         AuctionOutbox latestOutbox = latestOutboxOpt.get();
