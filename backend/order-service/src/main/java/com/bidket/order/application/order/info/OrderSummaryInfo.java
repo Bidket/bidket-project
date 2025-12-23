@@ -1,5 +1,6 @@
 package com.bidket.order.application.order.info;
 
+import com.bidket.order.application.order.port.AuctionSnapshot;
 import com.bidket.order.domain.order.model.Order;
 import com.bidket.order.domain.order.model.OrderStatus;
 import java.time.LocalDateTime;
@@ -36,13 +37,17 @@ public class OrderSummaryInfo {
     }
 
     public static OrderSummaryInfo from(Order order) {
+        return from(order, null);
+    }
+
+    public static OrderSummaryInfo from(Order order, AuctionSnapshot auction) {
         return new OrderSummaryInfo(
                 order.id(),
                 order.status(),
                 order.amount(),
-                null, // TODO: 신발/경매 서비스 연동
-                null, // TODO: 경매 제목
-                null, // TODO: 경매 시작 시간
+                null, // TODO: 신발/재고 서비스 연동
+                auction != null ? auction.auctionTitle() : null,
+                auction != null ? auction.startTime() : null,
                 order.createdAt()
         );
     }

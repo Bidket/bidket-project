@@ -1,0 +1,33 @@
+
+services:
+  eureka-server:
+    image: bidket/eureka-server:${EUREKA_IMAGE_TAG}
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    environment:
+      - TZ=Asia/Seoul
+      - SPRING_PROFILES_ACTIVE=prod
+    restart: unless-stopped
+    networks:
+      - bidket-net
+
+  gateway-service:
+    image: bidket/gateway-service:${GATEWAY_IMAGE_TAG}
+    container_name: gateway-service
+    ports:
+      - "8000:8000"
+    environment:
+      - TZ=Asia/Seoul
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_SERVER_URL=${EUREKA_SERVER_URL}
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - eureka-server
+    restart: unless-stopped
+    networks:
+      - bidket-net
+
+networks:
+  bidket-net:
+    driver: bridge

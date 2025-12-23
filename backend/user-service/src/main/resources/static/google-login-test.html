@@ -1,0 +1,386 @@
+<!--
+LOCAL / TEST PURPOSE ONLY
+Swagger 테스트용 Google idToken 발급 페이지
+운영 배포 금지
+-->
+
+
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google 소셜 로그인 테스트</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .login-section {
+            margin-bottom: 30px;
+        }
+        
+        #google-signin-button {
+            width: 100%;
+            padding: 15px;
+            background: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        #google-signin-button:hover {
+            background: #357ae8;
+        }
+        
+        #google-signin-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .token-section {
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .token-section.active {
+            display: block;
+        }
+        
+        .token-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            display: block;
+        }
+        
+        .token-display {
+            background: #f5f5f5;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #333;
+            margin-bottom: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-copy {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .btn-copy:hover {
+            background: #45a049;
+        }
+        
+        .btn-test {
+            background: #2196f3;
+            color: white;
+        }
+        
+        .btn-test:hover {
+            background: #0b7dda;
+        }
+        
+        .btn-reset {
+            background: #f44336;
+            color: white;
+        }
+        
+        .btn-reset:hover {
+            background: #da190b;
+        }
+        
+        .user-info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+        
+        .user-info h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+        
+        .user-info p {
+            color: #555;
+            margin: 5px 0;
+        }
+        
+        .success-message {
+            background: #4caf50;
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .success-message.show {
+            display: block;
+        }
+        
+        .instructions {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .instructions h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ol {
+            margin-left: 20px;
+            color: #856404;
+        }
+        
+        .instructions li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Google 소셜 로그인 테스트</h1>
+        <p class="subtitle">idToken을 발급받아 Swagger API 테스트에 사용하세요</p>
+        
+        <div class="instructions">
+            <h3>📋 사용 방법</h3>
+            <ol>
+                <li>아래 "Google 로그인" 버튼 클릭</li>
+                <li>Google 계정으로 로그인</li>
+                <li>발급받은 idToken 복사</li>
+                <li>Swagger UI에서 소셜 로그인 API 테스트</li>
+            </ol>
+        </div>
+        
+        <div class="login-section">
+            <button id="google-signin-button" onclick="handleGoogleSignIn()">
+                <svg width="18" height="18" xmlns="http://www.w3.org/2000/svg">
+                    <g fill="#000" fill-rule="evenodd">
+                        <path d="M9 3.48c1.69 0 2.83.73 3.48 1.34l2.54-2.48C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.96l2.91 2.26C4.6 5.05 6.62 3.48 9 3.48z" fill="#EA4335"/>
+                        <path d="M17.64 9.2c0-.74-.06-1.28-.19-1.84H9v3.34h4.96c-.21 1.18-.84 2.96-2.04 4.16l2.84 2.2c2.07-1.9 3.26-4.69 3.26-7.86z" fill="#4285F4"/>
+                        <path d="M3.88 10.78A5.54 5.54 0 0 1 3.58 9c0-.62.11-1.22.29-1.78L.96 4.96A9.008 9.008 0 0 0 0 9c0 1.45.35 2.82.96 4.04l2.92-2.26z" fill="#FBBC05"/>
+                        <path d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.84-2.2c-.76.53-1.78.9-3.12.9-2.38 0-4.4-1.57-5.12-3.74L.96 13.04C2.45 15.98 5.48 18 9 18z" fill="#34A853"/>
+                    </g>
+                </svg>
+                Google 로그인
+            </button>
+        </div>
+        
+        <div class="token-section" id="token-section">
+            <label class="token-label">📝 발급받은 ID Token:</label>
+            <div class="token-display" id="id-token-display"></div>
+            
+            <div class="button-group">
+                <button class="btn btn-copy" onclick="copyToken()">📋 Token 복사</button>
+                <button class="btn btn-test" onclick="openSwagger()">🚀 Swagger 열기</button>
+                <button class="btn btn-reset" onclick="resetLogin()">🔄 다시 로그인</button>
+            </div>
+            
+            <div class="user-info" id="user-info"></div>
+            
+            <div class="success-message" id="success-message">
+                ✅ Token이 클립보드에 복사되었습니다!
+            </div>
+        </div>
+    </div>
+
+    <!-- Google Sign-In JavaScript 라이브러리 -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
+    <script>
+        // Google Client ID
+        const GOOGLE_CLIENT_ID = 'GOOGLE_CLIENT_ID';
+        
+        let idToken = null;
+        let userInfo = null;
+        
+        // Google 로그인 초기화
+        window.onload = function() {
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: handleCredentialResponse
+            });
+            
+            // 버튼 자동 렌더링
+            google.accounts.id.renderButton(
+                document.getElementById('google-signin-button'),
+                {
+                    theme: 'outline',
+                    size: 'large',
+                    width: '100%',
+                    text: 'signin_with',
+                    type: 'standard'
+                }
+            );
+        };
+        
+        // 로그인 버튼 클릭 핸들러 (수동 버튼용)
+        function handleGoogleSignIn() {
+            google.accounts.oauth2.initTokenClient({
+                client_id: GOOGLE_CLIENT_ID,
+                scope: 'openid email profile',
+                callback: (response) => {
+                    if (response.error) {
+                        console.error('로그인 오류:', response.error);
+                        alert('로그인에 실패했습니다: ' + response.error);
+                        return;
+                    }
+                    // 이 방법은 access_token만 제공하므로 id_token이 필요함
+                    alert('이 방법은 access_token만 제공합니다. Google Sign-In 버튼을 사용하세요.');
+                }
+            }).requestAccessToken();
+        }
+        
+        // Google Sign-In 응답 처리 (id_token 받음)
+        function handleCredentialResponse(response) {
+            if (response.credential) {
+                idToken = response.credential;
+                displayToken(idToken);
+                
+                // JWT 디코딩하여 사용자 정보 표시
+                try {
+                    const payload = JSON.parse(atob(idToken.split('.')[1]));
+                    userInfo = {
+                        email: payload.email,
+                        name: payload.name,
+                        picture: payload.picture,
+                        sub: payload.sub
+                    };
+                    displayUserInfo(userInfo);
+                } catch (e) {
+                    console.error('Token 디코딩 실패:', e);
+                }
+            } else {
+                console.error('로그인 실패:', response);
+            }
+        }
+        
+        // Token 표시
+        function displayToken(token) {
+            document.getElementById('id-token-display').textContent = token;
+            document.getElementById('token-section').classList.add('active');
+        }
+        
+        // 사용자 정보 표시
+        function displayUserInfo(info) {
+            const userInfoDiv = document.getElementById('user-info');
+            if (info) {
+                userInfoDiv.innerHTML = `
+                    <h3>👤 사용자 정보</h3>
+                    <p><strong>이메일:</strong> ${info.email || 'N/A'}</p>
+                    <p><strong>이름:</strong> ${info.name || 'N/A'}</p>
+                `;
+            }
+        }
+        
+        // Token 복사
+        function copyToken() {
+            if (!idToken) {
+                alert('Token이 없습니다.');
+                return;
+            }
+            
+            navigator.clipboard.writeText(idToken).then(() => {
+                const message = document.getElementById('success-message');
+                message.classList.add('show');
+                setTimeout(() => {
+                    message.classList.remove('show');
+                }, 2000);
+            }).catch(err => {
+                console.error('복사 실패:', err);
+                alert('복사에 실패했습니다. 수동으로 복사해주세요.');
+            });
+        }
+        
+        // Swagger 열기
+        function openSwagger() {
+            window.open('http://localhost:8100/swagger-ui/index.html', '_blank');
+        }
+        
+        // 다시 로그인
+        function resetLogin() {
+            idToken = null;
+            userInfo = null;
+            document.getElementById('token-section').classList.remove('active');
+            document.getElementById('id-token-display').textContent = '';
+            document.getElementById('user-info').innerHTML = '';
+            
+            // Google 로그아웃 (선택사항)
+            if (typeof google !== 'undefined' && google.accounts) {
+                google.accounts.id.disableAutoSelect();
+            }
+        }
+    </script>
+</body>
+</html>
+
