@@ -31,5 +31,3 @@ public interface BidRepository {
 
     long countByAuctionId(UUID auctionId);
 }
-
-

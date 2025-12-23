@@ -15,19 +15,17 @@ class BidTest {
     @Test
     @DisplayName("입찰을 생성할 수 있다")
     void shouldCreateBid() {
-        // Given
+         
         UUID auctionId = UUID.randomUUID();
         UUID bidderId = UUID.randomUUID();
         Long amount = 350000L;
 
-        // When
         Bid bid = Bid.builder()
                 .auctionId(auctionId)
                 .bidderId(bidderId)
                 .amount(amount)
                 .build();
 
-        // Then
         assertThat(bid).isNotNull();
         assertThat(bid.getAuctionId()).isEqualTo(auctionId);
         assertThat(bid.getBidderId()).isEqualTo(bidderId);
@@ -39,11 +37,10 @@ class BidTest {
     @Test
     @DisplayName("입찰 금액은 0보다 커야 한다")
     void shouldValidateBidAmount() {
-        // Given
+         
         UUID auctionId = UUID.randomUUID();
         UUID bidderId = UUID.randomUUID();
 
-        // When & Then
         assertThatThrownBy(() -> 
             Bid.builder()
                 .auctionId(auctionId)
@@ -58,17 +55,15 @@ class BidTest {
     @Test
     @DisplayName("입찰을 최고가로 설정할 수 있다")
     void shouldMarkAsHighest() {
-        // Given
+         
         Bid bid = Bid.builder()
                 .auctionId(UUID.randomUUID())
                 .bidderId(UUID.randomUUID())
                 .amount(350000L)
                 .build();
 
-        // When
         bid.markAsHighest();
 
-        // Then
         assertThat(bid.isHighest()).isTrue();
         assertThat(bid.getStatus()).isEqualTo(BidStatus.ACTIVE);
     }
@@ -76,7 +71,7 @@ class BidTest {
     @Test
     @DisplayName("최고가 입찰이 밀릴 수 있다")
     void shouldMarkAsOutbid() {
-        // Given
+         
         Bid bid = Bid.builder()
                 .auctionId(UUID.randomUUID())
                 .bidderId(UUID.randomUUID())
@@ -84,10 +79,8 @@ class BidTest {
                 .build();
         bid.markAsHighest();
 
-        // When
         bid.markAsOutbid();
 
-        // Then
         assertThat(bid.isHighest()).isFalse();
         assertThat(bid.getStatus()).isEqualTo(BidStatus.OUTBID);
     }
@@ -95,7 +88,7 @@ class BidTest {
     @Test
     @DisplayName("입찰을 낙찰 상태로 변경할 수 있다")
     void shouldMarkAsWon() {
-        // Given
+         
         Bid bid = Bid.builder()
                 .auctionId(UUID.randomUUID())
                 .bidderId(UUID.randomUUID())
@@ -103,34 +96,30 @@ class BidTest {
                 .build();
         bid.markAsHighest();
 
-        // When
         bid.markAsWon();
 
-        // Then
         assertThat(bid.getStatus()).isEqualTo(BidStatus.WON);
     }
 
     @Test
     @DisplayName("입찰을 취소할 수 있다")
     void shouldCancelBid() {
-        // Given
+         
         Bid bid = Bid.builder()
                 .auctionId(UUID.randomUUID())
                 .bidderId(UUID.randomUUID())
                 .amount(350000L)
                 .build();
 
-        // When
         bid.cancel();
 
-        // Then
         assertThat(bid.getStatus()).isEqualTo(BidStatus.CANCELLED);
     }
 
     @Test
     @DisplayName("최고가 입찰은 취소할 수 없다")
     void shouldNotCancelHighestBid() {
-        // Given
+         
         Bid bid = Bid.builder()
                 .auctionId(UUID.randomUUID())
                 .bidderId(UUID.randomUUID())
@@ -138,11 +127,9 @@ class BidTest {
                 .build();
         bid.markAsHighest();
 
-        // When & Then
         assertThatThrownBy(() -> bid.cancel())
                 .isInstanceOf(BidDomainException.class)
                 .extracting(e -> ((BidDomainException) e).getErrorCode())
                 .isEqualTo(BidErrorCode.CANNOT_CANCEL_HIGHEST_BID);
     }
 }
-

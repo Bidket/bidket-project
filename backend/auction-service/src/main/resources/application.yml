@@ -10,9 +10,9 @@ spring:
     time-zone: Asia/Seoul
 
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${AUCTION_DB:bidket_auction}
-    username: ${POSTGRES_USER:bidket}
-    password: ${POSTGRES_PASSWORD:bidket}
+    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${AUCTION_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -28,8 +28,8 @@ spring:
 
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
       timeout: 2000ms
 
   cache:
@@ -38,7 +38,7 @@ spring:
       time-to-live: 600000 # 10분 (ms)
 
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -58,9 +58,109 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+      defaultZone: ${EUREKA_SERVER_URL}
+
+# Feign Client 설정
+feign:
+  product-service:
+    url: ${PRODUCT_SERVICE_URL}
 
 # Outbox 폴링 설정
 outbox:
   publisher:
     fixed-delay-ms: 5000 # 5초마다 폴링 (기본값: 1000ms)
+
+# Auction Service Kafka Topics
+# 명명 규칙: [소비_도메인].[생산_도메인]
+auction:
+  kafka:
+    topics:
+      auction-events: auction.events
+      bid-events: bid.events
+      # Order가 생산, Auction이 소비
+      auction-order: auction.order
+      # Auction이 생산, Order가 소비
+      order-auction: order.auction
+
+# Saga Recovery 설정 (SAGA-004)
+bidket:
+  saga:
+    recovery:
+      enabled: true # 복구 기능 활성화 여부
+      zombie-timeout-minutes: 10 # Zombie 트랜잭션 감지 임계값 (분)
+      outbox-max-retries: 3 # OutBox 최대 재시도 횟수
+      outbox-batch-size: 100 # OutBox 복구 시 한 번에 처리할 배치 크기
+
+# Resilience4j 설정 (SAGA-005: Saga Orchestration Enhancements)
+resilience4j:
+  circuitbreaker:
+    instances:
+      # Product Service 호출 Circuit Breaker
+      productService:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+
+  timelimiter:
+    instances:
+      # Saga Step 실행 시간 제한
+      sagaStep:
+        timeout-duration: 30s
+        cancel-running-future: true
+      # 주문 생성 Step 시간 제한
+      createOrderStep:
+        timeout-duration: 45s
+        cancel-running-future: true
+
+  bulkhead:
+    instances:
+      # Saga Orchestrator 동시 실행 제한
+      sagaOrchestrator:
+        max-concurrent-calls: 10
+        max-wait-duration: 100ms
+      # 보상 트랜잭션 동시 실행 제한
+      sagaCompensation:
+        max-concurrent-calls: 5
+        max-wait-duration: 200ms
+
+  retry:
+    instances:
+      # Saga Step 재시도 정책
+      sagaStep:
+        max-attempts: 3
+        wait-duration: 1s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - java.util.concurrent.TimeoutException
+          - org.springframework.web.client.ResourceAccessException
+        ignore-exceptions:
+          - com.bidket.auction.global.exception.AuctionDomainException
+
+# Actuator 엔드포인트에 Resilience4j 메트릭 노출
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus,circuitbreakers,circuitbreakerevents,info
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
+  health:
+    circuitbreakers:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    export:
+      prometheus:
+        enabled: true
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true

@@ -1,11 +1,13 @@
 package com.bidket.auction.application.auction.scheduler;
 
+import com.bidket.auction.application.saga.AuctionEndSagaOrchestrator;
 import com.bidket.auction.domain.auction.model.Auction;
 import com.bidket.auction.domain.auction.repository.AuctionRepository;
 import com.bidket.auction.domain.auction.model.AuctionStatus;
 import com.bidket.auction.infrastructure.redis.ViewCountCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -25,7 +28,10 @@ import static java.util.stream.Collectors.toSet;
 public class AuctionScheduler {
 
     private final AuctionRepository auctionRepository;
-    //private final ViewCountCacheService viewCountCacheService;
+     
+
+    @Autowired(required = false)
+    private AuctionEndSagaOrchestrator sagaOrchestrator;
 
     @Scheduled(fixedDelay = 60000)
     @Transactional
@@ -88,7 +94,7 @@ public class AuctionScheduler {
     @Transactional
     public void endActiveAuctions() {
         LocalDateTime now = LocalDateTime.now();
-        
+
         List<Auction> activeAuctions = auctionRepository
                 .findActiveAuctionsEndingBefore(now);
 
@@ -101,14 +107,20 @@ public class AuctionScheduler {
         for (Auction auction : activeAuctions) {
             try {
                 boolean hasBids = auction.getStats().getTotalBidsCount() > 0;
-                auction.end(hasBids);
-                auctionRepository.save(auction);
-                
-                log.info("경매 종료: {} ({}) - 상태: {}", 
-                        auction.getId(), 
-                        auction.getAuctionTitle(), 
-                        auction.getStatus());
-                
+
+                if (hasBids && sagaOrchestrator != null) {
+                     
+                    UUID sagaId = sagaOrchestrator.startAuctionEndSaga(auction.getId());
+                    log.info("경매 종료 Saga 시작: auctionId={}, sagaId={}", auction.getId(), sagaId);
+
+                } else {
+                     
+                    auction.end(false);
+                    auctionRepository.save(auction);
+                    log.info("경매 종료: {} ({}) - 상태: EXPIRED (입찰 없음)",
+                            auction.getId(), auction.getAuctionTitle());
+                }
+
             } catch (Exception e) {
                 log.error("경매 종료 실패: {}", auction.getId(), e);
             }
@@ -117,27 +129,4 @@ public class AuctionScheduler {
         log.info("경매 자동 종료 완료: {} 건", activeAuctions.size());
     }
 
-    // @Scheduled(fixedDelay = 300000)
-    // @Transactional
-    // public void syncViewCounts() {
-    //     log.info("조회수 캐시 동기화 시작");
-
-    //     try {
-    //         int syncedCount = viewCountCacheService.syncViewCountsToDatabase();
-
-    //         if (syncedCount > 0) {
-    //             log.info("조회수 캐시 동기화 완료: {} 건", syncedCount);
-    //         } else {
-    //             log.debug("동기화할 조회수 없음");
-    //         }
-
-    //         ViewCountCacheService.CacheStats stats = viewCountCacheService.getCacheStats();
-    //         log.debug("현재 캐시 상태: {}", stats);
-
-    //     } catch (Exception e) {
-    //         log.error("조회수 캐시 동기화 중 오류 발생", e);
-    //     }
-    // }
 }
-
-

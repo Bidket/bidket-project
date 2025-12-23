@@ -28,5 +28,3 @@ public interface AuctionJpaRepository extends JpaRepository<Auction, UUID> {
     )
     int updateViewCount(@Param("auctionId") UUID auctionId, @Param("viewCount") Integer viewCount);
 }
-
-

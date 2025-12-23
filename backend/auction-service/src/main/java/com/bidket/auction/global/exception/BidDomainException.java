@@ -6,5 +6,3 @@ public class BidDomainException extends DomainException {
         super(errorCode);
     }
 }
-
-

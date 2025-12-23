@@ -17,6 +17,10 @@ import java.util.UUID;
 public class OutboxService {
 
     private static final String AGGREGATE_TYPE_AUCTION = "AUCTION";
+    private static final String AGGREGATE_TYPE_ORDER = "ORDER";
+    private static final String AGGREGATE_TYPE_NOTIFICATION = "NOTIFICATION";
+    private static final String AGGREGATE_TYPE_PRODUCT = "PRODUCT";
+    private static final String AGGREGATE_TYPE_PAYMENT = "PAYMENT";
 
     private final OutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
@@ -25,11 +29,48 @@ public class OutboxService {
                                           UUID aggregateId,
                                           Map<String, Object> payload,
                                           UUID correlationId) {
+        return saveEvent(AGGREGATE_TYPE_AUCTION, eventType, aggregateId, payload, correlationId);
+    }
+
+    public AuctionOutbox saveOrderEvent(String eventType,
+                                        UUID aggregateId,
+                                        Map<String, Object> payload,
+                                        UUID correlationId) {
+        return saveEvent(AGGREGATE_TYPE_ORDER, eventType, aggregateId, payload, correlationId);
+    }
+
+    public AuctionOutbox saveNotificationEvent(String eventType,
+                                               UUID userId,
+                                               Map<String, Object> payload,
+                                               UUID correlationId) {
+        return saveEvent(AGGREGATE_TYPE_NOTIFICATION, eventType, userId, payload, correlationId);
+    }
+
+    public AuctionOutbox saveProductEvent(String eventType,
+                                          UUID productSizeId,
+                                          Map<String, Object> payload,
+                                          UUID correlationId) {
+        return saveEvent(AGGREGATE_TYPE_PRODUCT, eventType, productSizeId, payload, correlationId);
+    }
+
+    public AuctionOutbox savePaymentEvent(String eventType,
+                                          UUID aggregateId,
+                                          Map<String, Object> payload,
+                                          UUID correlationId) {
+        return saveEvent(AGGREGATE_TYPE_PAYMENT, eventType, aggregateId, payload, correlationId);
+    }
+
+    private AuctionOutbox saveEvent(String aggregateType,
+                                    String eventType,
+                                    UUID aggregateId,
+                                    Map<String, Object> payload,
+                                    UUID correlationId) {
         try {
-            log.info("Outbox 저장 시작: eventType={}, aggregateId={}, correlationId={}", eventType, aggregateId, correlationId);
+            log.info("Outbox 저장 시작: aggregateType={}, eventType={}, aggregateId={}, correlationId={}",
+                    aggregateType, eventType, aggregateId, correlationId);
             String payloadJson = toJson(payload);
             AuctionOutbox outbox = AuctionOutbox.pending(
-                    AGGREGATE_TYPE_AUCTION,
+                    aggregateType,
                     aggregateId,
                     eventType,
                     payloadJson,

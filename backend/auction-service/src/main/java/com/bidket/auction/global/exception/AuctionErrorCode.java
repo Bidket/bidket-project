@@ -39,7 +39,14 @@ public enum AuctionErrorCode implements BaseErrorCode {
     UNEXPECTED_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "재시도 로직 실행 중 예상치 못한 오류 발생"),
 
     AUCTION_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "경매 생성에 실패했습니다."),
-    AUCTION_UPDATE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "경매 수정에 실패했습니다.")
+    AUCTION_UPDATE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "경매 수정에 실패했습니다."),
+
+    NO_BIDS_FOUND(HttpStatus.NOT_FOUND, "입찰 내역이 없습니다."),
+    BID_NOT_FOUND(HttpStatus.NOT_FOUND, "입찰을 찾을 수 없습니다."),
+    SAGA_NOT_FOUND(HttpStatus.NOT_FOUND, "Saga를 찾을 수 없습니다."),
+    SAGA_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 진행 중인 Saga가 있습니다."),
+    SAGA_COMPENSATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "Saga 보상 트랜잭션 실행에 실패했습니다."),
+    SAGA_BULKHEAD_FULL(HttpStatus.TOO_MANY_REQUESTS, "동시 처리 가능한 Saga 수를 초과했습니다. 잠시 후 다시 시도해주세요.")
     ;
 
     private final HttpStatus status;

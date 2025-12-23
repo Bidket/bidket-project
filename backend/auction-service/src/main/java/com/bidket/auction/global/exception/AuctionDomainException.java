@@ -6,5 +6,3 @@ public class AuctionDomainException extends DomainException {
         super(errorCode);
     }
 }
-
-

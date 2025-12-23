@@ -73,5 +73,3 @@ public class PriceInfo {
                 .build();
     }
 }
-
-

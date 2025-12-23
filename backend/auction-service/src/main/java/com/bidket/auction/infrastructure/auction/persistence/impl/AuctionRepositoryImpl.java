@@ -62,5 +62,3 @@ public class AuctionRepositoryImpl implements AuctionRepository {
         return jpaRepository.updateViewCount(auctionId, viewCount);
     }
 }
-
-

@@ -20,5 +20,3 @@ public record UpdateAuctionRequest(
         Long buyNowPrice
 ) {
 }
-
-

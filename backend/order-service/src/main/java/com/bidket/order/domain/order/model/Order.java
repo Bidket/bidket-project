@@ -81,11 +81,77 @@ public record Order(
         );
     }
 
+    /**
+     * 결제 완료로 상태 변경
+     * PAYMENT → PAID
+     */
+    public Order markPaid(LocalDateTime now) {
+        if (status != OrderStatus.PAYMENT) {
+            throw new IllegalStateException("결제 대기 상태만 결제 완료로 변경할 수 있습니다. 현재 상태: " + status);
+        }
+        return new Order(
+                id,
+                userId,
+                auctionId,
+                shoeId,
+                OrderStatus.PAID,
+                amount,
+                usedPointAmount,
+                paymentExpiredAt,
+                createdAt,
+                now
+        );
+    }
+
+    /**
+     * 결제 시간 초과로 상태 변경
+     * PAYMENT → EXPIRED
+     */
+    public Order expire(LocalDateTime now) {
+        if (status != OrderStatus.PAYMENT) {
+            throw new IllegalStateException("결제 대기 상태만 만료 처리할 수 있습니다. 현재 상태: " + status);
+        }
+        return new Order(
+                id,
+                userId,
+                auctionId,
+                shoeId,
+                OrderStatus.EXPIRED,
+                amount,
+                usedPointAmount,
+                paymentExpiredAt,
+                createdAt,
+                now
+        );
+    }
+
+    /**
+     * 주문 취소
+     * PAYMENT → CANCELED
+     */
+    public Order cancel(LocalDateTime now) {
+        if (status != OrderStatus.PAYMENT) {
+            throw new IllegalStateException("결제 대기 상태만 취소할 수 있습니다. 현재 상태: " + status);
+        }
+        return new Order(
+                id,
+                userId,
+                auctionId,
+                shoeId,
+                OrderStatus.CANCELED,
+                amount,
+                usedPointAmount,
+                paymentExpiredAt,
+                createdAt,
+                now
+        );
+    }
+
     public Order requestRefund(LocalDateTime now) {
         if (this.status != OrderStatus.PAID) {
             throw new IllegalStateException("환불 요청 가능한 주문 상태가 아닙니다.");
         }
-        
+
     public Order markPaid(LocalDateTime now) {
         return new Order(
                 this.id,

@@ -50,8 +50,6 @@ public class Bid extends BaseEntity {
     @Version
     private Long version;
 
-    // ===== Getter 메서드 =====
-
     public Long getAmount() {
         return bidAmount != null ? bidAmount.getAmount() : null;
     }
@@ -72,7 +70,6 @@ public class Bid extends BaseEntity {
         return bidMetadata != null ? bidMetadata.getIdempotencyKey() : null;
     }
 
-    // Private 생성자
     private Bid(UUID id, UUID auctionId, UUID bidderId, BidAmount bidAmount,
                 BidResult bidResult, BidMetadata bidMetadata, BidStatus status, Long version) {
         this.id = id;
@@ -85,7 +82,6 @@ public class Bid extends BaseEntity {
         this.version = version;
     }
 
-    // Builder
     public static BidBuilder builder() {
         return new BidBuilder();
     }
@@ -102,7 +98,6 @@ public class Bid extends BaseEntity {
         private BidStatus status;
         private Long version;
 
-        // 하위 호환성을 위한 레거시 메서드들
         public BidBuilder id(UUID id) {
             this.id = id;
             return this;
@@ -154,7 +149,7 @@ public class Bid extends BaseEntity {
         }
 
         public Bid build() {
-            // VO 생성
+             
             BidAmount bidAmount = BidAmount.builder()
                     .amount(this.amount)
                     .highest(this.isHighest)
@@ -169,7 +164,6 @@ public class Bid extends BaseEntity {
                     BidMetadata.builder().idempotencyKey(this.idempotencyKey).build() :
                     BidMetadata.empty();
 
-            // 기본값 설정
             BidStatus resolvedStatus = this.status != null ? this.status : BidStatus.PENDING;
 
             Bid bid = new Bid(
@@ -200,8 +194,6 @@ public class Bid extends BaseEntity {
         }
     }
 
-    // ===== 도메인 비즈니스 메서드 =====
-
     public void markAsHighest() {
         this.bidAmount = this.bidAmount.markAsHighest();
         this.status = BidStatus.ACTIVE;
@@ -217,6 +209,14 @@ public class Bid extends BaseEntity {
             throw new BidDomainException(BidErrorCode.BID_CONFLICT);
         }
         this.status = BidStatus.WON;
+    }
+
+    public void revertFromWon() {
+        if (this.status != BidStatus.WON) {
+            throw new BidDomainException(BidErrorCode.BID_CONFLICT);
+        }
+        this.status = BidStatus.ACTIVE;
+        this.bidAmount = this.bidAmount.markAsHighest();
     }
 
     public void cancel() {
@@ -238,5 +238,3 @@ public class Bid extends BaseEntity {
         this.bidAmount = this.bidAmount.withRank(rank);
     }
 }
-
-

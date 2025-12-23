@@ -15,5 +15,3 @@ public enum AuctionCondition {
         return description;
     }
 }
-
-
