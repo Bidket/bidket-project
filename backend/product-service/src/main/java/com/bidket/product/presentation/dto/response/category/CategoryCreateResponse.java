@@ -17,7 +17,7 @@ public record CategoryCreateResponse(
         return new CategoryCreateResponse(
                 category.getId(),
                 category.getProductType().getId(),
-                category.getParentId() != null ? category.getParentId().getId() : null,
+                category.getParent() != null ? category.getParent().getId() : null,
                 category.getDepth(),
                 category.getName(),
                 category.getCode(),
