@@ -42,8 +42,16 @@ public class OrderRepositoryImpl implements OrderRepository {
 
     @Override
     public Page<Order> findByUserId(UUID userId, Pageable pageable) {
-        Page<OrderEntity> page = orderJpaRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
-                userId, pageable);
+        Page<OrderEntity> page = orderJpaRepository
+                .findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(userId, pageable);
+        return page.map(this::toDomain);
+    }
+
+    @Override
+    public Page<Order> findByUserIdAndStatus(UUID userId, OrderStatus status, Pageable pageable) {
+        Page<OrderEntity> page = orderJpaRepository
+                .findByUserIdAndStatusAndDeletedAtIsNullOrderByCreatedAtDesc(userId, status,
+                        pageable);
         return page.map(this::toDomain);
     }
 

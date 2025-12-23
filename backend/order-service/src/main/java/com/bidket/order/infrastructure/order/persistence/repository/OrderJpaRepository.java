@@ -30,5 +30,9 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, UUID> {
     Page<OrderEntity> findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(UUID userId,
             Pageable pageable);
 
+    Page<OrderEntity> findByUserIdAndStatusAndDeletedAtIsNullOrderByCreatedAtDesc(UUID userId,
+            OrderStatus status,
+            Pageable pageable);
+
     boolean existsByAuctionIdAndDeletedAtIsNull(UUID auctionId);
 }
