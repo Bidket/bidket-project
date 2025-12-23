@@ -5,19 +5,17 @@ import com.bidket.order.domain.outbox.model.OutboxStatus;
 import com.bidket.order.domain.outbox.repository.OrderOutboxRepository;
 import com.bidket.order.infrastructure.outbox.entity.OrderOutboxEntity;
 import com.bidket.order.infrastructure.outbox.repository.OrderOutboxJpaRepository;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
 /**
- * OrderOutbox Repository 구현체
- * Entity ↔ Domain 매핑
+ * OrderOutbox Repository 구현체 Entity ↔ Domain 매핑
  */
 @Repository
 @RequiredArgsConstructor
@@ -29,7 +27,17 @@ public class OrderOutboxRepositoryImpl implements OrderOutboxRepository {
 
     @Override
     public OrderOutbox save(OrderOutbox outbox) {
-        OrderOutboxEntity entity = toEntity(outbox);
+        // Spring Data JPA가 version=null 인 엔티티를 "new"로 판단하면 persist를 호출하는데,
+        // UUID(id)가 이미 존재하는 엔티티에 persist가 호출되면 Hibernate가 detached entity 오류를 발생시킬 수 있음.
+        // 따라서 기존 row가 있으면 version을 포함해서 merge(save)되도록 만든다.
+        Long version = null;
+        if (outbox.id() != null) {
+            version = jpaRepository.findById(outbox.id())
+                    .map(OrderOutboxEntity::getVersion)
+                    .orElse(null);
+        }
+
+        OrderOutboxEntity entity = toEntity(outbox, version);
         OrderOutboxEntity saved = jpaRepository.save(entity);
         return toDomain(saved);
     }
@@ -56,6 +64,13 @@ public class OrderOutboxRepositoryImpl implements OrderOutboxRepository {
      * Domain → Entity 변환
      */
     private OrderOutboxEntity toEntity(OrderOutbox domain) {
+        return toEntity(domain, null);
+    }
+
+    /**
+     * Domain → Entity 변환 (version 포함)
+     */
+    private OrderOutboxEntity toEntity(OrderOutbox domain, Long version) {
         return new OrderOutboxEntity(
                 domain.id(),
                 domain.aggregateType(),
@@ -67,7 +82,7 @@ public class OrderOutboxRepositoryImpl implements OrderOutboxRepository {
                 domain.retryCount(),
                 domain.errorMessage(),
                 domain.publishedAt(),
-                null  // version은 JPA가 관리
+                version
         );
     }
 
