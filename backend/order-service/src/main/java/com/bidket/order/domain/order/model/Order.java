@@ -134,6 +134,21 @@ public record Order(
         );
     }
 
+    public Order cancel(LocalDateTime now) {
+        return new Order(
+                this.id,
+                this.userId,
+                this.auctionId,
+                this.shoeId,
+                OrderStatus.CANCELED,
+                this.amount,
+                this.usedPointAmount,
+                this.paymentExpiredAt,
+                this.createdAt,
+                now
+        );
+    }
+
     public Order cancelByPaymentFail(LocalDateTime now, String errorCode, String errorMessage) {
         return new Order(
                 this.id,
