@@ -33,13 +33,13 @@ public class OrderRepositoryImpl implements OrderRepository {
     }
 
     @Override
-    public boolean existsByAuctionId(UUID auctionId) {
-        return orderJpaRepository.existsByAuctionId(auctionId);
+    public Optional<Order> findById(UUID orderId) {
+        return orderJpaRepository.findById(orderId).map(this::toDomain);
     }
 
     @Override
-    public Optional<Order> findById(UUID orderId) {
-        return orderJpaRepository.findById(orderId).map(this::toDomain);
+    public boolean existsByAuctionId(UUID auctionId) {
+        return orderJpaRepository.existsByAuctionId(auctionId);
     }
 
     @Override
