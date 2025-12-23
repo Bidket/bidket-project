@@ -14,6 +14,8 @@ public enum ProductErrorCode implements BaseErrorCode {
             "카테고리는 자기 자신이나 하위 카테고리로 이동할 수 없습니다."
     ),
 
+    FORBIDDEN(HttpStatus.FORBIDDEN, "해당 요청에 대한 권한이 없습니다."),
+
     PRODUCT_TYPE_NOT_FOUND(HttpStatus.NOT_FOUND, "상품타입을 찾을 수 없습니다."),
     CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "카테고리를 찾을 수 없습니다."),
     SIZE_TYPE_NOT_FOUND(HttpStatus.NOT_FOUND, "사이즈타입을 찾을 수 없습니다."),

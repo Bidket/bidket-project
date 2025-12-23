@@ -7,6 +7,7 @@ import com.bidket.product.application.service.CategoryService;
 import com.bidket.product.application.service.ProductAdminService;
 import com.bidket.product.application.service.ShoesDetailService;
 import com.bidket.product.application.service.SizeService;
+import com.bidket.product.application.validator.AdminRoleValidator;
 import com.bidket.product.presentation.dto.request.brand.BrandCreateRequest;
 import com.bidket.product.presentation.dto.request.brand.BrandStatusChangeRequest;
 import com.bidket.product.presentation.dto.request.brand.BrandUpdateRequest;
@@ -43,6 +44,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -58,6 +60,7 @@ public class ProductAdminController {
     private final ProductAdminService productAdminService;
     private final ShoesDetailService shoesDetailService;
     private final ProductAdminFacade productAdminFacade;
+    private final AdminRoleValidator adminRoleValidator;
 
     @Operation(
             summary = "상품 타입 생성",
@@ -65,8 +68,10 @@ public class ProductAdminController {
     )
     @PostMapping("/product-types")
     public ApiResponse<ProductTypeCreateResponse> createProductType(
+            @RequestHeader("X-User-Role") String role,
             @Valid @RequestBody ProductTypeCreateRequest req
     ) {
+        adminRoleValidator.validate(role);
         return ApiResponse.success(productAdminService.createProductType(req));
     }
 
@@ -76,8 +81,10 @@ public class ProductAdminController {
     )
     @PostMapping("/brands")
     public ApiResponse<BrandCreateResponse> createBrand(
+            @RequestHeader("X-User-Role") String role,
             @Valid @RequestBody BrandCreateRequest req
     ) {
+        adminRoleValidator.validate(role);
         return ApiResponse.success(brandService.createBrand(req));
     }
 
@@ -88,8 +95,10 @@ public class ProductAdminController {
     )
     @PostMapping("/categories")
     public ApiResponse<CategoryCreateResponse> createCategory(
+            @RequestHeader("X-User-Role") String role,
             @Valid @RequestBody CategoryCreateRequest req
     ) {
+        adminRoleValidator.validate(role);
         return ApiResponse.success(categoryService.createCategory(req));
     }
 
@@ -100,8 +109,10 @@ public class ProductAdminController {
     )
     @PostMapping("/size-types")
     public ApiResponse<SizeTypeCreateResponse> createSizeType(
+            @RequestHeader("X-User-Role") String role,
             @Valid @RequestBody SizeTypeCreateRequest req
     ) {
+        adminRoleValidator.validate(role);
         return ApiResponse.success(sizeService.createSizeType(req));
     }
 
@@ -111,8 +122,10 @@ public class ProductAdminController {
     )
     @PostMapping("/sizes")
     public ApiResponse<SizeCreateResponse> createSize(
+            @RequestHeader("X-User-Role") String role,
             @Valid @RequestBody SizeCreateRequest req
     ) {
+        adminRoleValidator.validate(role);
         return ApiResponse.success(sizeService.createSize(req));
     }
 
@@ -122,8 +135,10 @@ public class ProductAdminController {
     )
     @PostMapping("/products")
     public ApiResponse<ProductCreateResponse> createProduct(
+            @RequestHeader("X-User-Role") String role,
             @Valid @RequestBody ProductCreateRequest req
     ) {
+        adminRoleValidator.validate(role);
         return ApiResponse.success(productAdminService.createProduct(req));
     }
 
@@ -133,9 +148,11 @@ public class ProductAdminController {
     )
     @PostMapping("/products/{productId}/details/shoes")
     public ApiResponse<ProductShoesDetailCreateResponse> createShoesDetail(
+            @RequestHeader("X-User-Role") String role,
             @PathVariable UUID productId,
             @Valid @RequestBody ProductShoesDetailCreateRequest req
     ) {
+        adminRoleValidator.validate(role);
         return ApiResponse.success(shoesDetailService.createShoesDetail(productId, req));
     }
 
@@ -145,9 +162,11 @@ public class ProductAdminController {
     )
     @PostMapping("/products/{productId}/categories")
     public ApiResponse<ProductCategoryCreateResponse> createProductCategory(
+            @RequestHeader("X-User-Role") String role,
             @PathVariable UUID productId,
             @Valid @RequestBody ProductCategoryCreateRequest req
     ) {
+        adminRoleValidator.validate(role);
         return ApiResponse.success(productAdminService.createProductCategory(productId ,req));
     }
 
@@ -157,9 +176,11 @@ public class ProductAdminController {
     )
     @PostMapping("/products/{productId}/skus")
     public ApiResponse<SkuCreateResponse> createSku(
+            @RequestHeader("X-User-Role") String role,
             @PathVariable UUID productId,
             @Valid @RequestBody SkuCreateRequest req
     ) {
+        adminRoleValidator.validate(role);
         return ApiResponse.success(productAdminService.createSku(productId, req));
     }
 
@@ -169,8 +190,10 @@ public class ProductAdminController {
     )
     @PostMapping("/products/with-shoes")
     public ApiResponse<ProductWithShoesCreateResponse> createProductWithShoes(
+            @RequestHeader("X-User-Role") String role,
             @Valid @RequestBody ProductWithShoesCreateRequest req
     ) {
+        adminRoleValidator.validate(role);
         return ApiResponse.success(
                 productAdminFacade.createProductWithShoes(req)
         );
@@ -181,9 +204,11 @@ public class ProductAdminController {
     )
     @PatchMapping("/brands/{brandId}")
     public ApiResponse<Void> updateBrand(
+            @RequestHeader("X-User-Role") String role,
             @PathVariable UUID brandId,
             @Valid @RequestBody BrandUpdateRequest req
     ) {
+        adminRoleValidator.validate(role);
         brandService.updateBrand(brandId, req);
         return ApiResponse.success("브랜드 정보가 수정 되었습니다.", null);
     }
@@ -194,9 +219,11 @@ public class ProductAdminController {
     )
     @PatchMapping("/brands/{brandId}/status")
     public ApiResponse<Void> changeBrandStatus(
+            @RequestHeader("X-User-Role") String role,
             @PathVariable UUID brandId,
             @RequestBody BrandStatusChangeRequest req
     ) {
+        adminRoleValidator.validate(role);
         brandService.changeBrandStatus(brandId, req.status());
         return ApiResponse.success("브랜드 상태가 수정되었습니다.", null);
     }
@@ -207,9 +234,11 @@ public class ProductAdminController {
     )
     @PatchMapping("/categories/{categoryId}")
     public ApiResponse<Void> updateCategory(
+            @RequestHeader("X-User-Role") String role,
             @PathVariable UUID categoryId,
             @Valid @RequestBody CategoryUpdateRequest request
     ) {
+        adminRoleValidator.validate(role);
         categoryService.updateCategory(categoryId, request);
         return ApiResponse.success("카테고리 정보가 수정되었습니다.", null);
     }
@@ -220,9 +249,11 @@ public class ProductAdminController {
     )
     @PatchMapping("/categories/{categoryId}/move")
     public ApiResponse<Void> moveCategory(
+            @RequestHeader("X-User-Role") String role,
             @PathVariable UUID categoryId,
             @Valid @RequestBody CategoryMoveRequest request
     ) {
+        adminRoleValidator.validate(role);
         categoryService.moveCategory(categoryId, request.newParentId());
         return ApiResponse.success("카테고리가 이동되었습니다.", null);
     }
@@ -233,9 +264,11 @@ public class ProductAdminController {
     )
     @PatchMapping("/products/{productId}/status")
     public ApiResponse<Void> changeBrandStatus(
+            @RequestHeader("X-User-Role") String role,
             @PathVariable UUID productId,
             @RequestBody ProductStatusChangeRequest req
     ) {
+        adminRoleValidator.validate(role);
         productAdminService.changeProductStatus(productId, req.status());
         return ApiResponse.success("상품 상태가 수정되었습니다.", null);
     }
@@ -246,9 +279,11 @@ public class ProductAdminController {
     )
     @PatchMapping("/products/{productId}")
     public ApiResponse<Void> updateProduct(
+            @RequestHeader("X-User-Role") String role,
             @PathVariable UUID productId,
             @Valid @RequestBody ProductUpdateRequest request
     ) {
+        adminRoleValidator.validate(role);
         productAdminService.updateProduct(productId, request);
         return ApiResponse.success("상품 정보가 수정되었습니다.", null);
     }
@@ -259,10 +294,12 @@ public class ProductAdminController {
     )
     @PatchMapping("/products/{productId}/skus/{skuId}/status")
     public ApiResponse<Void> changeSkuStatus(
+            @RequestHeader("X-User-Role") String role,
             @PathVariable UUID productId,
             @PathVariable UUID skuId,
             @Valid @RequestBody SkuStatusChangeRequest req
     ) {
+        adminRoleValidator.validate(role);
         productAdminService.changeSkuStatus(productId, skuId, req.status());
         return ApiResponse.success("SKU 상태가 수정되었습니다.", null);
     }

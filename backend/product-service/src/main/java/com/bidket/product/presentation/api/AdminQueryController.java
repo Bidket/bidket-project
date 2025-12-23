@@ -4,6 +4,7 @@ import com.bidket.common.presentation.response.ApiResponse;
 import com.bidket.common.presentation.response.PageResponse;
 import com.bidket.product.application.facade.AdminProductDetailFacade;
 import com.bidket.product.application.service.AdminQueryService;
+import com.bidket.product.application.validator.AdminRoleValidator;
 import com.bidket.product.domain.model.ProductStatus;
 import com.bidket.product.presentation.dto.request.PageRequestDto;
 import com.bidket.product.presentation.dto.response.product.ProductGetAdminDetailResponse;
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,6 +34,7 @@ public class AdminQueryController {
 
     private final AdminQueryService adminQueryService;
     private final AdminProductDetailFacade detailFacade;
+    private final AdminRoleValidator adminRoleValidator;
 
     @Operation(
             summary = "어드민 사이즈 타입 목록 조회",
@@ -39,11 +42,11 @@ public class AdminQueryController {
     )
     @GetMapping("/size-types")
     public ApiResponse<PageResponse<SizeTypeGetAdminResponse>> getSizeTypes(
-            //@RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-User-Role") String role,
             @RequestParam(required = false) UUID productTypeId,
             PageRequestDto pageRequest
     ) {
-        //adminRoleValidator.validator(role);
+        adminRoleValidator.validate(role);
         return ApiResponse.success(adminQueryService.getSizeTypes(productTypeId, pageRequest));
     }
 
@@ -53,11 +56,11 @@ public class AdminQueryController {
     )
     @GetMapping("/sizes")
     public ApiResponse<PageResponse<SizeGetAdminResponse>> getSizes(
-            //@RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-User-Role") String role,
             @RequestParam(required = false) UUID sizeTypeId,
             PageRequestDto pageRequest
     ) {
-        //adminRoleValidator.validator(role);
+        adminRoleValidator.validate(role);
         return ApiResponse.success(adminQueryService.getSizes(sizeTypeId, pageRequest));
     }
 
@@ -68,13 +71,13 @@ public class AdminQueryController {
     )
     @GetMapping("/products")
     public ApiResponse<PageResponse<ProductGetAdminResponse>> getProducts(
-            //@RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-User-Role") String role,
             @RequestParam(defaultValue = "ALL") ProductStatus status,
             @RequestParam(required = false) UUID brandId,
             @RequestParam(required = false) UUID productTypeId,
             PageRequestDto pageRequest
     ) {
-        //adminRoleValidator.validator(role);
+        adminRoleValidator.validate(role);
         log.info("/v1/admin/products Received status: {}", status);
         return ApiResponse.success(
                 adminQueryService.getProducts(
@@ -92,10 +95,10 @@ public class AdminQueryController {
     )
     @GetMapping("/products/{productId}")
     public ApiResponse<ProductGetAdminSimpleResponse> getProduct(
-            //@RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-User-Role") String role,
             @PathVariable UUID productId
     ) {
-        //adminRoleValidator.validator(role);
+        adminRoleValidator.validate(role);
         return ApiResponse.success(adminQueryService.getProduct(productId));
     }
 
@@ -105,11 +108,11 @@ public class AdminQueryController {
     )
     @GetMapping("/products/{productId}/skus")
     public ApiResponse<PageResponse<SkuGetAdminResponse>> getProductSkus(
-            //@RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-User-Role") String role,
             @PathVariable UUID productId,
             PageRequestDto pageRequest
     ) {
-        //adminRoleValidator.validator(role);
+        adminRoleValidator.validate(role);
         return ApiResponse.success(
                 adminQueryService.getProductSkus(productId, pageRequest)
         );
@@ -121,10 +124,10 @@ public class AdminQueryController {
     )
     @GetMapping("/products/{productId}/detail")
     public ApiResponse<ProductGetAdminDetailResponse> getProductDetail(
-            //@RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-User-Role") String role,
             @PathVariable UUID productId
     ) {
-        //adminRoleValidator.validator(role);
+        adminRoleValidator.validate(role);
         return ApiResponse.success(
                 detailFacade.getProductDetail(productId)
         );
