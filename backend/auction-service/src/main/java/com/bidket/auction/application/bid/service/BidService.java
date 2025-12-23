@@ -12,12 +12,17 @@ import com.bidket.auction.global.exception.AuctionDomainException;
 import com.bidket.auction.global.exception.AuctionErrorCode;
 import com.bidket.auction.global.exception.BidDomainException;
 import com.bidket.auction.global.exception.BidErrorCode;
+import com.bidket.auction.application.saga.AuctionEndSagaOrchestrator;
+import com.bidket.auction.infrastructure.notification.NotificationEventProducer;
 import com.bidket.auction.infrastructure.retry.RetryOnOptimisticLock;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -30,6 +35,9 @@ public class BidService {
 
     private final BidRepository bidRepository;
     private final AuctionRepository auctionRepository;
+    private final NotificationEventProducer notificationEventProducer;
+    private final AuctionEndSagaOrchestrator auctionEndSagaOrchestrator;
+    private final CacheManager cacheManager;
 
     @Transactional
     @RetryOnOptimisticLock
@@ -55,6 +63,16 @@ public class BidService {
             Bid prevBid = previousHighestBid.get();
             prevBid.markAsOutbid();
             bidRepository.save(prevBid);
+
+            notificationEventProducer.publishOutbidNotification(
+                    prevBid.getBidderId(),
+                    auctionId,
+                    amount,
+                    LocalDateTime.now(),
+                    auctionId
+            );
+            log.info("상회 입찰 알림 발행: previousBidderId={}, auctionId={}, newAmount={}",
+                    prevBid.getBidderId(), auctionId, amount);
         }
 
         Bid newBid = Bid.builder()
@@ -69,14 +87,35 @@ public class BidService {
         auction.updateCurrentPrice(amount);
         auctionRepository.save(auction);
 
+        evictAuctionCache(auctionId);
+
         log.info("입찰 등록 완료 - 경매 ID: {}, 입찰자: {}, 금액: {}", auctionId, bidderId, amount);
-        
+
         return savedBid;
     }
 
     @Transactional
     public BidResponse createBid(UUID bidderId, CreateBidRequest request) {
         Bid bid = placeBid(request.auctionId(), bidderId, request.amount());
+        return BidResponse.from(bid);
+    }
+
+    @Transactional
+    public BidResponse createBid(UUID bidderId, CreateBidRequest request, boolean queueVerified) {
+        log.info("[BidService] 입찰 생성: bidderId={}, auctionId={}, queueVerified={}",
+                bidderId, request.auctionId(), queueVerified);
+
+        if (!queueVerified) {
+            log.warn("[BidService] Queue 검증 실패 (Gateway 우회 접근): bidderId={}, auctionId={}",
+                    bidderId, request.auctionId());
+            throw new BidDomainException(BidErrorCode.QUEUE_ACCESS_DENIED);
+        }
+
+        Bid bid = placeBid(request.auctionId(), bidderId, request.amount());
+
+        log.info("[BidService] 입찰 완료: bidId={}, auctionId={}, amount={}",
+                bid.getId(), request.auctionId(), request.amount());
+
         return BidResponse.from(bid);
     }
 
@@ -151,6 +190,16 @@ public class BidService {
             Bid prevBid = previousHighestBid.get();
             prevBid.markAsOutbid();
             bidRepository.save(prevBid);
+
+            notificationEventProducer.publishOutbidNotification(
+                    prevBid.getBidderId(),
+                    auctionId,
+                    buyNowPrice,
+                    LocalDateTime.now(),
+                    auctionId
+            );
+            log.info("즉시 구매로 인한 상회 입찰 알림 발행: previousBidderId={}, auctionId={}, buyNowPrice={}",
+                    prevBid.getBidderId(), auctionId, buyNowPrice);
         }
 
         Bid buyNowBid = Bid.builder()
@@ -166,10 +215,52 @@ public class BidService {
         auction.end(true);
         auctionRepository.save(auction);
 
+        evictAuctionCache(auctionId);
+
         log.info("즉시 구매 완료 - 경매 ID: {}, 구매자: {}, 금액: {}", auctionId, bidderId, buyNowPrice);
+
+        try {
+            UUID sagaId = auctionEndSagaOrchestrator.startAuctionEndSaga(auctionId);
+            log.info("AuctionEndSaga 시작 완료 - Saga ID: {}, 경매 ID: {}", sagaId, auctionId);
+        } catch (Exception e) {
+            log.error("AuctionEndSaga 시작 실패 - 경매 ID: {}, 에러: {}", auctionId, e.getMessage(), e);
+             
+             
+        }
 
         return savedBid;
     }
+
+    @Transactional
+    @RetryOnOptimisticLock
+    public Bid buyNow(UUID auctionId, UUID bidderId, boolean queueVerified) {
+        log.info("[BidService] 즉시 구매: bidderId={}, auctionId={}, queueVerified={}",
+                bidderId, auctionId, queueVerified);
+
+        if (!queueVerified) {
+            log.warn("[BidService] Queue 검증 실패 (Gateway 우회 접근): bidderId={}, auctionId={}",
+                    bidderId, auctionId);
+            throw new BidDomainException(BidErrorCode.QUEUE_ACCESS_DENIED);
+        }
+
+        Bid bid = buyNow(auctionId, bidderId);
+
+        log.info("[BidService] 즉시 구매 완료: bidId={}, auctionId={}",
+                bid.getId(), auctionId);
+
+        return bid;
+    }
+
+    private void evictAuctionCache(UUID auctionId) {
+        try {
+            Cache cache = cacheManager.getCache("auctions");
+            if (cache != null) {
+                cache.evict(auctionId);
+                log.debug("경매 캐시 무효화 완료: auctionId={}", auctionId);
+            }
+        } catch (Exception e) {
+             
+            log.warn("경매 캐시 무효화 실패: auctionId={}, error={}", auctionId, e.getMessage());
+        }
+    }
 }
-
-

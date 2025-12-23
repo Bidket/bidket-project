@@ -28,5 +28,3 @@ public interface AuctionRepository {
 
     int updateViewCount(UUID auctionId, Integer viewCount);
 }
-
-

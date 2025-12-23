@@ -75,7 +75,6 @@ public class Auction extends BaseEntity {
     @Version
     private Long version;
 
-    // ===== Private 생성자 =====
     private Auction(UUID id, UUID productSizeId, UUID sellerId, String auctionTitle,
                     String description, AuctionCondition condition, PriceInfo priceInfo,
                     AuctionPeriod period, WinnerInfo winnerInfo, AuctionStats stats,
@@ -94,7 +93,6 @@ public class Auction extends BaseEntity {
         this.version = version;
     }
 
-    // ===== Builder =====
     public static AuctionBuilder builder() {
         return new AuctionBuilder();
     }
@@ -113,7 +111,6 @@ public class Auction extends BaseEntity {
         private AuctionStatus status;
         private Long version;
 
-        // 하위 호환성을 위한 개별 필드 (레거시 코드 지원용)
         private Long startPrice;
         private Long currentPrice;
         private Long bidIncrement;
@@ -188,7 +185,6 @@ public class Auction extends BaseEntity {
             return this;
         }
 
-        // ===== 하위 호환성 메서드 (레거시) =====
         public AuctionBuilder startPrice(Long startPrice) {
             this.startPrice = startPrice;
             return this;
@@ -255,7 +251,7 @@ public class Auction extends BaseEntity {
         }
 
         public Auction build() {
-            // PriceInfo 생성
+             
             PriceInfo resolvedPriceInfo = this.priceInfo;
             if (resolvedPriceInfo == null && this.startPrice != null) {
                 resolvedPriceInfo = PriceInfo.builder()
@@ -266,7 +262,6 @@ public class Auction extends BaseEntity {
                         .build();
             }
 
-            // AuctionPeriod 생성
             AuctionPeriod resolvedPeriod = this.period;
             if (resolvedPeriod == null && this.startTime != null) {
                 resolvedPeriod = AuctionPeriod.builder()
@@ -277,7 +272,6 @@ public class Auction extends BaseEntity {
                         .build();
             }
 
-            // WinnerInfo 생성
             WinnerInfo resolvedWinnerInfo = this.winnerInfo;
             if (resolvedWinnerInfo == null) {
                 if (this.winnerId != null || this.winningBidId != null || this.finalPrice != null) {
@@ -291,7 +285,6 @@ public class Auction extends BaseEntity {
                 }
             }
 
-            // AuctionStats 생성
             AuctionStats resolvedStats = this.stats;
             if (resolvedStats == null) {
                 resolvedStats = AuctionStats.builder()
@@ -300,7 +293,6 @@ public class Auction extends BaseEntity {
                         .build();
             }
 
-            // 기본값 설정
             AuctionStatus resolvedStatus = this.status != null ? this.status : AuctionStatus.CREATING;
 
             Auction auction = new Auction(
@@ -332,7 +324,6 @@ public class Auction extends BaseEntity {
         }
     }
 
-    // ===== 도메인 비즈니스 메서드 =====
     public void confirmCreation() {
         if (this.status != AuctionStatus.CREATING) {
             throw new AuctionDomainException(AuctionErrorCode.INVALID_AUCTION_STATUS);
@@ -434,5 +425,3 @@ public class Auction extends BaseEntity {
         return period != null && period.isEnded();
     }
 }
-
-

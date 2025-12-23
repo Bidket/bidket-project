@@ -1,9 +1,12 @@
 package com.bidket.order.infrastructure.refund.impl;
 
 import com.bidket.order.domain.refund.model.Refund;
+import com.bidket.order.domain.refund.model.RefundStatus;
 import com.bidket.order.domain.refund.repository.RefundRepository;
 import com.bidket.order.infrastructure.refund.entity.RefundEntity;
 import com.bidket.order.infrastructure.refund.repository.RefundJpaRepository;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -27,5 +30,16 @@ public class RefundRepositoryImpl implements RefundRepository {
         return jpaRepository
                 .findByUserId(userId, pageable)
                 .map(RefundEntity::toModel);
+    }
+
+    @Override
+    public Optional<Refund> findById(UUID refundId) {
+        return jpaRepository.findById(refundId)
+                .map(RefundEntity::toModel);
+    }
+
+    @Override
+    public boolean existsByPaymentIdAndStatusIn(UUID paymentId, List<RefundStatus> statuses) {
+        return jpaRepository.existsByPaymentIdAndStatusIn(paymentId, statuses);
     }
 }

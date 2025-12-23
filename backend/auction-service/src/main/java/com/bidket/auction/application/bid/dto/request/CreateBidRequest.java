@@ -14,5 +14,3 @@ public record CreateBidRequest(
         Long amount
 ) {
 }
-
-

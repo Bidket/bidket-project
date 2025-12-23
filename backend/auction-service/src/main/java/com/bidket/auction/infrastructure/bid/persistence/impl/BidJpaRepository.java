@@ -26,5 +26,3 @@ public interface BidJpaRepository extends JpaRepository<Bid, UUID> {
 
     long countByAuctionId(UUID auctionId);
 }
-
-

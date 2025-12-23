@@ -41,7 +41,7 @@ public class Category extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
-    private Category parentId;
+    private Category parent;
 
     @Column(nullable = false)
     private Integer depth;
@@ -67,7 +67,7 @@ public class Category extends BaseEntity {
     ) {
         Category category = new Category();
         category.productType = productType;
-        category.parentId = parent;
+        category.parent = parent;
         category.name = name;
         category.code = code;
         category.sortId = sortId;
@@ -87,10 +87,10 @@ public class Category extends BaseEntity {
     }
 
     public void updateDepth() {
-        if (this.parentId == null) {
+        if (this.parent == null) {
             this.depth = 0;
         } else {
-            this.depth = this.parentId.getDepth() + 1;
+            this.depth = this.parent.getDepth() + 1;
         }
     }
 }

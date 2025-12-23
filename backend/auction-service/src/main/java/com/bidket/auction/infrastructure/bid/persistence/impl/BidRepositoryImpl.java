@@ -71,5 +71,3 @@ public class BidRepositoryImpl implements BidRepository {
         return bidJpaRepository.countByAuctionId(auctionId);
     }
 }
-
-

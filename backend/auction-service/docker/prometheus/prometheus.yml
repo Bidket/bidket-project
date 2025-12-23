@@ -1,0 +1,66 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'bidket-monitor'
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'auction-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['auction-service:8300']
+        labels:
+          application: 'auction-service'
+          environment: 'docker'
+
+  - job_name: 'user-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['user-service:8100']
+        labels:
+          application: 'user-service'
+          environment: 'docker'
+
+  - job_name: 'product-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['product-service:8200']
+        labels:
+          application: 'product-service'
+          environment: 'docker'
+
+  - job_name: 'order-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['order-service:8500']
+        labels:
+          application: 'order-service'
+          environment: 'docker'
+
+  - job_name: 'queue-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['queue-service:8400']
+        labels:
+          application: 'queue-service'
+          environment: 'docker'
+
+  - job_name: 'notification-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['notification-service:8600']
+        labels:
+          application: 'notification-service'
+          environment: 'docker'
+
+  - job_name: 'gateway-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['gateway-service:8000']
+        labels:
+          application: 'gateway-service'
+          environment: 'docker'

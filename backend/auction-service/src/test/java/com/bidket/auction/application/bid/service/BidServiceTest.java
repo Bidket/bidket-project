@@ -39,6 +39,9 @@ class BidServiceTest {
     @Mock
     private AuctionRepository auctionRepository;
 
+    @Mock
+    private com.bidket.auction.infrastructure.notification.NotificationEventProducer notificationEventProducer;
+
     @InjectMocks
     private BidService bidService;
 
@@ -83,16 +86,14 @@ class BidServiceTest {
     @Test
     @DisplayName("유효한 입찰을 등록할 수 있다")
     void shouldPlaceBid() {
-        // Given
+         
         Long bidAmount = 350000L;
         when(auctionRepository.findById(auctionId)).thenReturn(Optional.of(activeAuction));
         when(bidRepository.findHighestBidByAuctionId(auctionId)).thenReturn(Optional.empty());
         when(bidRepository.save(any(Bid.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // When
         Bid result = bidService.placeBid(auctionId, bidderId, bidAmount);
 
-        // Then
         assertThat(result).isNotNull();
         assertThat(result.getAmount()).isEqualTo(bidAmount);
         assertThat(result.isHighest()).isTrue();
@@ -104,7 +105,7 @@ class BidServiceTest {
     @Test
     @DisplayName("경매가 ACTIVE 상태가 아니면 입찰할 수 없다")
     void shouldNotPlaceBidWhenAuctionNotActive() {
-        // Given
+         
         PriceInfo pendingPriceInfo = PriceInfo.builder()
                 .startPrice(300000L)
                 .currentPrice(300000L)
@@ -133,7 +134,6 @@ class BidServiceTest {
 
         when(auctionRepository.findById(auctionId)).thenReturn(Optional.of(activeAuction));
 
-        // When & Then
         assertThatThrownBy(() -> bidService.placeBid(auctionId, bidderId, 350000L))
                 .isInstanceOf(AuctionDomainException.class);
     }
@@ -141,10 +141,9 @@ class BidServiceTest {
     @Test
     @DisplayName("판매자는 자신의 경매에 입찰할 수 없다")
     void shouldNotPlaceBidOnOwnAuction() {
-        // Given
+         
         when(auctionRepository.findById(auctionId)).thenReturn(Optional.of(activeAuction));
 
-        // When & Then
         assertThatThrownBy(() -> bidService.placeBid(auctionId, sellerId, 350000L))
                 .isInstanceOf(BidDomainException.class);
     }
@@ -152,10 +151,9 @@ class BidServiceTest {
     @Test
     @DisplayName("최소 입찰가보다 낮은 금액으로 입찰할 수 없다")
     void shouldNotPlaceBidBelowMinimumAmount() {
-        // Given
+         
         when(auctionRepository.findById(auctionId)).thenReturn(Optional.of(activeAuction));
 
-        // When & Then
         assertThatThrownBy(() -> bidService.placeBid(auctionId, bidderId, 300000L))
                 .isInstanceOf(BidDomainException.class);
     }
@@ -163,7 +161,7 @@ class BidServiceTest {
     @Test
     @DisplayName("이전 최고가 입찰을 OUTBID 상태로 변경한다")
     void shouldMarkPreviousHighestBidAsOutbid() {
-        // Given
+         
         Long bidAmount = 350000L;
         UUID previousBidderId = UUID.randomUUID();
         
@@ -180,10 +178,8 @@ class BidServiceTest {
                 .thenReturn(Optional.of(previousHighestBid));
         when(bidRepository.save(any(Bid.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // When
         Bid result = bidService.placeBid(auctionId, bidderId, bidAmount);
 
-        // Then
         assertThat(previousHighestBid.getStatus()).isEqualTo(BidStatus.OUTBID);
         assertThat(previousHighestBid.isHighest()).isFalse();
         assertThat(result.isHighest()).isTrue();
@@ -193,26 +189,23 @@ class BidServiceTest {
     @Test
     @DisplayName("입찰 시 경매의 현재가를 업데이트한다")
     void shouldUpdateAuctionCurrentPrice() {
-        // Given
+         
         Long bidAmount = 350000L;
         when(auctionRepository.findById(auctionId)).thenReturn(Optional.of(activeAuction));
         when(bidRepository.findHighestBidByAuctionId(auctionId)).thenReturn(Optional.empty());
         when(bidRepository.save(any(Bid.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // When
         bidService.placeBid(auctionId, bidderId, bidAmount);
 
-        // Then
         verify(auctionRepository).save(argThat(auction -> 
             auction.getPriceInfo().getCurrentPrice().equals(bidAmount)
         ));
     }
 
-
     @Test
     @DisplayName("최고가가 아닌 입찰을 취소할 수 있다")
     void shouldCancelBidWhenNotHighest() {
-        // Given
+         
         UUID bidId = UUID.randomUUID();
         Bid bid = Bid.builder()
                 .id(bidId)
@@ -225,10 +218,8 @@ class BidServiceTest {
         when(bidRepository.findById(bidId)).thenReturn(Optional.of(bid));
         when(bidRepository.save(any(Bid.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // When
         bidService.cancelBid(bidId, bidderId);
 
-        // Then
         assertThat(bid.getStatus()).isEqualTo(BidStatus.CANCELLED);
         verify(bidRepository).save(bid);
     }
@@ -236,7 +227,7 @@ class BidServiceTest {
     @Test
     @DisplayName("최고가 입찰은 취소할 수 없다")
     void shouldNotCancelHighestBid() {
-        // Given
+         
         UUID bidId = UUID.randomUUID();
         Bid highestBid = Bid.builder()
                 .id(bidId)
@@ -248,7 +239,6 @@ class BidServiceTest {
 
         when(bidRepository.findById(bidId)).thenReturn(Optional.of(highestBid));
 
-        // When & Then
         assertThatThrownBy(() -> bidService.cancelBid(bidId, bidderId))
                 .isInstanceOf(BidDomainException.class);
     }
@@ -256,7 +246,7 @@ class BidServiceTest {
     @Test
     @DisplayName("다른 사용자의 입찰은 취소할 수 없다")
     void shouldNotCancelOtherUsersBid() {
-        // Given
+         
         UUID bidId = UUID.randomUUID();
         UUID otherBidderId = UUID.randomUUID();
         Bid bid = Bid.builder()
@@ -268,7 +258,6 @@ class BidServiceTest {
 
         when(bidRepository.findById(bidId)).thenReturn(Optional.of(bid));
 
-        // When & Then
         assertThatThrownBy(() -> bidService.cancelBid(bidId, bidderId))
                 .isInstanceOf(BidDomainException.class);
     }
@@ -276,20 +265,18 @@ class BidServiceTest {
     @Test
     @DisplayName("존재하지 않는 입찰은 취소할 수 없다")
     void shouldNotCancelNonExistentBid() {
-        // Given
+         
         UUID bidId = UUID.randomUUID();
         when(bidRepository.findById(bidId)).thenReturn(Optional.empty());
 
-        // When & Then
         assertThatThrownBy(() -> bidService.cancelBid(bidId, bidderId))
                 .isInstanceOf(BidDomainException.class);
     }
 
-
     @Test
     @DisplayName("즉시 구매가로 경매를 즉시 낙찰할 수 있다")
     void shouldBuyNow() {
-        // Given
+         
         Long buyNowPrice = 500000L;
         PriceInfo priceInfoWithBuyNow = PriceInfo.builder()
                 .startPrice(300000L)
@@ -319,10 +306,8 @@ class BidServiceTest {
         when(auctionRepository.findById(auctionId)).thenReturn(Optional.of(auctionWithBuyNow));
         when(bidRepository.save(any(Bid.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // When
         Bid result = bidService.buyNow(auctionId, bidderId);
 
-        // Then
         assertThat(result).isNotNull();
         assertThat(result.getAmount()).isEqualTo(buyNowPrice);
         assertThat(result.isHighest()).isTrue();
@@ -334,10 +319,9 @@ class BidServiceTest {
     @Test
     @DisplayName("즉시 구매가가 설정되지 않은 경매는 즉시 구매할 수 없다")
     void shouldNotBuyNowWhenBuyNowPriceNotSet() {
-        // Given
+         
         when(auctionRepository.findById(auctionId)).thenReturn(Optional.of(activeAuction));
 
-        // When & Then
         assertThatThrownBy(() -> bidService.buyNow(auctionId, bidderId))
                 .isInstanceOf(AuctionDomainException.class);
     }
@@ -345,7 +329,7 @@ class BidServiceTest {
     @Test
     @DisplayName("판매자는 자신의 경매를 즉시 구매할 수 없다")
     void shouldNotBuyNowOwnAuction() {
-        // Given
+         
         Long buyNowPrice = 500000L;
         PriceInfo priceInfoWithBuyNow = PriceInfo.builder()
                 .startPrice(300000L)
@@ -374,7 +358,6 @@ class BidServiceTest {
 
         when(auctionRepository.findById(auctionId)).thenReturn(Optional.of(auctionWithBuyNow));
 
-        // When & Then
         assertThatThrownBy(() -> bidService.buyNow(auctionId, sellerId))
                 .isInstanceOf(BidDomainException.class);
     }
@@ -382,7 +365,7 @@ class BidServiceTest {
     @Test
     @DisplayName("ACTIVE 상태가 아닌 경매는 즉시 구매할 수 없다")
     void shouldNotBuyNowWhenAuctionNotActive() {
-        // Given
+         
         Long buyNowPrice = 500000L;
         PriceInfo priceInfoWithBuyNow = PriceInfo.builder()
                 .startPrice(300000L)
@@ -411,9 +394,7 @@ class BidServiceTest {
 
         when(auctionRepository.findById(auctionId)).thenReturn(Optional.of(pendingAuction));
 
-        // When & Then
         assertThatThrownBy(() -> bidService.buyNow(auctionId, bidderId))
                 .isInstanceOf(AuctionDomainException.class);
     }
 }
-

@@ -14,8 +14,10 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
+@Setter
 @Entity
 @Table(name = "p_order")
 public class OrderEntity extends BaseEntity {
@@ -43,6 +45,13 @@ public class OrderEntity extends BaseEntity {
 
     @Column(nullable = false)
     private LocalDateTime paymentExpiredAt;
+
+    @Column(name = "deleted_by_uuid")
+    private UUID deletedByUuid;
+
+    public void setDeletedByUuid(UUID deletedByUuid) {
+        this.deletedByUuid = deletedByUuid;
+    }
 
     protected OrderEntity() {
     }

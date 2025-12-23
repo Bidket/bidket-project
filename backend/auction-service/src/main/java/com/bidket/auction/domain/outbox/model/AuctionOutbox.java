@@ -68,7 +68,8 @@ public class AuctionOutbox extends BaseEntity {
     private LocalDateTime publishedAt;
 
     @Version
-    private Long version;
+    @Column(nullable = false)
+    private Long version = 0L;
 
     private AuctionOutbox(String aggregateType,
                           UUID aggregateId,

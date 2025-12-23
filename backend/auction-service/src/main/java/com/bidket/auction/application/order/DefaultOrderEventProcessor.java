@@ -1,0 +1,180 @@
+package com.bidket.auction.application.order;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.UUID;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class DefaultOrderEventProcessor implements OrderEventProcessor {
+
+    private static final String EVENT_TYPE_ORDER_CREATED = "ORDER_CREATED";
+    private static final String EVENT_TYPE_ORDER_CREATION_FAILED = "ORDER_CREATION_FAILED";
+    private static final String EVENT_TYPE_PAYMENT_TIMEOUT = "PAYMENT_TIMEOUT";
+    private static final String EVENT_TYPE_PAYMENT_COMPLETED = "PAYMENT_COMPLETED";
+    private static final String EVENT_TYPE_ORDER_CANCELED = "ORDER_CANCELED";
+
+    private final OrderSagaMessageHandler sagaMessageHandler;
+    private final PaymentTimeoutEventProcessor paymentTimeoutEventProcessor;
+    private final PaymentCompletedEventProcessor paymentCompletedEventProcessor;
+    private final OrderCanceledEventProcessor orderCanceledEventProcessor;
+
+    @Override
+    public void process(String eventType, Map<String, Object> payload) {
+        log.info("[OrderEventProcessor] 이벤트 처리 시작: eventType={}", eventType);
+
+        switch (eventType) {
+            case EVENT_TYPE_ORDER_CREATED:
+                handleOrderCreated(payload);
+                break;
+            case EVENT_TYPE_ORDER_CREATION_FAILED:
+                handleOrderCreationFailed(payload);
+                break;
+            case EVENT_TYPE_PAYMENT_TIMEOUT:
+                handlePaymentTimeout(payload);
+                break;
+            case EVENT_TYPE_PAYMENT_COMPLETED:
+                handlePaymentCompleted(payload);
+                break;
+            case EVENT_TYPE_ORDER_CANCELED:
+                handleOrderCanceled(payload);
+                break;
+            default:
+                log.warn("[OrderEventProcessor] 알 수 없는 이벤트 타입: {}", eventType);
+        }
+    }
+
+    private void handleOrderCreated(Map<String, Object> payload) {
+        try {
+             
+            Map<String, Object> data = getDataMap(payload);
+
+            UUID sagaId = parseUuid(data, "sagaId");
+            UUID orderId = parseUuid(data, "orderId");
+            UUID auctionId = parseUuid(data, "auctionId");
+
+            log.info("[OrderEventProcessor] ORDER_CREATED 처리: sagaId={}, orderId={}, auctionId={}",
+                    sagaId, orderId, auctionId);
+
+            sagaMessageHandler.handleOrderCreated(payload);
+        } catch (Exception e) {
+            log.error("[OrderEventProcessor] ORDER_CREATED 처리 실패: payload={}", payload, e);
+            throw new RuntimeException("ORDER_CREATED 이벤트 처리 실패", e);
+        }
+    }
+
+    private void handleOrderCreationFailed(Map<String, Object> payload) {
+        try {
+             
+            Map<String, Object> data = getDataMap(payload);
+
+            UUID sagaId = parseUuid(data, "sagaId");
+            UUID auctionId = parseUuid(data, "auctionId");
+            String failureReason = parseString(data, "failureReason");
+
+            log.info("[OrderEventProcessor] ORDER_CREATION_FAILED 처리: sagaId={}, auctionId={}, reason={}",
+                    sagaId, auctionId, failureReason);
+
+            sagaMessageHandler.handleOrderCreationFailed(payload);
+        } catch (Exception e) {
+            log.error("[OrderEventProcessor] ORDER_CREATION_FAILED 처리 실패: payload={}", payload, e);
+            throw new RuntimeException("ORDER_CREATION_FAILED 이벤트 처리 실패", e);
+        }
+    }
+
+    private void handlePaymentTimeout(Map<String, Object> payload) {
+        try {
+            log.info("[OrderEventProcessor] PAYMENT_TIMEOUT 처리: orderId={}, auctionId={}",
+                    payload.get("orderId"), payload.get("auctionId"));
+            paymentTimeoutEventProcessor.processPaymentTimeout(payload);
+        } catch (Exception e) {
+            log.error("[OrderEventProcessor] PAYMENT_TIMEOUT 처리 실패: payload={}", payload, e);
+            throw new RuntimeException("PAYMENT_TIMEOUT 이벤트 처리 실패", e);
+        }
+    }
+
+    private void handlePaymentCompleted(Map<String, Object> payload) {
+        try {
+            log.info("[OrderEventProcessor] PAYMENT_COMPLETED 처리: orderId={}, auctionId={}",
+                    payload.get("orderId"), payload.get("auctionId"));
+            paymentCompletedEventProcessor.processPaymentCompleted(payload);
+        } catch (Exception e) {
+            log.error("[OrderEventProcessor] PAYMENT_COMPLETED 처리 실패: payload={}", payload, e);
+            throw new RuntimeException("PAYMENT_COMPLETED 이벤트 처리 실패", e);
+        }
+    }
+
+    private void handleOrderCanceled(Map<String, Object> payload) {
+        try {
+            log.info("[OrderEventProcessor] ORDER_CANCELED 처리: orderId={}, auctionId={}",
+                    payload.get("orderId"), payload.get("auctionId"));
+            orderCanceledEventProcessor.processOrderCanceled(payload);
+        } catch (Exception e) {
+            log.error("[OrderEventProcessor] ORDER_CANCELED 처리 실패: payload={}", payload, e);
+            throw new RuntimeException("ORDER_CANCELED 이벤트 처리 실패", e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> getDataMap(Map<String, Object> payload) {
+        Object dataObj = payload.get("data");
+        if (dataObj instanceof Map) {
+            return (Map<String, Object>) dataObj;
+        }
+        throw new IllegalArgumentException("Invalid event structure: 'data' field is missing or not a Map");
+    }
+
+    private UUID parseUuid(Map<String, Object> payload, String key) {
+        Object value = payload.get(key);
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof UUID) {
+            return (UUID) value;
+        }
+        return UUID.fromString(value.toString());
+    }
+
+    private Long parseLong(Map<String, Object> payload, String key) {
+        Object value = payload.get(key);
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        return Long.parseLong(value.toString());
+    }
+
+    private String parseString(Map<String, Object> payload, String key) {
+        Object value = payload.get(key);
+        return value != null ? value.toString() : null;
+    }
+
+    private LocalDateTime parseLocalDateTime(Map<String, Object> payload, String key) {
+        Object value = payload.get(key);
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof LocalDateTime) {
+            return (LocalDateTime) value;
+        }
+        return LocalDateTime.parse(value.toString());
+    }
+
+    private boolean parseBoolean(Map<String, Object> payload, String key) {
+        Object value = payload.get(key);
+        if (value == null) {
+            return false;
+        }
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+        return Boolean.parseBoolean(value.toString());
+    }
+}
