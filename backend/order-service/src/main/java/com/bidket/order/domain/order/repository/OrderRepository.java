@@ -13,7 +13,7 @@ public interface OrderRepository {
     Page<Order> findByUserId(UUID userId, Pageable pageable);
 
     Optional<Order> findById(UUID orderId);
-  
+
     boolean existsByAuctionId(UUID auctionId);
 
     void softDelete(UUID orderId, UUID userId);
