@@ -112,7 +112,7 @@ public class OrderController {
         );
 
         String message = (status == null)
-                ? "내 주문 목록을 조회했습니다."
+                ? "주문 목록을 조회했습니다."
                 : status.name() + " 주문 목록을 조회했습니다.";
 
         return ApiResponse.success(message, response);
