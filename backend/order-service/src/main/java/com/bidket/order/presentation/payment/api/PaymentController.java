@@ -4,11 +4,13 @@ import com.bidket.common.presentation.response.ApiResponse;
 import com.bidket.common.presentation.response.PageResponse;
 import com.bidket.order.application.payment.facade.PaymentFacade;
 import com.bidket.order.application.payment.info.PaymentSummaryInfo;
+import com.bidket.order.domain.payment.model.Payment;
 import com.bidket.order.domain.payment.model.PaymentStatus;
 import com.bidket.order.presentation.payment.dto.request.PaymentConfirmRequest;
 import com.bidket.order.presentation.payment.dto.request.PaymentCreateRequest;
 import com.bidket.order.presentation.payment.dto.request.PaymentFailRequest;
 import com.bidket.order.presentation.payment.dto.response.PaymentCreateResponse;
+import com.bidket.order.presentation.payment.dto.response.PaymentDetailResponse;
 import com.bidket.order.presentation.payment.dto.response.PaymentStatusResponse;
 import com.bidket.order.presentation.payment.dto.response.PaymentSummaryResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,6 +24,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -36,12 +39,12 @@ public class PaymentController {
 
     private final PaymentFacade paymentFacade;
 
+    @PostMapping
     @Operation(
             summary = "결제 요청 생성",
             description = "주문 ID와 결제 정보를 기반으로 결제 요청을 생성합니다.\n\n"
                     + "※ Payple(PG) 연동 전 단계로, 현재는 내부 결제 요청 데이터만 생성합니다."
     )
-    @PostMapping
     public ApiResponse<PaymentCreateResponse> createPayment(
             @RequestParam String userId, // TODO: 인증 적용 예정
             @RequestBody PaymentCreateRequest request
@@ -62,12 +65,12 @@ public class PaymentController {
         );
     }
 
+    @PostMapping("/confirm")
     @Operation(
             summary = "결제 승인 처리",
             description = "PG 결제 완료 후 전달되는 paymentKey, orderId, amount 등을 검증하고 결제를 최종 승인합니다.\n"
                     + "성공 시 주문 상태를 PAID로 변경합니다."
     )
-    @PostMapping("/confirm")
     public ApiResponse<PaymentStatusResponse> confirmPayment(
             @RequestParam String userId, // TODO: 인증 적용 예정
             @RequestBody PaymentConfirmRequest request
@@ -87,12 +90,12 @@ public class PaymentController {
         );
     }
 
+    @PatchMapping("/fail")
     @Operation(
             summary = "결제 실패 처리",
             description = "PG 결제 실패/취소 콜백을 처리합니다.\n"
                     + "결제 상태를 FAILED로 기록하고 주문 상태를 CANCELED 또는 EXPIRED로 변경합니다."
     )
-    @PatchMapping("/fail")
     public ApiResponse<PaymentStatusResponse> failPayment(
             @RequestParam String userId, // TODO: 인증 적용 예정
             @RequestBody PaymentFailRequest request
@@ -144,5 +147,18 @@ public class PaymentController {
                 : status.name() + " 결제 내역을 조회했습니다.";
 
         return ApiResponse.success(message, response);
+    }
+
+    @GetMapping("/{paymentId}")
+    public ApiResponse<PaymentDetailResponse> getPaymentDetail(
+            @PathVariable UUID paymentId,
+            @RequestParam UUID userId
+    ) {
+        Payment payment = paymentFacade.getPaymentDetail(paymentId, userId);
+
+        return ApiResponse.success(
+                "결제 상세 조회 성공",
+                PaymentDetailResponse.from(payment)
+        );
     }
 }

@@ -177,6 +177,18 @@ public class PaymentFacade {
                         .map(PaymentSummaryInfo::from);
     }
 
+    @Transactional(readOnly = true)
+    public Payment getPaymentDetail(UUID paymentId, UUID userId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new IllegalStateException("결제 정보를 찾을 수 없습니다."));
+
+        if (!payment.userId().equals(userId)) {
+            throw new IllegalStateException("본인 결제만 조회할 수 있습니다.");
+        }
+
+        return payment;
+    }
+
     private void validatePayableOrder(Order order, UUID userId) {
         if (!order.userId().equals(userId)) {
             throw new IllegalStateException("본인 주문만 결제할 수 있습니다.");

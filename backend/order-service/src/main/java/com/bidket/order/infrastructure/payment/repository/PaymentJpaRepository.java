@@ -16,5 +16,7 @@ public interface PaymentJpaRepository extends JpaRepository<PaymentEntity, UUID>
 
     Page<PaymentEntity> findByUserIdAndStatus(UUID userId, PaymentStatus status, Pageable pageable);
 
+    Optional<PaymentEntity> findByIdAndUserIdAndDeletedAtIsNull(UUID id, UUID userId);
+
     boolean existsByOrderIdAndStatus(UUID orderId, PaymentStatus status);
 }

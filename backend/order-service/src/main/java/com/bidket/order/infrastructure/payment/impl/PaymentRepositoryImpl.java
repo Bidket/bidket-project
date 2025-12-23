@@ -49,6 +49,14 @@ public class PaymentRepositoryImpl implements PaymentRepository {
     }
 
     @Override
+    public Payment getByIdAndUserId(UUID paymentId, UUID userId) {
+        PaymentEntity entity = paymentJpaRepository.findByIdAndUserIdAndDeletedAtIsNull(paymentId,
+                        userId)
+                .orElseThrow(() -> new IllegalStateException("결제 정보를 찾을 수 없습니다."));
+        return entity.toModel();
+    }
+
+    @Override
     public boolean existsByOrderIdAndStatus(UUID orderId, PaymentStatus status) {
         return paymentJpaRepository.existsByOrderIdAndStatus(orderId, status);
     }

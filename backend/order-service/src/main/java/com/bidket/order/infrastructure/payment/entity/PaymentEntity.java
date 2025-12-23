@@ -1,5 +1,6 @@
 package com.bidket.order.infrastructure.payment.entity;
 
+import com.bidket.common.infra.BaseEntity;
 import com.bidket.order.domain.payment.model.Payment;
 import com.bidket.order.domain.payment.model.PaymentMethod;
 import com.bidket.order.domain.payment.model.PaymentStatus;
@@ -18,7 +19,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "payments")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class PaymentEntity {
+public class PaymentEntity extends BaseEntity {
 
     @Id
     private UUID id;
