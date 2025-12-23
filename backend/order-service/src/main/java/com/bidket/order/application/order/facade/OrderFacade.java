@@ -25,7 +25,6 @@ public class OrderFacade {
     private final AuctionEventProducer auctionEventProducer;
     private final Clock clock;
     private final AuctionQueryPort auctionQueryPort;
-    // TODO: 포인트/재고 검증용 Port 추가
 
     @Transactional
     public OrderInfo createOrder(
@@ -70,8 +69,6 @@ public class OrderFacade {
             UUID sagaId,
             UUID correlationId
     ) {
-        // TODO 포인트 잔액 검증, 경매 낙찰 여부/유효 시간 검증, 재고 검증 추가
-
         LocalDateTime now = LocalDateTime.now();
 
         Order order = Order.createForPayment(

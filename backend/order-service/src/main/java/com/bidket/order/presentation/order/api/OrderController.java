@@ -8,6 +8,7 @@ import com.bidket.order.application.order.info.OrderSummaryInfo;
 import com.bidket.order.domain.order.model.OrderStatus;
 import com.bidket.order.presentation.order.dto.request.OrderCreateRequest;
 import com.bidket.order.presentation.order.dto.response.OrderCreateResponse;
+import com.bidket.order.presentation.order.dto.response.OrderDetailResponse;
 import com.bidket.order.presentation.order.dto.response.OrderSummaryResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -23,6 +24,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -110,5 +112,15 @@ public class OrderController {
                 : status.name() + " 주문 목록을 조회했습니다.";
 
         return ApiResponse.success(message, response);
+    }
+
+    @GetMapping("/{orderId}")
+    @Operation(summary = "주문 상세 조회", description = "특정 주문의 상세 정보를 조회합니다.")
+    public ApiResponse<OrderDetailResponse> getOrderDetail(
+            @PathVariable UUID orderId,
+            @RequestParam UUID userId
+    ) {
+        OrderInfo info = orderFacade.getOrder(userId, orderId);
+        return ApiResponse.success("주문 상세 조회 성공", OrderDetailResponse.from(info));
     }
 }
