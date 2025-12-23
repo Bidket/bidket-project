@@ -3,9 +3,10 @@ name: Build & Push User Service Image
 on:
   push:
     branches:
-      - cicd-test
-    #paths:
-    #  - backend/user-service/**
+      #- cicd-test # 임시 트리거
+      - dev
+    paths:
+      - backend/user-service/**
   workflow_dispatch: {}
 
 jobs:

@@ -1,12 +1,12 @@
 name: Build & Push Notification Service Image
 
 on:
-  # 임시 트리거
   push:
     branches:
-      - cicd-test
-    # paths:
-    #   - backend/notification-service/**
+      #- cicd-test # 임시 트리거
+      - dev
+    paths:
+      - backend/notification-service/**
   workflow_dispatch: {}
 
 jobs:

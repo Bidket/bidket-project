@@ -3,7 +3,11 @@ name: Build & Push Gateway Service Image
 on:
   push:
     branches:
-      - cicd-test
+      #- cicd-test # 임시 트리거
+      - dev
+    paths:
+      - backend/gateway-service/**
+  workflow_dispatch: {}
 
 jobs:
   build-and-push:

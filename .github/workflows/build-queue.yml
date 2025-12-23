@@ -1,12 +1,12 @@
 name: Build & Push Queue Service Image
 
 on:
-  # 임시 트리거
   push:
     branches:
-      - cicd-test
-    # paths:
-    #   - backend/queue-service/**
+      #- cicd-test # 임시 트리거
+      - dev
+    paths:
+      - backend/queue-service/**
   workflow_dispatch: {}
 
 jobs:

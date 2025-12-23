@@ -1,12 +1,12 @@
 name: Build & Push Auction Service Image
 
 on:
-  # 임시 트리거
   push:
     branches:
-      - cicd-test
-    # paths:
-    #   - backend/auction-service/**
+      #- cicd-test # 임시 트리거
+      - dev
+    paths:
+       - backend/auction-service/**
   workflow_dispatch: {}
 
 jobs:
