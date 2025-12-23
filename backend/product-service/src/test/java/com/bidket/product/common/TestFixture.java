@@ -99,6 +99,26 @@ public class TestFixture {
         return productRepository.save(p);
     }
 
+    // 비활성 상품 생성
+    public Product createInactiveProduct() {
+        ProductType pt = createProductType();
+        Brand brand = createBrand();
+
+        Product product = Product.of(
+                pt,
+                brand,
+                "Inactive Product",
+                "비활성 상품",
+                "INACTIVE-001",
+                Gender.UNISEX,
+                "비활성 상품 설명",
+                LocalDate.of(2025, 1, 1),
+                new BigDecimal("100000"),
+                ProductStatus.INACTIVE
+        );
+        return productRepository.save(product);
+    }
+
     // 상품-카테고리 매핑 생성
     public ProductCategory createProductCategory(Product product, Category category, boolean isPrimary) {
         ProductCategory pc = ProductCategory.create(product, category, isPrimary);
