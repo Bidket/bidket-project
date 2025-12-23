@@ -43,6 +43,7 @@ public class OrderController {
 
     private final OrderFacade orderFacade;
 
+    @PostMapping
     @Operation(
             summary = "신발 경매 주문 생성",
             description = "낙찰된 신발 경매에 대해 주문을 생성하고 결제 대기 상태로 저장합니다."
@@ -62,7 +63,6 @@ public class OrderController {
                     description = "유효하지 않은 경매 상태 또는 이미 처리된 주문"
             )
     })
-    @PostMapping
     public ApiResponse<OrderCreateResponse> createOrder(
             @Valid @RequestBody OrderCreateRequest request
     ) {
@@ -121,8 +121,8 @@ public class OrderController {
     @GetMapping("/{orderId}")
     @Operation(summary = "주문 상세 조회", description = "특정 주문의 상세 정보를 조회합니다.")
     public ApiResponse<OrderDetailResponse> getOrderDetail(
-            @PathVariable UUID orderId,
-            @RequestParam UUID userId
+            @Parameter(description = "주문 ID") @PathVariable UUID orderId,
+            @Parameter(description = "유저 ID") @RequestParam UUID userId
     ) {
         OrderInfo info = orderFacade.getOrder(userId, orderId);
         return ApiResponse.success("주문 상세 조회했습니다.", OrderDetailResponse.from(info));
