@@ -10,6 +10,7 @@ public record CancelOrderRequestedEvent() {
     public static StandardEvent create(
             UUID orderId,
             UUID auctionId,
+            UUID userId,
             String reason,
             UUID correlationId
     ) {
@@ -19,12 +20,13 @@ public record CancelOrderRequestedEvent() {
         data.put("reason", reason);
         data.put("correlationId", correlationId.toString());
 
-        return new StandardEvent(
-                UUID.randomUUID(),
-                LocalDateTime.now(),
-                "auction-service",
-                "CANCEL_ORDER_REQUESTED",
-                data
-        );
+        return StandardEvent.builder()
+                .eventId(UUID.randomUUID())
+                .eventType("CANCEL_ORDER_REQUESTED")
+                .occurredAt(LocalDateTime.now())
+                .source("auction-service")
+                .userId(userId)
+                .data(data)
+                .build();
     }
 }

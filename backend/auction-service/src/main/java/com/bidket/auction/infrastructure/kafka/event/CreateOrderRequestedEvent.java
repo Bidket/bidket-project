@@ -26,7 +26,6 @@ public class CreateOrderRequestedEvent {
         if (correlationId == null) throw new IllegalArgumentException("correlationId must not be null");
 
         Map<String, Object> data = new LinkedHashMap<>();
-        data.put("userId", winnerUserId.toString());  
         data.put("sagaId", sagaId.toString());
         data.put("auctionId", auctionId.toString());
         data.put("productSizeId", productSizeId.toString());
@@ -34,6 +33,6 @@ public class CreateOrderRequestedEvent {
         data.put("paymentDeadline", LocalDateTime.now().plusMinutes(30).toString());
         data.put("correlationId", correlationId.toString());
 
-        return StandardEvent.of(SOURCE, TYPE, data);
+        return StandardEvent.of(SOURCE, TYPE, winnerUserId, data);
     }
 }

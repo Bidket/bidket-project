@@ -18,7 +18,6 @@ public class AuctionClosedEvent {
             LocalDateTime closedAt
     ) {
         Map<String, Object> data = new LinkedHashMap<>();
-        data.put("userId", winnerId.toString());  
         data.put("auctionId", auctionId.toString());
         data.put("result", "WON");
         data.put("finalPrice", finalPrice);
@@ -27,6 +26,7 @@ public class AuctionClosedEvent {
         return StandardEvent.of(
                 "auction-service",
                 "closed",
+                winnerId,
                 data
         );
     }
@@ -38,7 +38,6 @@ public class AuctionClosedEvent {
             LocalDateTime closedAt
     ) {
         Map<String, Object> data = new LinkedHashMap<>();
-        data.put("userId", loserId.toString());  
         data.put("auctionId", auctionId.toString());
         data.put("result", "LOST");
         data.put("finalPrice", finalPrice);
@@ -47,6 +46,7 @@ public class AuctionClosedEvent {
         return StandardEvent.of(
                 "auction-service",
                 "closed",
+                loserId,
                 data
         );
     }

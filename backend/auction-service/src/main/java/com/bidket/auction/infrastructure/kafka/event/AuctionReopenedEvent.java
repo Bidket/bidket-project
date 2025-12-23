@@ -23,12 +23,13 @@ public record AuctionReopenedEvent() {
         data.put("newEndTime", newEndTime.toString());
         data.put("correlationId", correlationId.toString());
 
-        return new StandardEvent(
-                UUID.randomUUID(),
-                LocalDateTime.now(),
-                "auction-service",
-                "AUCTION_REOPENED",
-                data
-        );
+        return StandardEvent.builder()
+                .eventId(UUID.randomUUID())
+                .eventType("AUCTION_REOPENED")
+                .occurredAt(LocalDateTime.now())
+                .source("auction-service")
+                .userId(previousWinnerId)
+                .data(data)
+                .build();
     }
 }

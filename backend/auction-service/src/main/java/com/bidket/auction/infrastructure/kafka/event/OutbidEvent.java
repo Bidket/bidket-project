@@ -18,7 +18,6 @@ public class OutbidEvent {
             LocalDateTime outbidAt
     ) {
         Map<String, Object> data = new LinkedHashMap<>();
-        data.put("userId", previousBidderId.toString());  
         data.put("auctionId", auctionId.toString());
         data.put("currentPrice", currentPrice);
         data.put("outbidAt", outbidAt.toString());
@@ -26,6 +25,7 @@ public class OutbidEvent {
         return StandardEvent.of(
                 "auction-service",
                 "outbid",
+                previousBidderId,
                 data
         );
     }

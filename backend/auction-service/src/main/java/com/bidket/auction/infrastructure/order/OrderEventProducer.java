@@ -56,15 +56,17 @@ public class OrderEventProducer {
     public AuctionOutbox publishCancelOrderRequest(
             UUID orderId,
             UUID auctionId,
+            UUID userId,
             String reason,
             UUID correlationId
     ) {
-        log.info("주문 취소 요청 이벤트 발행: orderId={}, auctionId={}, reason={}",
-                orderId, auctionId, reason);
+        log.info("주문 취소 요청 이벤트 발행: orderId={}, auctionId={}, userId={}, reason={}",
+                orderId, auctionId, userId, reason);
 
         StandardEvent event = CancelOrderRequestedEvent.create(
                 orderId,
                 auctionId,
+                userId,
                 reason,
                 correlationId
         );
@@ -85,9 +87,10 @@ public class OrderEventProducer {
     private Map<String, Object> convertToMap(StandardEvent event) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("eventId", event.eventId().toString());
+        map.put("eventType", event.eventType());
         map.put("occurredAt", event.occurredAt().toString());
         map.put("source", event.source());
-        map.put("eventType", event.eventType());
+        map.put("userId", event.userId() != null ? event.userId().toString() : null);
         map.put("data", event.data());
         return map;
     }

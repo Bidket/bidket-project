@@ -28,11 +28,12 @@ public class CancelPaymentCompensationAction implements CompensationAction {
         }
 
         try {
-             
+
             paymentEventProducer.publishCancelPaymentRequest(
                     paymentId,
-                    null,  
-                    null,  
+                    null,
+                    null,
+                    null,
                     "SAGA_COMPENSATION",
                     sagaId
             );

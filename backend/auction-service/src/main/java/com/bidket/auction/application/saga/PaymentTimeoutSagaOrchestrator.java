@@ -149,6 +149,7 @@ public class PaymentTimeoutSagaOrchestrator {
         orderEventProducer.publishCancelOrderRequest(
                 sagaContext.getOrderId(),
                 sagaContext.getAuctionId(),
+                sagaContext.getWinnerId(),
                 PAYMENT_TIMEOUT_REASON,
                 sagaContext.getCorrelationId()
         );
