@@ -2,19 +2,17 @@ package com.bidket.order.infrastructure.outbox.publisher;
 
 import com.bidket.order.application.outbox.publisher.OutboxEventPublisher;
 import com.bidket.order.domain.outbox.model.OrderOutbox;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
-
-import java.time.Clock;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Kafka를 통한 OutBox 이벤트 발행 구현체
@@ -24,7 +22,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class KafkaOutboxPublisher implements OutboxEventPublisher {
 
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
     private final Clock clock;
 
@@ -34,13 +32,14 @@ public class KafkaOutboxPublisher implements OutboxEventPublisher {
     @Override
     public void publish(OrderOutbox outbox) {
         String topic = resolveTopic(outbox.aggregateType());
-        Map<String, Object> message = buildEnvelope(outbox);
 
         try {
-            ProducerRecord<String, Object> record = new ProducerRecord<>(
+            String messageJson = objectMapper.writeValueAsString(buildEnvelope(outbox));
+
+            ProducerRecord<String, String> record = new ProducerRecord<>(
                     topic,
-                    outbox.aggregateId().toString(), // 파티션 키
-                    message
+                    outbox.aggregateId().toString(),
+                    messageJson
             );
 
             // 헤더에 메타데이터 추가
@@ -51,12 +50,11 @@ public class KafkaOutboxPublisher implements OutboxEventPublisher {
             }
 
             kafkaTemplate.send(record).get();
-            log.debug("[KafkaOutboxPublisher] Kafka 발행 성공: id={}, topic={}, eventType={}",
-                    outbox.id(), topic, outbox.eventType());
 
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Kafka publish interrupted", ie);
+            log.debug(
+                    "[KafkaOutboxPublisher] Kafka 발행 성공: id={}, topic={}, eventType={}",
+                    outbox.id(), topic, outbox.eventType()
+            );
         } catch (Exception e) {
             throw new RuntimeException("Kafka publish failed", e);
         }
@@ -73,26 +71,15 @@ public class KafkaOutboxPublisher implements OutboxEventPublisher {
         envelope.put("aggregateId", outbox.aggregateId());
         envelope.put("correlationId", outbox.correlationId());
         envelope.put("occurredAt", LocalDateTime.now(clock));
-        envelope.put("payload", readPayload(outbox.payload()));
+        envelope.put("payload", outbox.payload());
         return envelope;
     }
 
-    /**
-     * JSON payload를 Map으로 역직렬화
-     */
-    private Map<String, Object> readPayload(String payload) {
-        try {
-            return objectMapper.readValue(payload, new TypeReference<>() {});
-        } catch (Exception e) {
-            throw new IllegalStateException("Outbox payload 역직렬화 실패", e);
-        }
-    }
 
     /**
      * aggregateType에 따라 적절한 토픽을 결정
-     *
-     * - ORDER: Order → Auction 이벤트 → auction.order
-     * - PAYMENT: Payment → Auction 이벤트 → auction.order
+     * <p>
+     * - ORDER: Order → Auction 이벤트 → auction.order - PAYMENT: Payment → Auction 이벤트 → auction.order
      * - REFUND: Refund → Auction 이벤트 → auction.order
      */
     private String resolveTopic(String aggregateType) {
