@@ -46,6 +46,9 @@ public record Payment(
     }
 
     public Payment approve(LocalDateTime approvedAt) {
+        if (this.status != PaymentStatus.PENDING) {
+            throw new IllegalStateException("결제 승인 가능한 상태가 아닙니다.");
+        }
         return new Payment(
                 this.id,
                 this.userId,
@@ -60,6 +63,9 @@ public record Payment(
     }
 
     public Payment fail(LocalDateTime failedAt) {
+        if (this.status != PaymentStatus.PENDING) {
+            throw new IllegalStateException("결제 실패 처리 가능한 상태가 아닙니다.");
+        }
         return new Payment(
                 this.id,
                 this.userId,
@@ -70,6 +76,40 @@ public record Payment(
                 PaymentStatus.FAILED,
                 this.createdAt,
                 failedAt
+        );
+    }
+
+    public Payment requestRefund(LocalDateTime now) {
+        if (this.status != PaymentStatus.SUCCESS) {
+            throw new IllegalStateException("환불 요청 가능한 결제 상태가 아닙니다.");
+        }
+        return new Payment(
+                this.id,
+                this.userId,
+                this.orderId,
+                this.method,
+                this.amount,
+                this.usedPointAmount,
+                PaymentStatus.REFUND_REQUESTED,
+                this.createdAt,
+                now
+        );
+    }
+
+    public Payment completeRefund(LocalDateTime now) {
+        if (this.status != PaymentStatus.REFUND_REQUESTED) {
+            throw new IllegalStateException("환불 완료로 전이 가능한 결제 상태가 아닙니다.");
+        }
+        return new Payment(
+                this.id,
+                this.userId,
+                this.orderId,
+                this.method,
+                this.amount,
+                this.usedPointAmount,
+                PaymentStatus.REFUNDED,
+                this.createdAt,
+                now
         );
     }
 
