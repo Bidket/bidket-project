@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 @RequiredArgsConstructor
@@ -34,6 +35,31 @@ public class OrderRepositoryImpl implements OrderRepository {
     @Override
     public Optional<Order> findById(UUID orderId) {
         return orderJpaRepository.findById(orderId).map(this::toDomain);
+    }
+
+    @Override
+    public boolean existsByAuctionId(UUID auctionId) {
+        return orderJpaRepository.existsByAuctionId(auctionId);
+    }
+
+    @Override
+    @Transactional
+    public void softDelete(UUID orderId, UUID userId) {
+        OrderEntity entity = orderJpaRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalStateException("주문을 찾을 수 없습니다."));
+
+        if (!entity.getUserId().equals(userId)) {
+            throw new IllegalStateException("본인의 주문만 삭제할 수 있습니다.");
+        }
+
+        if (entity.isDeleted()) {
+            return;
+        }
+
+        entity.markDeleted(null);
+        entity.setDeletedByUuid(userId);
+
+        orderJpaRepository.save(entity);
     }
 
     private OrderEntity toEntity(Order order) {

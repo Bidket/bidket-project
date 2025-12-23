@@ -44,6 +44,13 @@ public class OrderEntity extends BaseEntity {
     @Column(nullable = false)
     private LocalDateTime paymentExpiredAt;
 
+    @Column(name = "deleted_by_uuid")
+    private UUID deletedByUuid;
+
+    public void setDeletedByUuid(UUID deletedByUuid) {
+        this.deletedByUuid = deletedByUuid;
+    }
+
     protected OrderEntity() {
     }
 

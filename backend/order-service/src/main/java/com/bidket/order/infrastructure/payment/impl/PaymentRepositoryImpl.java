@@ -1,6 +1,7 @@
 package com.bidket.order.infrastructure.payment.impl;
 
 import com.bidket.order.domain.payment.model.Payment;
+import com.bidket.order.domain.payment.model.PaymentStatus;
 import com.bidket.order.domain.payment.repository.PaymentRepository;
 import com.bidket.order.infrastructure.payment.entity.PaymentEntity;
 import com.bidket.order.infrastructure.payment.repository.PaymentJpaRepository;
@@ -33,5 +34,15 @@ public class PaymentRepositoryImpl implements PaymentRepository {
     public Optional<Payment> findById(UUID paymentId) {
         return paymentJpaRepository.findById(paymentId)
                 .map(PaymentEntity::toModel);
+    }
+
+    public Optional<Payment> findByOrderId(UUID orderId) {
+        return paymentJpaRepository.findByOrderId(orderId)
+                .map(PaymentEntity::toModel);
+    }
+
+    @Override
+    public boolean existsByOrderIdAndStatus(UUID orderId, PaymentStatus status) {
+        return paymentJpaRepository.existsByOrderIdAndStatus(orderId, status);
     }
 }

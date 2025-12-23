@@ -15,7 +15,8 @@ import java.util.UUID;
         @Index(name = "idx_refresh_user_id", columnList = "user_id"),
         @Index(name = "idx_refresh_expires_at", columnList = "expires_at")
 }, uniqueConstraints = {
-        @UniqueConstraint(name = "uk_refresh_token", columnNames = "token")
+        @UniqueConstraint(name = "uk_refresh_token", columnNames = "token"),
+        @UniqueConstraint(name = "uk_refresh_user_id", columnNames = "user_id")
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -44,6 +45,14 @@ public class RefreshToken extends BaseEntity {
 
     public boolean isExpired(LocalDateTime now) {
         return now.isAfter(this.expiresAt);
+    }
+
+    /**
+     * RefreshToken 업데이트 (토큰과 만료 시간만 변경)
+     */
+    public void updateToken(String token, LocalDateTime expiresAt) {
+        this.token = token;
+        this.expiresAt = expiresAt;
     }
 }
 

@@ -1,6 +1,7 @@
 package com.bidket.order.domain.payment.repository;
 
 import com.bidket.order.domain.payment.model.Payment;
+import com.bidket.order.domain.payment.model.PaymentStatus;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -13,4 +14,8 @@ public interface PaymentRepository {
     Page<Payment> findByUserId(UUID userId, Pageable pageable);
 
     Optional<Payment> findById(UUID paymentId);
+    
+    Optional<Payment> findByOrderId(UUID orderId);
+
+    boolean existsByOrderIdAndStatus(UUID orderId, PaymentStatus status);
 }
