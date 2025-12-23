@@ -18,6 +18,7 @@ public enum UserErrorCode {
     WEAK_PASSWORD(HttpStatus.BAD_REQUEST, "WEAK_PASSWORD", "비밀번호 강도가 부족합니다."),
     PASSWORD_CHANGE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "PASSWORD_CHANGE_NOT_ALLOWED", "소셜 로그인 사용자는 비밀번호를 변경할 수 없습니다."),
     INVALID_CURRENT_PASSWORD(HttpStatus.BAD_REQUEST, "INVALID_CURRENT_PASSWORD", "현재 비밀번호가 올바르지 않습니다."),
+    INVALID_REQUEST(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "provider와 인증 토큰(idToken)을 확인해주세요."),
     
     // 401 Unauthorized
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "이메일 또는 비밀번호가 올바르지 않습니다."),
@@ -25,6 +26,7 @@ public enum UserErrorCode {
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "INVALID_TOKEN", "유효하지 않은 토큰입니다."),
     TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "TOKEN_EXPIRED", "토큰이 만료되었습니다."),
     USER_NOT_FOUND(HttpStatus.UNAUTHORIZED, "USER_NOT_FOUND", "사용자를 찾을 수 없습니다."),
+    SOCIAL_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "SOCIAL_TOKEN_INVALID", "소셜 인증 토큰이 유효하지 않습니다."),
     
     // 403 Forbidden
     INACTIVE_MEMBER(HttpStatus.FORBIDDEN, "INACTIVE_MEMBER", "비활성화된 계정입니다."),

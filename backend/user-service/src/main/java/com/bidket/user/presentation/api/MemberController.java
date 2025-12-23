@@ -19,9 +19,11 @@ import com.bidket.user.application.service.MemberDeactivationService;
 import com.bidket.user.application.service.PasswordChangeService;
 import com.bidket.user.application.service.ProfileUpdateService;
 import com.bidket.user.application.service.SignupService;
+import com.bidket.user.application.service.SocialLoginService;
 import com.bidket.user.presentation.dto.request.BlacklistRegisterRequest;
 import com.bidket.user.presentation.dto.request.LoginRequest;
 import com.bidket.user.presentation.dto.request.MemberDeactivationRequest;
+import com.bidket.user.presentation.dto.request.SocialLoginRequest;
 import com.bidket.user.presentation.dto.request.TokenRefreshRequest;
 import com.bidket.user.presentation.dto.request.PasswordChangeRequest;
 import com.bidket.user.presentation.dto.request.ProfileUpdateRequest;
@@ -35,6 +37,7 @@ import com.bidket.user.presentation.dto.response.EmailCheckResponse;
 import com.bidket.user.presentation.dto.response.LoginResponse;
 import com.bidket.user.presentation.dto.response.LogoutResponse;
 import com.bidket.user.presentation.dto.response.NicknameCheckResponse;
+import com.bidket.user.presentation.dto.response.SocialLoginResponse;
 import com.bidket.user.presentation.dto.response.TokenRefreshResponse;
 import com.bidket.user.presentation.dto.response.MyInfoResponse;
 import com.bidket.user.presentation.dto.response.PermissionsResponse;
@@ -78,6 +81,7 @@ public class MemberController {
 
     private final SignupService signupService;
     private final LoginService loginService;
+    private final SocialLoginService socialLoginService;
     private final LogoutService logoutService;
     private final TokenRefreshService tokenRefreshService;
     private final MyInfoService myInfoService;
@@ -211,6 +215,49 @@ public class MemberController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.success("로그인에 성공했습니다.", response));
+    }
+
+    /**
+     * 소셜 로그인 API
+     * POST /v1/members/social-login
+     * 구글 소셜 로그인 (회원가입/로그인 겸용)
+     * @param request 소셜 로그인 요청 정보 (provider=GOOGLE, idToken, deviceId, marketingAgree)
+     * @return 소셜 로그인 응답 (accessToken, refreshToken, tokenType, expiresIn, memberId, email, name, nickname, provider, status, isNewMember)
+     */
+    @Operation(
+            summary = "소셜 로그인",
+            description = "구글 소셜 로그인을 수행합니다. 최초 로그인 시 자동으로 회원가입이 진행됩니다.\n\n" +
+                    "idToken은 Google 로그인 후 발급받은 토큰을 사용하세요. " +
+                    "테스트를 위해서는 /google-login-test.html 페이지를 이용하거나 Google Identity Services를 통해 획득할 수 있습니다.",
+            tags = {"01. 회원 인증"},
+            operationId = "auth-04-social-login"
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "소셜 로그인 성공",
+                    content = @Content(schema = @Schema(implementation = SocialLoginResponse.class))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "400",
+                    description = "잘못된 요청 (provider 또는 인증 토큰 누락)"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "401",
+                    description = "소셜 인증 토큰이 유효하지 않음"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "403",
+                    description = "블랙리스트 회원 또는 비활성화된 계정"
+            )
+    })
+    @PostMapping("/social-login")
+    public ResponseEntity<ApiResponse<SocialLoginResponse>> socialLogin(
+            @RequestBody(required = true) @Valid SocialLoginRequest request) {
+        SocialLoginResponse response = socialLoginService.socialLogin(request);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success("소셜 로그인에 성공했습니다.", response));
     }
 
     /**

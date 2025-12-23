@@ -32,5 +32,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     /** 특정 회원을 제외하고 닉네임 중복 확인 */
     boolean existsByNicknameAndIdNot(String nickname, UUID id);
+
+    /** provider + providerId로 사용자 조회 */
+    Optional<User> findByProviderAndProviderId(com.bidket.user.domain.model.Provider provider, String providerId);
 }
 
