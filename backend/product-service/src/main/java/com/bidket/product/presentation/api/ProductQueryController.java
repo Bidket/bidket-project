@@ -19,6 +19,7 @@ import com.bidket.product.presentation.dto.response.product.ProductSearchRespons
 import com.bidket.product.presentation.dto.response.product.SkuGetDetailResponse;
 import com.bidket.product.presentation.dto.response.product.SkuGetResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.UUID;
@@ -46,6 +47,7 @@ public class ProductQueryController {
             summary = "sku 단건 조회",
             description = "활성(ACTIVE) 상태인 sku를 조회합니다."
     )
+    @SecurityRequirements
     @GetMapping("/products/skus/{skuId}")
     public ApiResponse<SkuGetDetailResponse> getSku(
             @PathVariable UUID skuId
@@ -58,6 +60,7 @@ public class ProductQueryController {
             description = "sku가 속한 상품의 존재 여부를 확인 후,"
                     + "활성(ACTIVE) 상태인 sku 목록을 페이징 형태로 조회합니다."
     )
+    @SecurityRequirements
     @GetMapping("/products/skus")
     public ApiResponse<PageResponse<SkuGetResponse>> getSkuList(
             SkuGetRequest req,
@@ -70,6 +73,7 @@ public class ProductQueryController {
             summary = "상품 상세 조회",
             description = "상품과 상세 정보, 상품이 속한 카테고리 목록, 상품의 sku 목록을 모두 조회합니다."
     )
+    @SecurityRequirements
     @GetMapping("/products/{productId}/page")
     public ApiResponse<ProductPageGetResponse> getProductPage(
             @PathVariable UUID productId
@@ -84,6 +88,7 @@ public class ProductQueryController {
                     + "페이징 형태로 검색 결과를 조회합니다. "
                     + "상품타입, 브랜드, 성별, 가격 구간 지정으로 필터링 할 수 있습니다."
     )
+    @SecurityRequirements
     @GetMapping("/products/search")
     public ApiResponse<PageResponse<ProductSearchResponse>> getProductSearch(
             ProductSearchRequest req,
@@ -96,6 +101,7 @@ public class ProductQueryController {
             summary = "상품 카드 목록 조회",
             description = "카드정보를 위한 상품 목록 조회합니다."
     )
+    @SecurityRequirements
     @GetMapping("/products")
     public ApiResponse<PageResponse<ProductCardGetResponse>> getProducts(
             @RequestParam(required = false) UUID brandId,
@@ -115,6 +121,7 @@ public class ProductQueryController {
             summary = "브랜드 목록 조회",
             description = "활성(ACTIVE) 상태인 브랜드 목록을 조회합니다.."
     )
+    @SecurityRequirements
     @GetMapping("/brands")
     public ApiResponse<List<BrandGetResponse>> getBrands() {
         return ApiResponse.success(
@@ -128,6 +135,7 @@ public class ProductQueryController {
                     + "필터링이 없으면 최상위 카테고리를 조회합니다."
                     + "parentId, depth로 필터링 할 수 있습니다."
     )
+    @SecurityRequirements
     @GetMapping("/categories")
     public ApiResponse<List<CategoryGetResponse>> getCategories(
             @RequestParam(required = false) UUID parentId,
@@ -144,6 +152,7 @@ public class ProductQueryController {
                     + "필터링이 없으면 최상위 카테고리를 조회합니다."
                     + "parentId, depth로 필터링 할 수 있습니다."
     )
+    @SecurityRequirements
     @GetMapping("/categories/tree")
     public ApiResponse<List<CategoryTreeResponse>> getCategoryTree() {
         return ApiResponse.success(
@@ -155,6 +164,7 @@ public class ProductQueryController {
             summary = "상품과 상품 상세 조회",
             description = "특정 상품의 정보와 상세정보를 함께 조회합니다."
     )
+    @SecurityRequirements
     @GetMapping("/products/{productId}")
     public ApiResponse<ProductPageGetResponse> getProductDetail(
             @PathVariable UUID productId
