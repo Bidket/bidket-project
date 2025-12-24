@@ -20,6 +20,8 @@ import com.bidket.user.application.service.PasswordChangeService;
 import com.bidket.user.application.service.ProfileUpdateService;
 import com.bidket.user.application.service.SignupService;
 import com.bidket.user.application.service.SocialLoginService;
+import com.bidket.user.application.service.HistoryService;
+import com.bidket.user.global.security.AuthorizationTokenValidator;
 import com.bidket.user.presentation.dto.request.BlacklistRegisterRequest;
 import com.bidket.user.presentation.dto.request.LoginRequest;
 import com.bidket.user.presentation.dto.request.MemberDeactivationRequest;
@@ -64,6 +66,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -98,6 +101,7 @@ public class MemberController {
     private final ProfileUpdateService profileUpdateService;
     private final PasswordChangeService passwordChangeService;
     private final MemberDeactivationService memberDeactivationService;
+    private final HistoryService historyService;
 
     /**
      * 이메일 중복 체크 API
@@ -611,6 +615,54 @@ public class MemberController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(response);
+    }
+
+    /**
+     * 입찰/주문 내역 조회 API
+     * type=BID인 경우: Auction 서비스의 "내 입찰 내역" API를 호출
+     * type=ORDER인 경우: Order 서비스의 "내 주문/결제 내역" API를 호출
+     * Authorization 헤더에 Bearer JWT 토큰이 필요
+     * @param page 페이지 번호 (0부터 시작, 기본값 0)
+     * @param size 페이지 사이즈 (기본값 20)
+     * @param type 히스토리 타입 (BID 또는 ORDER, 기본값 BID)
+     * @param authorization Authorization 헤더 값 (Bearer 토큰)
+     * @return 입찰/주문 내역 조회 응답
+     */
+    @Operation(
+            summary = "입찰/주문 내역 조회",
+            description = "현재 로그인한 사용자의 활동 내역을 조회합니다. type=BID인 경우 Auction 서비스를 호출하고, type=ORDER인 경우 Order 서비스를 호출합니다.",
+            tags = {"02. 회원 정보"},
+            security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @GetMapping("/history")
+    public ResponseEntity<?> getHistory(
+            @Parameter(description = "페이지 번호 (0부터 시작)", example = "0", schema = @Schema(defaultValue = "0"))
+            @RequestParam(required = false) Integer page,
+            @Parameter(description = "페이지 사이즈", example = "20", schema = @Schema(defaultValue = "20"))
+            @RequestParam(required = false) Integer size,
+            @Parameter(description = "히스토리 타입 (BID 또는 ORDER)", example = "BID", schema = @Schema(defaultValue = "BID"))
+            @RequestParam(required = false) String type,
+            @RequestHeader(value = "Authorization") String authorization) {
+        
+        // Authorization 헤더 검증 및 정규화 (Bearer 형식 보장)
+        // 검증과 전송에 동일한 정규화된 값을 사용하여 일관성 보장
+        String normalizedAuthorization = AuthorizationTokenValidator.validateAndNormalize(authorization);
+        
+        // 기본값 설정
+        String historyType = (type != null && !type.isEmpty()) ? type : "BID";
+        
+        // 타입에 따라 다른 응답 반환
+        Object response = historyService.getHistory(page, size, type, normalizedAuthorization);
+        
+        if ("ORDER".equalsIgnoreCase(historyType)) {
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(ApiResponse.success("주문 내역 조회에 성공했습니다.", response));
+        } else {
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(ApiResponse.success("입찰 내역 조회에 성공했습니다.", response));
+        }
     }
 }
 
