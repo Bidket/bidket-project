@@ -49,12 +49,6 @@ public class OrderRepositoryImpl implements OrderRepository {
     }
 
     @Override
-    public Optional<Order> findById(UUID orderId) {
-        return orderJpaRepository.findById(orderId)
-                .map(this::toDomain);
-    }
-
-    @Override
     public List<Order> findExpiredOrders(LocalDateTime now) {
         return orderJpaRepository.findExpiredOrders(OrderStatus.PAYMENT, now)
                 .stream()

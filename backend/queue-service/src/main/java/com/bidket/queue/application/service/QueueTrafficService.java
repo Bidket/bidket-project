@@ -7,27 +7,28 @@ import com.bidket.queue.domain.model.HeartbeatStatus;
 import com.bidket.queue.domain.model.QueueErrorCode;
 import com.bidket.queue.domain.model.QueueTrafficStatus;
 import com.bidket.queue.domain.model.UserStatus;
+import com.bidket.queue.domain.model.outbox.EventType;
+import com.bidket.queue.domain.model.outbox.OutboxStatus;
+import com.bidket.queue.domain.model.outbox.QueueOutboxModel;
 import com.bidket.queue.domain.repository.QueueManagementRepository;
+import com.bidket.queue.domain.repository.QueueOutboxRepository;
 import com.bidket.queue.domain.repository.QueueTrafficRepository;
 import com.bidket.queue.global.annotation.CheckQueueConfig;
 import com.bidket.queue.global.util.jwt.TokenProvider;
+import com.bidket.queue.infrastructure.persistence.entity.QueueOutboxEntity;
 import com.bidket.queue.presentation.dto.response.QueueAccommodatableResponse;
 import com.bidket.queue.presentation.dto.response.QueueEnterResponse;
 import com.bidket.queue.presentation.dto.response.QueueHeartbeatResponse;
 import com.bidket.queue.presentation.dto.response.QueueStatusResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.kafka.core.reactive.ReactiveKafkaProducerTemplate;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.Sinks;
+import reactor.kafka.sender.KafkaSender;
 
-import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.UUID;
@@ -39,24 +40,14 @@ public class QueueTrafficService {
     private final QueueTrafficRepository trafficRepository;
     private final QueueManagementRepository managementRepository;
     private final TokenProvider tokenProvider;
-    private final ReactiveKafkaProducerTemplate<String, EventTemplate> kafkaTemplate;
-    private final Sinks.Many<EventTemplate> eventSink = Sinks.many().multicast().onBackpressureBuffer();
+    private final KafkaSender<String, EventTemplate> kafkaSender;
     private final ObjectMapper objectMapper;
+    private final QueueOutboxRepository outboxRepository;
 
     private final String EVENT_SOURCE = "queue-service";
 
     @Value("${kafka.notification.queue.near_turn.topic}")
     private String queueNearTurnTopic;
-
-    @PostConstruct
-    public void init() {
-        eventSink.asFlux()
-                .flatMap(event -> kafkaTemplate.send(queueNearTurnTopic, event.userId().toString(), event))
-                .doOnComplete(() -> log.info("complete"))
-                .doOnError(e -> log.error("알림 이벤트 발행 실패: {}", e.getMessage(), e))
-                .onErrorResume(e -> Mono.empty())
-                .subscribe();
-    }
 
     @Value("${heartbeat.frequency}")
     private Long heartbeatFrequency;
@@ -96,26 +87,8 @@ public class QueueTrafficService {
                             .build());
                 })
                 .switchIfEmpty(trafficRepository.getRank(auctionId, userId)
-                        .map(rank -> {
-                            if (rank <= 10) {
-                                QueueNearTurnEvent eventData = QueueNearTurnEvent.builder()
-                                        .auctionId(auctionId)
-                                        .userId(userId)
-                                        .rank(rank)
-                                        .build();
-
-                                EventTemplate event = EventTemplate.builder()
-                                        .eventId(UUID.randomUUID())
-                                        .occurredAt(LocalDateTime.now())
-                                        .userId(userId)
-                                        .source(EVENT_SOURCE)
-                                        .data(objectMapper.convertValue(eventData, Map.class))
-                                        .build();
-
-                                eventSink.emitNext(event, Sinks.EmitFailureHandler.busyLooping(Duration.ofMillis(100L)));
-                            }
-
-                            return QueueAccommodatableResponse.builder()
+                        .flatMap(rank -> {
+                            QueueAccommodatableResponse response = QueueAccommodatableResponse.builder()
                                     .auctionId(auctionId)
                                     .userId(userId)
                                     .status(UserStatus.WAITING)
@@ -124,6 +97,47 @@ public class QueueTrafficService {
                                     .token(null)
                                     .message("현재 대기 인원 " + rank + "명 남았습니다.")
                                     .build();
+
+                            return Mono.just(response);
+                        })
+                        .flatMap(response -> {
+                            if (response.rank() <= 10) {
+                                QueueNearTurnEvent eventData = QueueNearTurnEvent.builder()
+                                        .auctionId(auctionId)
+                                        .userId(userId)
+                                        .rank(response.rank())
+                                        .build();
+
+                                EventTemplate event = EventTemplate.of(userId,
+                                        EVENT_SOURCE,
+                                        EventType.QUEUE_NEAR_TURN.name(),
+                                        objectMapper.convertValue(eventData, Map.class));
+
+                                return mapToString(event)
+                                        .flatMap(payload -> {
+                                            QueueOutboxModel outboxModel = QueueOutboxModel.builder()
+                                                    .id(UUID.randomUUID())
+                                                    .aggregateId(response.userId())
+                                                    .aggregateType("QUEUE")
+                                                    .topic(queueNearTurnTopic)
+                                                    .key(response.userId().toString())
+                                                    .payload(payload)
+                                                    .eventType(EventType.QUEUE_NEAR_TURN)
+                                                    .correlationId(userId)
+                                                    .retryCount(0)
+                                                    .status(OutboxStatus.PENDING)
+                                                    .isNew(true)
+                                                    .build();
+
+                                            return outboxRepository.save(QueueOutboxEntity.from(outboxModel))
+                                                    .doOnSuccess(entity -> log.info("저장 성공: id[{}]", entity.getId()))
+                                                    .onErrorMap(e -> new QueueException(QueueErrorCode.OUTBOX_SAVE_FAILED, e.getMessage()));
+                                        })
+                                        .thenReturn(response);
+
+                            }
+
+                            return Mono.just(response);
                         })
                         .switchIfEmpty(Mono.error(() -> new QueueException(QueueErrorCode.WAITING_USER_NOT_FOUND)))
                 );
@@ -176,5 +190,10 @@ public class QueueTrafficService {
                                 .build()
                 )
                 .switchIfEmpty(Mono.error(new QueueException(QueueErrorCode.TOKEN_NOT_FOUND)));
+    }
+
+    private Mono<String> mapToString(Object object) {
+        return Mono.fromCallable(() -> objectMapper.writeValueAsString(object))
+                .onErrorMap(e -> new RuntimeException("JSON 변환 실패", e));
     }
 }
