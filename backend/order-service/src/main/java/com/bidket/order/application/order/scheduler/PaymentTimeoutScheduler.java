@@ -47,7 +47,7 @@ public class PaymentTimeoutScheduler {
         for (Order order : expiredOrders) {
             try {
                 // 1. 주문 상태를 EXPIRED로 변경
-                Order expiredOrder = order.expire(now);
+                Order expiredOrder = order.markExpired(now);
                 orderRepository.save(expiredOrder);
 
                 // 2. PAYMENT_TIMEOUT 이벤트 발행 (OutBox 패턴)
