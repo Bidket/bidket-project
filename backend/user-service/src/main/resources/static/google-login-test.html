@@ -258,8 +258,8 @@ Swagger 테스트용 Google idToken 발급 페이지
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <script>
-        // Google Client ID
-        const GOOGLE_CLIENT_ID = 'GOOGLE_CLIENT_ID';
+        // Google Client ID (환경 변수에서 주입됨)
+        const GOOGLE_CLIENT_ID = '${GOOGLE_CLIENT_ID}';
         
         let idToken = null;
         let userInfo = null;
