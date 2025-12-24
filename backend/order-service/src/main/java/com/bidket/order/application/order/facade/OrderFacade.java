@@ -5,6 +5,7 @@ import com.bidket.order.application.order.info.OrderSummaryInfo;
 import com.bidket.order.application.order.port.AuctionQueryPort;
 import com.bidket.order.application.order.port.AuctionSnapshot;
 import com.bidket.order.domain.order.model.Order;
+import com.bidket.order.domain.order.model.OrderStatus;
 import com.bidket.order.domain.order.repository.OrderRepository;
 import com.bidket.order.infrastructure.kafka.producer.AuctionEventProducer;
 import java.time.Clock;
@@ -23,9 +24,7 @@ public class OrderFacade {
     private final OrderRepository orderRepository;
     private final AuctionEventProducer auctionEventProducer;
     private final Clock clock;
-    // TODO 포인트/경매/재고 검증용 Port 추가
     private final AuctionQueryPort auctionQueryPort;
-    // TODO: 포인트/재고 검증용 Port 추가
 
     @Transactional
     public OrderInfo createOrder(
@@ -57,8 +56,7 @@ public class OrderFacade {
     }
 
     /**
-     * Auction Service로부터의 이벤트 기반 주문 생성
-     * Kafka Consumer에서 호출됩니다.
+     * Auction Service로부터의 이벤트 기반 주문 생성 Kafka Consumer에서 호출됩니다.
      */
     @Transactional
     public OrderInfo createOrderFromAuction(
@@ -71,8 +69,6 @@ public class OrderFacade {
             UUID sagaId,
             UUID correlationId
     ) {
-        // TODO 포인트 잔액 검증, 경매 낙찰 여부/유효 시간 검증, 재고 검증 추가
-
         LocalDateTime now = LocalDateTime.now();
 
         Order order = Order.createForPayment(
@@ -90,8 +86,10 @@ public class OrderFacade {
         return OrderInfo.from(saved);
     }
 
-    public Page<OrderSummaryInfo> getOrders(UUID userId, Pageable pageable) {
-        Page<Order> page = orderRepository.findByUserId(userId, pageable);
+    public Page<OrderSummaryInfo> getOrders(UUID userId, OrderStatus status, Pageable pageable) {
+        Page<Order> page = (status == null)
+                ? orderRepository.findByUserId(userId, pageable)
+                : orderRepository.findByUserIdAndStatus(userId, status, pageable);
 
         return page.map(order -> {
             try {
@@ -114,14 +112,24 @@ public class OrderFacade {
         return OrderInfo.from(order);
     }
 
+    public OrderStatus getOrderStatus(UUID userId, UUID orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalStateException("주문을 찾을 수 없습니다."));
+
+        if (!order.userId().equals(userId)) {
+            throw new IllegalStateException("본인의 주문만 조회할 수 있습니다.");
+        }
+
+        return order.status();
+    }
+
     @Transactional
     public void deleteOrder(UUID userId, UUID orderId) {
         orderRepository.softDelete(orderId, userId);
     }
 
     /**
-     * 주문 취소
-     * PAYMENT 상태의 주문만 취소 가능
+     * 주문 취소 PAYMENT 상태의 주문만 취소 가능
      */
     @Transactional
     public OrderInfo cancelOrder(UUID orderId, UUID userId) {
@@ -131,7 +139,8 @@ public class OrderFacade {
 
         // 2. 소유자 확인
         if (!order.userId().equals(userId)) {
-            throw new IllegalArgumentException("주문 취소 권한이 없습니다: orderId=" + orderId + ", userId=" + userId);
+            throw new IllegalArgumentException(
+                    "주문 취소 권한이 없습니다: orderId=" + orderId + ", userId=" + userId);
         }
 
         // 3. 주문 취소 (PAYMENT → CANCELED)
@@ -146,6 +155,31 @@ public class OrderFacade {
                 saved.userId(),
                 "사용자 요청에 의한 주문 취소",
                 UUID.randomUUID() // correlationId 생성
+        );
+
+        return OrderInfo.from(saved);
+    }
+
+    @Transactional
+    public OrderInfo cancelOrder(UUID orderId, UUID userId, String reason) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다: " + orderId));
+
+        if (!order.userId().equals(userId)) {
+            throw new IllegalArgumentException(
+                    "주문 취소 권한이 없습니다: orderId=" + orderId + ", userId=" + userId);
+        }
+
+        LocalDateTime now = LocalDateTime.now(clock);
+        Order canceledOrder = order.cancel(now);
+        Order saved = orderRepository.save(canceledOrder);
+
+        auctionEventProducer.publishOrderCanceled(
+                saved.id(),
+                saved.auctionId(),
+                saved.userId(),
+                reason,
+                UUID.randomUUID()
         );
 
         return OrderInfo.from(saved);

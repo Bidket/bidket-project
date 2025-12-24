@@ -8,7 +8,6 @@ import com.bidket.order.infrastructure.order.persistence.repository.OrderJpaRepo
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -43,14 +42,23 @@ public class OrderRepositoryImpl implements OrderRepository {
 
     @Override
     public Page<Order> findByUserId(UUID userId, Pageable pageable) {
-        Page<OrderEntity> page = orderJpaRepository.findByUserIdOrderByCreatedAtDesc(userId,
-                pageable);
+        Page<OrderEntity> page = orderJpaRepository
+                .findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(userId, pageable);
+        return page.map(this::toDomain);
+    }
+
+    @Override
+    public Page<Order> findByUserIdAndStatus(UUID userId, OrderStatus status, Pageable pageable) {
+        Page<OrderEntity> page = orderJpaRepository
+                .findByUserIdAndStatusAndDeletedAtIsNullOrderByCreatedAtDesc(userId, status,
+                        pageable);
         return page.map(this::toDomain);
     }
 
     @Override
     public Optional<Order> findById(UUID orderId) {
         return orderJpaRepository.findById(orderId)
+                .filter(e -> e.getDeletedAt() == null)
                 .map(this::toDomain);
     }
 
@@ -63,24 +71,15 @@ public class OrderRepositoryImpl implements OrderRepository {
     }
 
     @Override
-    public Optional<Order> findById(UUID orderId) {
-        return orderJpaRepository.findById(orderId).map(this::toDomain);
-    }
-
-    @Override
     public boolean existsByAuctionId(UUID auctionId) {
-        return orderJpaRepository.existsByAuctionId(auctionId);
+        return orderJpaRepository.existsByAuctionIdAndDeletedAtIsNull(auctionId);
     }
 
     @Override
     @Transactional
     public void softDelete(UUID orderId, UUID userId) {
-        OrderEntity entity = orderJpaRepository.findById(orderId)
+        OrderEntity entity = orderJpaRepository.findByIdAndUserIdAndDeletedAtIsNull(orderId, userId)
                 .orElseThrow(() -> new IllegalStateException("주문을 찾을 수 없습니다."));
-
-        if (!entity.getUserId().equals(userId)) {
-            throw new IllegalStateException("본인의 주문만 삭제할 수 있습니다.");
-        }
 
         if (entity.isDeleted()) {
             return;

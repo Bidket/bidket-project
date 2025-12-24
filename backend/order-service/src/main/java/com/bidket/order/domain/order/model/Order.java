@@ -82,8 +82,7 @@ public record Order(
     }
 
     /**
-     * 결제 완료로 상태 변경
-     * PAYMENT → PAID
+     * 결제 완료로 상태 변경 PAYMENT → PAID
      */
     public Order markPaid(LocalDateTime now) {
         if (status != OrderStatus.PAYMENT) {
@@ -104,8 +103,7 @@ public record Order(
     }
 
     /**
-     * 결제 시간 초과로 상태 변경
-     * PAYMENT → EXPIRED
+     * 결제 시간 초과로 상태 변경 PAYMENT → EXPIRED
      */
     public Order expire(LocalDateTime now) {
         if (status != OrderStatus.PAYMENT) {
@@ -126,8 +124,7 @@ public record Order(
     }
 
     /**
-     * 주문 취소
-     * PAYMENT → CANCELED
+     * 주문 취소 PAYMENT → CANCELED
      */
     public Order cancel(LocalDateTime now) {
         if (status != OrderStatus.PAYMENT) {
@@ -147,65 +144,80 @@ public record Order(
         );
     }
 
+    public Order cancelByPaymentFail(LocalDateTime now, String errorCode, String errorMessage) {
+        if (status != OrderStatus.PAYMENT) {
+            throw new IllegalStateException("결제 대기 상태만 결제 실패로 취소할 수 있습니다. 현재 상태: " + status);
+        }
+        return new Order(
+                id,
+                userId,
+                auctionId,
+                shoeId,
+                OrderStatus.CANCELED,
+                amount,
+                usedPointAmount,
+                paymentExpiredAt,
+                createdAt,
+                now
+        );
+    }
+
     public Order requestRefund(LocalDateTime now) {
-        if (this.status != OrderStatus.PAID) {
+        if (status != OrderStatus.PAID) {
             throw new IllegalStateException("환불 요청 가능한 주문 상태가 아닙니다.");
         }
-
-    public Order markPaid(LocalDateTime now) {
         return new Order(
-                this.id,
-                this.userId,
-                this.auctionId,
-                this.shoeId,
+                id,
+                userId,
+                auctionId,
+                shoeId,
                 OrderStatus.REFUND_REQUESTED,
-                OrderStatus.PAID,
-                this.amount,
-                this.usedPointAmount,
-                this.paymentExpiredAt,
-                this.createdAt,
+                amount,
+                usedPointAmount,
+                paymentExpiredAt,
+                createdAt,
                 now
         );
     }
 
     public Order completeRefund(LocalDateTime now) {
-        if (this.status != OrderStatus.REFUND_REQUESTED) {
+        if (status != OrderStatus.REFUND_REQUESTED) {
             throw new IllegalStateException("환불 완료로 전이 가능한 주문 상태가 아닙니다.");
         }
-
-    public Order cancelByPaymentFail(LocalDateTime now, String errorCode, String errorMessage) {
         return new Order(
-                this.id,
-                this.userId,
-                this.auctionId,
-                this.shoeId,
+                id,
+                userId,
+                auctionId,
+                shoeId,
                 OrderStatus.REFUNDED,
-                OrderStatus.CANCELED,
-                this.amount,
-                this.usedPointAmount,
-                this.paymentExpiredAt,
-                this.createdAt,
+                amount,
+                usedPointAmount,
+                paymentExpiredAt,
+                createdAt,
                 now
         );
     }
 
     public boolean isPaymentExpired(LocalDateTime now) {
-        return this.status == OrderStatus.PAYMENT
-                && this.paymentExpiredAt != null
-                && now.isAfter(this.paymentExpiredAt);
+        return status == OrderStatus.PAYMENT
+                && paymentExpiredAt != null
+                && now.isAfter(paymentExpiredAt);
     }
 
     public Order markExpired(LocalDateTime now) {
+        if (status != OrderStatus.PAYMENT) {
+            throw new IllegalStateException("결제 대기 상태만 만료로 변경할 수 있습니다. 현재 상태: " + status);
+        }
         return new Order(
-                this.id,
-                this.userId,
-                this.auctionId,
-                this.shoeId,
+                id,
+                userId,
+                auctionId,
+                shoeId,
                 OrderStatus.EXPIRED,
-                this.amount,
-                this.usedPointAmount,
-                this.paymentExpiredAt,
-                this.createdAt,
+                amount,
+                usedPointAmount,
+                paymentExpiredAt,
+                createdAt,
                 now
         );
     }

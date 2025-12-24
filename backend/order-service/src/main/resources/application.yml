@@ -6,6 +6,14 @@ spring:
     name: order-service
   config:
     import: optional:file:.env[.properties]
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: order-service-group
+      auto-offset-reset: earliest
+    producer:
+      acks: all
+      retries: 3
 
   datasource:
     url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${ORDER_DB}
@@ -29,15 +37,6 @@ spring:
 services:
   auction:
     base-url: http://localhost:8300
-
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-    consumer:
-      group-id: order-service-group
-      auto-offset-reset: earliest
-    producer:
-      acks: all
-      retries: 3
 
 eureka:
   client:

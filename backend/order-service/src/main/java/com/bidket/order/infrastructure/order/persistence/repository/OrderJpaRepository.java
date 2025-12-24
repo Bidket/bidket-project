@@ -19,14 +19,19 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, UUID> {
     /**
      * 결제 시간이 초과된 주문 조회
      */
-    @Query("SELECT o FROM OrderEntity o WHERE o.status = :status AND o.paymentExpiredAt < :now")
-    List<OrderEntity> findExpiredOrders(@Param("status") OrderStatus status, @Param("now") LocalDateTime now);
+    @Query("SELECT o FROM OrderEntity o WHERE o.status = :status AND o.paymentExpiredAt < :now AND o.deletedAt IS NULL")
+    List<OrderEntity> findExpiredOrders(@Param("status") OrderStatus status,
+            @Param("now") LocalDateTime now);
 
     boolean existsByAuctionId(UUID auctionId);
 
     Optional<OrderEntity> findByIdAndUserIdAndDeletedAtIsNull(UUID orderId, UUID userId);
 
     Page<OrderEntity> findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(UUID userId,
+            Pageable pageable);
+
+    Page<OrderEntity> findByUserIdAndStatusAndDeletedAtIsNullOrderByCreatedAtDesc(UUID userId,
+            OrderStatus status,
             Pageable pageable);
 
     boolean existsByAuctionIdAndDeletedAtIsNull(UUID auctionId);
