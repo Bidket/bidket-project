@@ -26,6 +26,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "auction_outbox", indexes = {
         @Index(name = "idx_auction_outbox_status_created", columnList = "status, created_at"),
+        @Index(name = "idx_auction_outbox_status_retry", columnList = "status, retry_count, created_at"), // 폴링 및 재시도 최적화
         @Index(name = "idx_auction_outbox_aggregate", columnList = "aggregate_type, aggregate_id"),
         @Index(name = "idx_auction_outbox_correlation", columnList = "correlation_id")
 })

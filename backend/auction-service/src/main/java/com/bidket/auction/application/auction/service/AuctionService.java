@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,7 +36,7 @@ public class AuctionService {
     private final OutboxService outboxService;
 
     @Transactional
-    @CacheEvict(value = "auctions", allEntries = true)
+    @CacheEvict(value = {"auctions", "auctionsByStatus"}, allEntries = true)
     public AuctionResponse createAuction(CreateAuctionRequest request) {
         log.info("경매 생성 요청: {}", request);
 
@@ -92,6 +93,7 @@ public class AuctionService {
                 .toList();
     }
 
+    @Cacheable(value = "auctionsByStatus", key = "#status.name()")
     public List<AuctionResponse> getAuctionsByStatus(AuctionStatus status) {
         log.info("상태별 경매 목록 조회: {}", status);
 
@@ -121,7 +123,10 @@ public class AuctionService {
     }
 
     @Transactional
-    @CacheEvict(value = "auctions", key = "#auctionId")
+    @Caching(evict = {
+        @CacheEvict(value = "auctions", key = "#auctionId"),
+        @CacheEvict(value = "auctionsByStatus", allEntries = true)
+    })
     public void cancelAuction(UUID auctionId) {
         log.info("경매 취소 요청: {}", auctionId);
 
@@ -137,7 +142,10 @@ public class AuctionService {
     }
 
     @Transactional
-    @CacheEvict(value = "auctions", key = "#auctionId")
+    @Caching(evict = {
+        @CacheEvict(value = "auctions", key = "#auctionId"),
+        @CacheEvict(value = "auctionsByStatus", allEntries = true)
+    })
     public void confirmAuctionCreation(UUID auctionId) {
         log.info("경매 생성 확정: {}", auctionId);
 

@@ -32,7 +32,7 @@ public class CacheConfig {
                 JsonTypeInfo.As.PROPERTY
         );
 
-        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(10))
                 .disableCachingNullValues()
                 .serializeKeysWith(
@@ -42,8 +42,28 @@ public class CacheConfig {
                         RedisSerializationContext.SerializationPair.fromSerializer(
                                 new GenericJackson2JsonRedisSerializer(objectMapper)));
 
+        // 입찰 관련 캐시: 짧은 TTL (1분) - 자주 변경됨
+        RedisCacheConfiguration highestBidConfig = defaultConfig
+                .entryTtl(Duration.ofMinutes(1));
+
+        // 입찰 목록 캐시: 중간 TTL (3분)
+        RedisCacheConfiguration bidsConfig = defaultConfig
+                .entryTtl(Duration.ofMinutes(3));
+
+        // 경매 캐시: 기본 TTL (10분)
+        RedisCacheConfiguration auctionConfig = defaultConfig
+                .entryTtl(Duration.ofMinutes(10));
+
+        // 경매 목록 캐시: 짧은 TTL (30초) - 목록은 자주 변경됨
+        RedisCacheConfiguration auctionsByStatusConfig = defaultConfig
+                .entryTtl(Duration.ofSeconds(30));
+
         return RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(config)
+                .cacheDefaults(defaultConfig)
+                .withCacheConfiguration("highestBid", highestBidConfig)
+                .withCacheConfiguration("bids", bidsConfig)
+                .withCacheConfiguration("auctions", auctionConfig)
+                .withCacheConfiguration("auctionsByStatus", auctionsByStatusConfig)
                 .build();
     }
 }

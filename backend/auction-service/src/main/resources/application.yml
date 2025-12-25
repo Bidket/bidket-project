@@ -1,5 +1,9 @@
 server:
   port: 8300
+  tomcat:
+    threads:
+      max: 1000 # \uae30\ubcf8 200 \u2192 400 (\ubd80\ud558 \ud14c\uc2a4\ud2b8 \uacb0\uacfc \uae30\ubc18 \ucd5c\uc801\ud654)
+      min-spare: 100 # \ucd5c\uc18c \uc720\uc9c0 \uc2a4\ub808\ub4dc \uc218
 
 spring:
   application:
@@ -14,6 +18,15 @@ spring:
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 300 # 성능 최적화: 500 → 300 (과도한 커넥션 감소)
+      minimum-idle: 100 # 성능 최적화: 200 → 100 (유휴 커넥션 최적화)
+      connection-timeout: 30000 # 성능 최적화: 60초 → 30초
+      validation-timeout: 5000 # 커넥션 검증 타임아웃 (5초)
+      idle-timeout: 600000 # 10분 (idle 커넥션 유지 시간)
+      max-lifetime: 1800000 # 30분 (커넥션 최대 수명)
+      connection-test-query: SELECT 1 # 커넥션 유효성 검증 쿼리
+      leak-detection-threshold: 30000 # 커넥션 누수 감지 (30초)
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -22,9 +35,21 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        show_sql: true
+        show_sql: false # 운영 환경에서는 false 권장 (성능 향상)
+        generate_statistics: false # 통계 수집 비활성화 (성능 최적화)
         jdbc:
           time_zone: Asia/Seoul
+          batch_size: 50 # 성능 최적화: 100 → 50 (메모리 압박 감소)
+          fetch_size: 50 # 페치 크기 설정
+        default_batch_fetch_size: 50 # 성능 최적화: 100 → 50 (N+1 문제 해결)
+        order_inserts: true # insert 순서 정렬로 배치 효율화
+        order_updates: true # update 순서 정렬로 배치 효율화
+        use_sql_comments: false # SQL 커멘트 비활성화 (성능 향상)
+        query:
+          plan_cache_max_size: 2048 # 쿼리 플랜 캐시 크기
+        cache:
+          use_second_level_cache: false # 2차 캐시 비활성화
+          use_query_cache: false # 쿼리 캐시 비활성화
 
   data:
     redis:
@@ -64,11 +89,16 @@ eureka:
 feign:
   product-service:
     url: ${PRODUCT_SERVICE_URL}
+  client:
+    config:
+      default:
+        connectTimeout: 5000 # 5\ucd08 (\uc5f0\uacb0 \ud0c0\uc784\uc544\uc6c3)
+        readTimeout: 30000 # 30\ucd08 (\uc77d\uae30 \ud0c0\uc784\uc544\uc6c3)
 
 # Outbox 폴링 설정
 outbox:
   publisher:
-    fixed-delay-ms: 5000 # 5초마다 폴링 (기본값: 1000ms)
+    fixed-delay-ms: 1000 # 1초마다 폴링 (성능 최적화: 빠른 이벤트 발행)
 
 # Auction Service Kafka Topics
 # 명명 규칙: [소비_도메인].[생산_도메인]
@@ -164,3 +194,14 @@ management:
     distribution:
       percentiles-histogram:
         http.server.requests: true
+
+# 로깅 설정 (성능 최적화)
+logging:
+  level:
+    root: INFO
+    '[com.bidket.auction.application.outbox]': WARN
+    '[com.bidket.auction.application.bid]': WARN
+    '[com.bidket.auction.application.auction]': WARN
+    '[com.bidket.auction.infrastructure.notification]': WARN
+    '[org.hibernate.SQL]': WARN
+    '[org.hibernate.type.descriptor.sql.BasicBinder]': WARN

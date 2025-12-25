@@ -4,6 +4,8 @@ import com.bidket.auction.domain.bid.model.Bid;
 import com.bidket.auction.domain.bid.model.BidStatus;
 import com.bidket.auction.domain.bid.repository.BidRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -17,6 +19,7 @@ public class BidRepositoryImpl implements BidRepository {
     private final BidJpaRepository bidJpaRepository;
 
     @Override
+    @CacheEvict(value = {"highestBid", "bids"}, key = "#bid.auctionId")
     public Bid save(Bid bid) {
         return bidJpaRepository.save(bid);
     }
@@ -27,9 +30,11 @@ public class BidRepositoryImpl implements BidRepository {
     }
 
     @Override
+    @Cacheable(value = "bids", key = "#auctionId")
     public List<Bid> findByAuctionId(UUID auctionId) {
         return bidJpaRepository.findByAuctionIdOrderByCreatedAtDesc(auctionId);
     }
+    
 
     @Override
     public List<Bid> findByBidderId(UUID bidderId) {
@@ -37,8 +42,10 @@ public class BidRepositoryImpl implements BidRepository {
     }
 
     @Override
+    @Cacheable(value = "highestBid", key = "#auctionId", unless = "#result.isEmpty()")
     public Optional<Bid> findHighestBidByAuctionId(UUID auctionId) {
-        return bidJpaRepository.findFirstByAuctionIdAndBidAmount_HighestTrue(auctionId);
+        // 최적화된 네이티브 쿼리 사용
+        return bidJpaRepository.findHighestBidOptimized(auctionId);
     }
 
     @Override
