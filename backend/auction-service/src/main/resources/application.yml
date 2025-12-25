@@ -2,8 +2,8 @@ server:
   port: 8300
   tomcat:
     threads:
-      max: 1000 # \uae30\ubcf8 200 \u2192 400 (\ubd80\ud558 \ud14c\uc2a4\ud2b8 \uacb0\uacfc \uae30\ubc18 \ucd5c\uc801\ud654)
-      min-spare: 100 # \ucd5c\uc18c \uc720\uc9c0 \uc2a4\ub808\ub4dc \uc218
+      max: 1000 
+      min-spare: 100 
 
 spring:
   application:
@@ -19,14 +19,14 @@ spring:
     password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 300 # 성능 최적화: 500 → 300 (과도한 커넥션 감소)
-      minimum-idle: 100 # 성능 최적화: 200 → 100 (유휴 커넥션 최적화)
-      connection-timeout: 30000 # 성능 최적화: 60초 → 30초
-      validation-timeout: 5000 # 커넥션 검증 타임아웃 (5초)
-      idle-timeout: 600000 # 10분 (idle 커넥션 유지 시간)
-      max-lifetime: 1800000 # 30분 (커넥션 최대 수명)
-      connection-test-query: SELECT 1 # 커넥션 유효성 검증 쿼리
-      leak-detection-threshold: 30000 # 커넥션 누수 감지 (30초)
+      maximum-pool-size: 300 
+      minimum-idle: 100 
+      connection-timeout: 30000 
+      validation-timeout: 5000
+      idle-timeout: 600000 
+      max-lifetime: 1800000 
+      connection-test-query: SELECT 1 
+      leak-detection-threshold: 30000 
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -35,21 +35,21 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        show_sql: false # 운영 환경에서는 false 권장 (성능 향상)
-        generate_statistics: false # 통계 수집 비활성화 (성능 최적화)
+        show_sql: false 
+        generate_statistics: false 
         jdbc:
           time_zone: Asia/Seoul
-          batch_size: 50 # 성능 최적화: 100 → 50 (메모리 압박 감소)
-          fetch_size: 50 # 페치 크기 설정
-        default_batch_fetch_size: 50 # 성능 최적화: 100 → 50 (N+1 문제 해결)
-        order_inserts: true # insert 순서 정렬로 배치 효율화
-        order_updates: true # update 순서 정렬로 배치 효율화
-        use_sql_comments: false # SQL 커멘트 비활성화 (성능 향상)
+          batch_size: 50 
+          fetch_size: 50 
+        default_batch_fetch_size: 50 
+        order_inserts: true 
+        order_updates: true 
+        use_sql_comments: false 
         query:
-          plan_cache_max_size: 2048 # 쿼리 플랜 캐시 크기
+          plan_cache_max_size: 2048 
         cache:
-          use_second_level_cache: false # 2차 캐시 비활성화
-          use_query_cache: false # 쿼리 캐시 비활성화
+          use_second_level_cache: false 
+          use_query_cache: false 
 
   data:
     redis:
@@ -60,7 +60,7 @@ spring:
   cache:
     type: redis
     redis:
-      time-to-live: 600000 # 10분 (ms)
+      time-to-live: 600000 
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
@@ -92,13 +92,13 @@ feign:
   client:
     config:
       default:
-        connectTimeout: 5000 # 5\ucd08 (\uc5f0\uacb0 \ud0c0\uc784\uc544\uc6c3)
-        readTimeout: 30000 # 30\ucd08 (\uc77d\uae30 \ud0c0\uc784\uc544\uc6c3)
+        connectTimeout: 5000 
+        readTimeout: 30000 
 
 # Outbox 폴링 설정
 outbox:
   publisher:
-    fixed-delay-ms: 1000 # 1초마다 폴링 (성능 최적화: 빠른 이벤트 발행)
+    fixed-delay-ms: 1000 
 
 # Auction Service Kafka Topics
 # 명명 규칙: [소비_도메인].[생산_도메인]
@@ -112,20 +112,19 @@ auction:
       # Auction이 생산, Order가 소비
       order-auction: order.auction
 
-# Saga Recovery 설정 (SAGA-004)
+# Saga Recovery 설정 
 bidket:
   saga:
     recovery:
-      enabled: true # 복구 기능 활성화 여부
-      zombie-timeout-minutes: 10 # Zombie 트랜잭션 감지 임계값 (분)
-      outbox-max-retries: 3 # OutBox 최대 재시도 횟수
-      outbox-batch-size: 100 # OutBox 복구 시 한 번에 처리할 배치 크기
+      enabled: true 
+      zombie-timeout-minutes: 10 
+      outbox-max-retries: 3 
+      outbox-batch-size: 100 
 
-# Resilience4j 설정 (SAGA-005: Saga Orchestration Enhancements)
+# Resilience4j 설정 
 resilience4j:
   circuitbreaker:
     instances:
-      # Product Service 호출 Circuit Breaker
       productService:
         sliding-window-type: COUNT_BASED
         sliding-window-size: 10
@@ -195,7 +194,7 @@ management:
       percentiles-histogram:
         http.server.requests: true
 
-# 로깅 설정 (성능 최적화)
+# 로깅 설정 
 logging:
   level:
     root: INFO

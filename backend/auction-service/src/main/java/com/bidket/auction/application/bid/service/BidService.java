@@ -253,14 +253,12 @@ public class BidService {
     @Async("taskExecutor")
     void evictAuctionCache(UUID auctionId) {
         try {
-            // 개별 경매 캐시 무효화
             Cache auctionsCache = cacheManager.getCache("auctions");
             if (auctionsCache != null) {
                 auctionsCache.evict(auctionId);
                 log.debug("경매 캐시 무효화 완료: auctionId={}", auctionId);
             }
 
-            // 경매 목록 캐시 무효화 (입찰로 인한 상태 변경 가능성)
             Cache auctionsByStatusCache = cacheManager.getCache("auctionsByStatus");
             if (auctionsByStatusCache != null) {
                 auctionsByStatusCache.clear();

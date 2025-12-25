@@ -44,9 +44,9 @@ public class BidRepositoryImpl implements BidRepository {
     @Override
     @Cacheable(value = "highestBid", key = "#auctionId", unless = "#result.isEmpty()")
     public Optional<Bid> findHighestBidByAuctionId(UUID auctionId) {
-        // 최적화된 네이티브 쿼리 사용
         return bidJpaRepository.findHighestBidOptimized(auctionId);
     }
+
 
     @Override
     public List<Bid> findByAuctionIdAndBidderId(UUID auctionId, UUID bidderId) {
