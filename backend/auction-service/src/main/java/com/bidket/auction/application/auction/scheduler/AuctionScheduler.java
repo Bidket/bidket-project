@@ -20,7 +20,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toSet;
 
 @Component
 @RequiredArgsConstructor
@@ -45,10 +44,8 @@ public class AuctionScheduler {
             return;
         }
 
-        List<Auction> activeAuctions = auctionRepository.findByStatus(AuctionStatus.ACTIVE);
-        Set<UUID> productSizeIdsWithActive = activeAuctions.stream()
-                .map(Auction::getProductSizeId)
-                .collect(toSet());
+        Set<UUID> productSizeIdsWithActive = auctionRepository
+                .findProductSizeIdsByStatus(AuctionStatus.ACTIVE);
 
         Map<UUID, List<Auction>> pendingByProductSize = pendingAuctions.stream()
                 .collect(groupingBy(Auction::getProductSizeId));
@@ -74,7 +71,6 @@ public class AuctionScheduler {
                 auctionToStart.start();
                 auctionRepository.save(auctionToStart);
                 startedCount++;
-
                 log.info("경매 시작: {} ({}) - productSizeId={}",
                         auctionToStart.getId(),
                         auctionToStart.getAuctionTitle(),

@@ -51,7 +51,6 @@ public class AuctionEndSagaOrchestrator {
     private final ObjectMapper objectMapper;
 
     @Transactional
-    @Bulkhead(name = "sagaOrchestrator", fallbackMethod = "startAuctionEndSagaFallback")
     public UUID startAuctionEndSaga(UUID auctionId) {
         log.info("[AuctionEndSaga] Saga 시작: auctionId={}", auctionId);
 
@@ -326,11 +325,6 @@ public class AuctionEndSagaOrchestrator {
         }
     }
 
-    private UUID startAuctionEndSagaFallback(UUID auctionId, Exception e) {
-        log.error("[AuctionEndSaga] Bulkhead 포화 - Saga 시작 실패: auctionId={}, error={}",
-                auctionId, e.getMessage());
-        throw new AuctionDomainException(AuctionErrorCode.SAGA_BULKHEAD_FULL);
-    }
 
     private void executeCreateOrderStepFallback(AuctionEndSagaContext sagaContext, Exception e) {
         log.error("[AuctionEndSaga] Order Service Circuit Breaker 활성화: sagaId={}, error={}",

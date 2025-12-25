@@ -15,9 +15,6 @@ public record CreateAuctionRequest(
         @NotNull(message = "상품 사이즈 ID는 필수입니다")
         UUID productSizeId,
 
-        @NotNull(message = "판매자 ID는 필수입니다")
-        UUID sellerId,
-
         @NotBlank(message = "경매 제목은 필수입니다")
         @Size(min = 5, max = 200, message = "경매 제목은 5자 이상 200자 이하여야 합니다")
         String auctionTitle,
@@ -44,7 +41,7 @@ public record CreateAuctionRequest(
         @NotNull(message = "종료 시간은 필수입니다")
         LocalDateTime endTime
 ) {
-    public Auction toEntity() {
+    public Auction toEntity(UUID sellerId) {
         return Auction.builder()
                 .productSizeId(productSizeId)
                 .sellerId(sellerId)

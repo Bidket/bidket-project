@@ -39,4 +39,11 @@ public class OutboxRepositoryImpl implements OutboxRepository {
     public Optional<AuctionOutbox> findById(UUID id) {
         return jpaRepository.findById(id);
     }
+
+    @Override
+    public boolean hasReadyToPublish() {
+        return jpaRepository.existsByStatusIn(
+                List.of(OutboxStatus.PENDING, OutboxStatus.FAILED)
+        );
+    }
 }

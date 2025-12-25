@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,10 +44,12 @@ public class AuctionController {
     @Operation(summary = "경매 생성", description = "새로운 경매를 생성합니다")
     @PostMapping
     public ResponseEntity<ApiResponse<AuctionResponse>> createAuction(
+            @Parameter(description = "사용자 ID", required = true)
+            @RequestHeader("X-User-Id") UUID userId,
             @Valid @RequestBody CreateAuctionRequest request) {
-        log.info("[경매 생성 API] 요청: {}", request);
+        log.info("[경매 생성 API] userId={}, 요청: {}", userId, request);
 
-        AuctionResponse response = auctionService.createAuction(request);
+        AuctionResponse response = auctionService.createAuction(userId, request);
 
         log.info("[경매 생성 API] 성공: auctionId={}", response.id());
 
@@ -128,12 +131,14 @@ public class AuctionController {
     @Operation(summary = "경매 수정", description = "경매 정보를 수정합니다 (PENDING 상태만)")
     @PutMapping("/{auctionId}")
     public ResponseEntity<ApiResponse<AuctionResponse>> updateAuction(
+            @Parameter(description = "사용자 ID", required = true)
+            @RequestHeader("X-User-Id") UUID userId,
             @Parameter(description = "경매 ID", required = true)
             @PathVariable UUID auctionId,
             @Valid @RequestBody UpdateAuctionRequest request) {
-        log.info("[경매 수정 API] auctionId={}, request={}", auctionId, request);
+        log.info("[경매 수정 API] userId={}, auctionId={}, request={}", userId, auctionId, request);
 
-        AuctionResponse response = auctionService.updateAuction(auctionId, request);
+        AuctionResponse response = auctionService.updateAuction(userId, auctionId, request);
 
         log.info("[경매 수정 API] 성공: auctionId={}", auctionId);
 
@@ -143,11 +148,13 @@ public class AuctionController {
     @Operation(summary = "경매 취소", description = "경매를 취소합니다 (입찰 없을 때만)")
     @DeleteMapping("/{auctionId}")
     public ResponseEntity<ApiResponse<Void>> cancelAuction(
+            @Parameter(description = "사용자 ID", required = true)
+            @RequestHeader("X-User-Id") UUID userId,
             @Parameter(description = "경매 ID", required = true)
             @PathVariable UUID auctionId) {
-        log.info("[경매 취소 API] auctionId={}", auctionId);
+        log.info("[경매 취소 API] userId={}, auctionId={}", userId, auctionId);
 
-        auctionService.cancelAuction(auctionId);
+        auctionService.cancelAuction(userId, auctionId);
 
         log.info("[경매 취소 API] 성공: auctionId={}", auctionId);
 
@@ -157,11 +164,13 @@ public class AuctionController {
     @Operation(summary = "경매 확정 (내부 API)", description = "재고 예약 완료 후 경매를 확정합니다")
     @PostMapping("/{auctionId}/confirm")
     public ResponseEntity<ApiResponse<Void>> confirmAuctionCreation(
+            @Parameter(description = "사용자 ID", required = true)
+            @RequestHeader("X-User-Id") UUID userId,
             @Parameter(description = "경매 ID", required = true)
             @PathVariable UUID auctionId) {
-        log.info("[경매 확정 API] auctionId={}", auctionId);
+        log.info("[경매 확정 API] userId={}, auctionId={}", userId, auctionId);
 
-        auctionService.confirmAuctionCreation(auctionId);
+        auctionService.confirmAuctionCreation(userId, auctionId);
 
         log.info("[경매 확정 API] 성공: auctionId={}", auctionId);
 

@@ -22,6 +22,8 @@ import org.springframework.cache.CacheManager;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -220,12 +222,18 @@ public class BidService {
 
         log.info("즉시 구매 완료 - 경매 ID: {}, 구매자: {}, 금액: {}", auctionId, bidderId, buyNowPrice);
 
-        try {
-            UUID sagaId = auctionEndSagaOrchestrator.startAuctionEndSaga(auctionId);
-            log.info("AuctionEndSaga 시작 완료 - Saga ID: {}, 경매 ID: {}", sagaId, auctionId);
-        } catch (Exception e) {
-            log.error("AuctionEndSaga 시작 실패 - 경매 ID: {}, 에러: {}", auctionId, e.getMessage(), e);
-        }
+        UUID finalAuctionId = auctionId;
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    UUID sagaId = auctionEndSagaOrchestrator.startAuctionEndSaga(finalAuctionId);
+                    log.info("AuctionEndSaga 시작 완료 - Saga ID: {}, 경매 ID: {}", sagaId, finalAuctionId);
+                } catch (Exception e) {
+                    log.error("AuctionEndSaga 시작 실패 - 경매 ID: {}, 에러: {}", finalAuctionId, e.getMessage(), e);
+                }
+            }
+        });
 
         return savedBid;
     }

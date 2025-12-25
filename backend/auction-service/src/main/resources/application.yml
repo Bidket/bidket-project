@@ -98,7 +98,7 @@ feign:
 # Outbox 폴링 설정
 outbox:
   publisher:
-    fixed-delay-ms: 1000 
+    fixed-delay-ms: 3000
 
 # Auction Service Kafka Topics
 # 명명 규칙: [소비_도메인].[생산_도메인]
@@ -150,12 +150,12 @@ resilience4j:
     instances:
       # Saga Orchestrator 동시 실행 제한
       sagaOrchestrator:
-        max-concurrent-calls: 10
-        max-wait-duration: 100ms
+        max-concurrent-calls: 50           # 10 → 50 (동시 처리 증가)
+        max-wait-duration: 5000ms          # 100ms → 5s (대기 시간 증가)
       # 보상 트랜잭션 동시 실행 제한
       sagaCompensation:
-        max-concurrent-calls: 5
-        max-wait-duration: 200ms
+        max-concurrent-calls: 20           # 5 → 20 (동시 처리 증가)
+        max-wait-duration: 3000ms          # 200ms → 3s (대기 시간 증가)
 
   retry:
     instances:

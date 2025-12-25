@@ -106,10 +106,9 @@ class AuctionServiceTest {
         @Test
         @DisplayName("성공: 유효한 요청으로 경매 생성")
         void createAuction_Success() {
-             
+
             CreateAuctionRequest request = new CreateAuctionRequest(
                     testProductSizeId,
-                    testSellerId,
                     "[새제품] Nike Air Jordan 1",
                     "새 제품입니다",
                     AuctionCondition.DEADSTOCK,
@@ -153,7 +152,7 @@ class AuctionServiceTest {
             given(outboxService.saveAuctionEvent(anyString(), any(UUID.class), any(Map.class), any(UUID.class)))
                     .willReturn(mockOutbox);
 
-            AuctionResponse response = auctionService.createAuction(request);
+            AuctionResponse response = auctionService.createAuction(testSellerId, request);
 
             assertThat(response).isNotNull();
             assertThat(response.auctionTitle()).isEqualTo("[새제품] Nike Air Jordan 1");
@@ -174,11 +173,10 @@ class AuctionServiceTest {
         @Test
         @DisplayName("실패: 검증 실패 시 예외 발생")
         void createAuction_ValidationFailed() {
-             
+
             CreateAuctionRequest request = new CreateAuctionRequest(
                     testProductSizeId,
-                    testSellerId,
-                    "짧음",  
+                    "짧음",
                     null,
                     AuctionCondition.NEW,
                     250000L,
@@ -191,7 +189,7 @@ class AuctionServiceTest {
             doThrow(new AuctionDomainException(AuctionErrorCode.INVALID_AUCTION_STATUS))
                     .when(auctionValidator).validateCreate(request);
 
-            assertThatThrownBy(() -> auctionService.createAuction(request))
+            assertThatThrownBy(() -> auctionService.createAuction(testSellerId, request))
                     .isInstanceOf(AuctionDomainException.class);
 
             verify(auctionValidator).validateCreate(request);
@@ -326,7 +324,7 @@ class AuctionServiceTest {
             given(auctionRepository.save(any(Auction.class)))
                     .willReturn(testAuction);
 
-            AuctionResponse response = auctionService.updateAuction(testAuctionId, request);
+            AuctionResponse response = auctionService.updateAuction(testSellerId, testAuctionId, request);
 
             assertThat(response).isNotNull();
 
@@ -347,13 +345,11 @@ class AuctionServiceTest {
                     null
             );
 
-            doThrow(new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_FOUND))
-                    .when(auctionValidator).validateUpdate(testAuctionId, request);
+            given(auctionRepository.findById(testAuctionId))
+                    .willReturn(Optional.empty());
 
-            assertThatThrownBy(() -> auctionService.updateAuction(testAuctionId, request))
+            assertThatThrownBy(() -> auctionService.updateAuction(testSellerId, testAuctionId, request))
                     .isInstanceOf(AuctionDomainException.class);
-
-            verify(auctionValidator).validateUpdate(testAuctionId, request);
         }
     }
 
@@ -370,7 +366,7 @@ class AuctionServiceTest {
             given(auctionRepository.findById(testAuctionId))
                     .willReturn(Optional.of(testAuction));
 
-            auctionService.cancelAuction(testAuctionId);
+            auctionService.cancelAuction(testSellerId, testAuctionId);
 
             assertThat(testAuction.getStatus()).isEqualTo(AuctionStatus.CANCELLED);
 
@@ -382,11 +378,14 @@ class AuctionServiceTest {
         @Test
         @DisplayName("실패: 입찰이 있는 경매 취소 시도")
         void cancelAuction_WithBids_Fail() {
-             
+
+            given(auctionRepository.findById(testAuctionId))
+                    .willReturn(Optional.of(testAuction));
+
             doThrow(new AuctionDomainException(AuctionErrorCode.CANNOT_CANCEL_WITH_BIDS))
                     .when(auctionValidator).validateCancel(testAuctionId);
 
-            assertThatThrownBy(() -> auctionService.cancelAuction(testAuctionId))
+            assertThatThrownBy(() -> auctionService.cancelAuction(testSellerId, testAuctionId))
                     .isInstanceOf(AuctionDomainException.class);
 
             verify(auctionValidator).validateCancel(testAuctionId);
@@ -404,7 +403,7 @@ class AuctionServiceTest {
             given(auctionRepository.findById(testAuctionId))
                     .willReturn(Optional.of(testAuction));
 
-            auctionService.confirmAuctionCreation(testAuctionId);
+            auctionService.confirmAuctionCreation(testSellerId, testAuctionId);
 
             assertThat(testAuction.getStatus()).isEqualTo(AuctionStatus.PENDING);
 
@@ -421,7 +420,7 @@ class AuctionServiceTest {
             given(auctionRepository.findById(testAuctionId))
                     .willReturn(Optional.of(testAuction));
 
-            assertThatThrownBy(() -> auctionService.confirmAuctionCreation(testAuctionId))
+            assertThatThrownBy(() -> auctionService.confirmAuctionCreation(testSellerId, testAuctionId))
                     .isInstanceOf(AuctionDomainException.class)
                     .extracting(e -> ((AuctionDomainException) e).getErrorCode())
                     .isEqualTo(AuctionErrorCode.INVALID_AUCTION_STATUS);

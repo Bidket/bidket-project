@@ -4,6 +4,8 @@ import com.bidket.auction.domain.auction.model.Auction;
 import com.bidket.auction.domain.auction.model.AuctionStatus;
 import com.bidket.auction.domain.auction.repository.AuctionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
@@ -20,6 +23,7 @@ public class AuctionRepositoryImpl implements AuctionRepository {
     private final AuctionJpaRepository jpaRepository;
 
     @Override
+    @CacheEvict(value = "activeProductSizeIds", allEntries = true)
     public Auction save(Auction auction) {
         return jpaRepository.save(auction);
     }
@@ -37,6 +41,12 @@ public class AuctionRepositoryImpl implements AuctionRepository {
     @Override
     public List<Auction> findByStatus(AuctionStatus status) {
         return jpaRepository.findByStatus(status);
+    }
+
+    @Override
+    @Cacheable(value = "activeProductSizeIds", key = "#status.name()")
+    public Set<UUID> findProductSizeIdsByStatus(AuctionStatus status) {
+        return jpaRepository.findProductSizeIdsByStatus(status);
     }
 
     @Override

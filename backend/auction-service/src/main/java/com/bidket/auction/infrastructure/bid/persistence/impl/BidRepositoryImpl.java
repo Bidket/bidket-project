@@ -42,7 +42,7 @@ public class BidRepositoryImpl implements BidRepository {
     }
 
     @Override
-    @Cacheable(value = "highestBid", key = "#auctionId", unless = "#result.isEmpty()")
+    @Cacheable(value = "highestBid", key = "#auctionId", unless = "#result == null")
     public Optional<Bid> findHighestBidByAuctionId(UUID auctionId) {
         return bidJpaRepository.findHighestBidOptimized(auctionId);
     }

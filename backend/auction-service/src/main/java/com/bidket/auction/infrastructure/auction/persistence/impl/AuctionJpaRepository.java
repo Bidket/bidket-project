@@ -11,11 +11,15 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public interface AuctionJpaRepository extends JpaRepository<Auction, UUID> {
 
     List<Auction> findBySellerId(UUID sellerId);
+
+    @Query("SELECT a.productSizeId FROM Auction a WHERE a.status = :status")
+    Set<UUID> findProductSizeIdsByStatus(@Param("status") AuctionStatus status);
 
     List<Auction> findByStatus(AuctionStatus status);
 

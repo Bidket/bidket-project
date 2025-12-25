@@ -51,11 +51,15 @@ public class CacheConfig {
         RedisCacheConfiguration auctionConfig = defaultConfig
                 .entryTtl(Duration.ofMinutes(10));
 
+        RedisCacheConfiguration activeProductSizeIdsConfig = defaultConfig
+                .entryTtl(Duration.ofMinutes(1));
+
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
                 .withCacheConfiguration("highestBid", highestBidConfig)
                 .withCacheConfiguration("bids", bidsConfig)
                 .withCacheConfiguration("auctions", auctionConfig)
+                .withCacheConfiguration("activeProductSizeIds", activeProductSizeIdsConfig)
                 .build();
     }
 }

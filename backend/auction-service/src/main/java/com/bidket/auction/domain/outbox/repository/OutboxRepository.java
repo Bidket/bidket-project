@@ -13,4 +13,6 @@ public interface OutboxRepository {
     List<AuctionOutbox> findReadyToPublish(int batchSize);
 
     Optional<AuctionOutbox> findById(UUID id);
+
+    boolean hasReadyToPublish();
 }
