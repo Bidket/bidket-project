@@ -12,6 +12,17 @@ public record EventTemplate(
         LocalDateTime occurredAt,
         String source,
         UUID userId,
+        String eventType,
         Map<String, Object> data
 ) {
+    public static EventTemplate of(UUID userId, String source, String eventType, Map<String, Object> data) {
+        return EventTemplate.builder()
+                .eventId(UUID.randomUUID())
+                .occurredAt(LocalDateTime.now())
+                .userId(userId)
+                .source(source)
+                .eventType(eventType)
+                .data(data)
+                .build();
+    }
 }

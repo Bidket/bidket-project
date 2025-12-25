@@ -9,8 +9,13 @@ import org.springframework.boot.ssl.SslBundles;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
-import org.springframework.kafka.core.reactive.ReactiveKafkaProducerTemplate;
+import org.springframework.kafka.support.serializer.JsonDeserializer;
+import reactor.kafka.receiver.KafkaReceiver;
+import reactor.kafka.receiver.ReceiverOptions;
+import reactor.kafka.sender.KafkaSender;
 import reactor.kafka.sender.SenderOptions;
+
+import java.util.Map;
 
 @Configuration
 public class KafkaConfig {
@@ -34,12 +39,31 @@ public class KafkaConfig {
     private String nearTurnNotificationRetention;
 
     @Bean
-    public ReactiveKafkaProducerTemplate<String, EventTemplate> reactiveKafkaProducerTemplate(
+    public SenderOptions<String, EventTemplate> reactiveKafkaProducerTemplate(
             KafkaProperties properties,
             SslBundles sslBundles) {
-        return new ReactiveKafkaProducerTemplate<>(
-                SenderOptions.create(properties.buildProducerProperties(sslBundles))
-        );
+        return SenderOptions.create(properties.buildProducerProperties(sslBundles));
+    }
+
+    @Bean
+    public KafkaSender<String, EventTemplate> kafkaSender(SenderOptions<String, EventTemplate> senderOptions) {
+        return KafkaSender.create(senderOptions);
+    }
+
+    @Bean
+    public ReceiverOptions<String, EventTemplate> receiverOptions(
+            KafkaProperties properties,
+            SslBundles sslBundles
+    ) {
+        Map<String, Object> consumerProperties = properties.buildConsumerProperties(sslBundles);
+
+        JsonDeserializer<EventTemplate> jsonDeserializer = new JsonDeserializer<>(EventTemplate.class);
+        jsonDeserializer.setRemoveTypeHeaders(false);
+        jsonDeserializer.addTrustedPackages("*");
+        jsonDeserializer.setUseTypeMapperForKey(true);
+
+        return ReceiverOptions.<String, EventTemplate>create(consumerProperties)
+                .withValueDeserializer(jsonDeserializer);
     }
 
     @Bean

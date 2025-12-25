@@ -111,6 +111,27 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 잘못된 인자 예외 처리
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
+            IllegalArgumentException e) {
+        log.warn("잘못된 인자: {}", e.getMessage());
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .success(false)
+                .errorCode(UserErrorCode.BAD_REQUEST.getErrorCode())
+                .message(e.getMessage())
+                .status(UserErrorCode.BAD_REQUEST.getStatus().value())
+                .data(null)
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(errorResponse);
+    }
+
+    /**
      * 기타 예외 처리 (서버 오류)
      */
     @ExceptionHandler(Exception.class)

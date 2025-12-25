@@ -48,3 +48,14 @@ google:
 springdoc:
   swagger-ui:
     tags-sorter: alpha
+
+services:
+  auction-service:
+    name: auction-service
+    url: http://localhost:8300
+  order-service:
+    name: order-service
+    url: http://localhost:8500
+  product-service:
+    name: product-service
+    url: http://localhost:8400
