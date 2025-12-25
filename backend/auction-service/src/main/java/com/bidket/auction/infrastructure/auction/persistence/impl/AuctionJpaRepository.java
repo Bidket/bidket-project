@@ -2,6 +2,8 @@ package com.bidket.auction.infrastructure.auction.persistence.impl;
 
 import com.bidket.auction.domain.auction.model.Auction;
 import com.bidket.auction.domain.auction.model.AuctionStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -16,6 +18,8 @@ public interface AuctionJpaRepository extends JpaRepository<Auction, UUID> {
     List<Auction> findBySellerId(UUID sellerId);
 
     List<Auction> findByStatus(AuctionStatus status);
+
+    Page<Auction> findByStatus(AuctionStatus status, Pageable pageable);
 
     List<Auction> findByStatusAndPeriod_EndTimeBefore(AuctionStatus status, LocalDateTime dateTime);
 

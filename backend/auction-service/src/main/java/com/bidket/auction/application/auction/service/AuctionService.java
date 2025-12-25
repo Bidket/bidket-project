@@ -17,6 +17,8 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,7 +38,7 @@ public class AuctionService {
     private final OutboxService outboxService;
 
     @Transactional
-    @CacheEvict(value = {"auctions", "auctionsByStatus"}, allEntries = true)
+    @CacheEvict(value = "auctions", allEntries = true)
     public AuctionResponse createAuction(CreateAuctionRequest request) {
         log.info("경매 생성 요청: {}", request);
 
@@ -93,14 +95,12 @@ public class AuctionService {
                 .toList();
     }
 
-    @Cacheable(value = "auctionsByStatus", key = "#status.name()")
-    public List<AuctionResponse> getAuctionsByStatus(AuctionStatus status) {
-        log.info("상태별 경매 목록 조회: {}", status);
+    public Page<AuctionResponse> getAuctionsByStatusWithPaging(AuctionStatus status, Pageable pageable) {
+        log.info("상태별 경매 목록 조회 (페이징): status={}, page={}, size={}",
+                status, pageable.getPageNumber(), pageable.getPageSize());
 
-        List<Auction> auctions = auctionRepository.findByStatus(status);
-        return auctions.stream()
-                .map(AuctionResponse::fromSummary)
-                .toList();
+        Page<Auction> auctionPage = auctionRepository.findByStatus(status, pageable);
+        return auctionPage.map(AuctionResponse::fromSummary);
     }
 
     @Transactional
@@ -123,10 +123,7 @@ public class AuctionService {
     }
 
     @Transactional
-    @Caching(evict = {
-        @CacheEvict(value = "auctions", key = "#auctionId"),
-        @CacheEvict(value = "auctionsByStatus", allEntries = true)
-    })
+    @CacheEvict(value = "auctions", key = "#auctionId")
     public void cancelAuction(UUID auctionId) {
         log.info("경매 취소 요청: {}", auctionId);
 
@@ -142,10 +139,7 @@ public class AuctionService {
     }
 
     @Transactional
-    @Caching(evict = {
-        @CacheEvict(value = "auctions", key = "#auctionId"),
-        @CacheEvict(value = "auctionsByStatus", allEntries = true)
-    })
+    @CacheEvict(value = "auctions", key = "#auctionId")
     public void confirmAuctionCreation(UUID auctionId) {
         log.info("경매 생성 확정: {}", auctionId);
 

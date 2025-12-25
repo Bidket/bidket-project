@@ -2,6 +2,8 @@ package com.bidket.auction.domain.auction.repository;
 
 import com.bidket.auction.domain.auction.model.Auction;
 import com.bidket.auction.domain.auction.model.AuctionStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,6 +19,8 @@ public interface AuctionRepository {
     List<Auction> findBySellerId(UUID sellerId);
 
     List<Auction> findByStatus(AuctionStatus status);
+
+    Page<Auction> findByStatus(AuctionStatus status, Pageable pageable);
 
     List<Auction> findActiveAuctionsEndingBefore(LocalDateTime dateTime);
 

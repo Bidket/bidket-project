@@ -51,15 +51,11 @@ public class CacheConfig {
         RedisCacheConfiguration auctionConfig = defaultConfig
                 .entryTtl(Duration.ofMinutes(10));
 
-        RedisCacheConfiguration auctionsByStatusConfig = defaultConfig
-                .entryTtl(Duration.ofSeconds(30));
-
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
                 .withCacheConfiguration("highestBid", highestBidConfig)
                 .withCacheConfiguration("bids", bidsConfig)
                 .withCacheConfiguration("auctions", auctionConfig)
-                .withCacheConfiguration("auctionsByStatus", auctionsByStatusConfig)
                 .build();
     }
 }

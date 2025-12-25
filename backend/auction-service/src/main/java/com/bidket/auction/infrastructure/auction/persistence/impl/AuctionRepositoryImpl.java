@@ -4,6 +4,8 @@ import com.bidket.auction.domain.auction.model.Auction;
 import com.bidket.auction.domain.auction.model.AuctionStatus;
 import com.bidket.auction.domain.auction.repository.AuctionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -35,6 +37,11 @@ public class AuctionRepositoryImpl implements AuctionRepository {
     @Override
     public List<Auction> findByStatus(AuctionStatus status) {
         return jpaRepository.findByStatus(status);
+    }
+
+    @Override
+    public Page<Auction> findByStatus(AuctionStatus status, Pageable pageable) {
+        return jpaRepository.findByStatus(status, pageable);
     }
 
     @Override

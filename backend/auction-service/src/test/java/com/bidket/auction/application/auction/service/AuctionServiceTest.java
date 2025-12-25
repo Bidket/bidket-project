@@ -25,6 +25,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -252,23 +256,50 @@ class AuctionServiceTest {
         }
 
         @Test
-        @DisplayName("성공: 상태별 경매 목록 조회")
-        void getAuctionsByStatus_Success() {
-             
+        @DisplayName("성공: 상태별 경매 목록 페이징 조회")
+        void getAuctionsByStatusWithPaging_Success() {
+
             testAuction.confirmCreation();
             testAuction.start();
-            
+
             List<Auction> auctions = List.of(testAuction);
-            given(auctionRepository.findByStatus(AuctionStatus.ACTIVE))
-                    .willReturn(auctions);
+            Pageable pageable = PageRequest.of(0, 20);
+            Page<Auction> auctionPage = new PageImpl<>(auctions, pageable, 1);
 
-            List<AuctionResponse> responses = auctionService
-                    .getAuctionsByStatus(AuctionStatus.ACTIVE);
+            given(auctionRepository.findByStatus(AuctionStatus.ACTIVE, pageable))
+                    .willReturn(auctionPage);
 
-            assertThat(responses).hasSize(1);
-            assertThat(responses.get(0).status()).isEqualTo(AuctionStatus.ACTIVE);
+            Page<AuctionResponse> responses = auctionService
+                    .getAuctionsByStatusWithPaging(AuctionStatus.ACTIVE, pageable);
 
-            verify(auctionRepository).findByStatus(AuctionStatus.ACTIVE);
+            assertThat(responses).isNotNull();
+            assertThat(responses.getContent()).hasSize(1);
+            assertThat(responses.getTotalElements()).isEqualTo(1);
+            assertThat(responses.getTotalPages()).isEqualTo(1);
+            assertThat(responses.getContent().get(0).status()).isEqualTo(AuctionStatus.ACTIVE);
+
+            verify(auctionRepository).findByStatus(AuctionStatus.ACTIVE, pageable);
+        }
+
+        @Test
+        @DisplayName("성공: 페이징으로 빈 결과 조회")
+        void getAuctionsByStatusWithPaging_EmptyResult() {
+
+            Pageable pageable = PageRequest.of(0, 20);
+            Page<Auction> emptyPage = new PageImpl<>(List.of(), pageable, 0);
+
+            given(auctionRepository.findByStatus(AuctionStatus.ACTIVE, pageable))
+                    .willReturn(emptyPage);
+
+            Page<AuctionResponse> responses = auctionService
+                    .getAuctionsByStatusWithPaging(AuctionStatus.ACTIVE, pageable);
+
+            assertThat(responses).isNotNull();
+            assertThat(responses.getContent()).isEmpty();
+            assertThat(responses.getTotalElements()).isEqualTo(0);
+            assertThat(responses.getTotalPages()).isEqualTo(0);
+
+            verify(auctionRepository).findByStatus(AuctionStatus.ACTIVE, pageable);
         }
     }
 

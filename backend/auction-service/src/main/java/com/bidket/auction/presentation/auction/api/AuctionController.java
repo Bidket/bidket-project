@@ -12,6 +12,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -75,18 +79,48 @@ public class AuctionController {
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
-    @Operation(summary = "상태별 경매 목록 조회", description = "특정 상태의 경매 목록을 조회합니다")
+    @Operation(summary = "상태별 경매 목록 조회", description = "특정 상태의 경매 목록을 페이징하여 조회합니다")
     @GetMapping
-    public ResponseEntity<ApiResponse<List<AuctionResponse>>> getAuctionsByStatus(
+    public ResponseEntity<ApiResponse<Page<AuctionResponse>>> getAuctionsByStatus(
             @Parameter(description = "경매 상태 (선택)", example = "ACTIVE")
-            @RequestParam(required = false) AuctionStatus status) {
-        log.info("[상태별 경매 목록 API] status={}", status);
+            @RequestParam(required = false) AuctionStatus status,
+            @Parameter(description = "페이지 번호 (0부터 시작, 최소 0)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "페이지 크기 (최소 1, 최대 100, 기본 20)", example = "20")
+            @RequestParam(defaultValue = "20") int size,
+            @Parameter(description = "정렬 기준", example = "createdAt")
+            @RequestParam(defaultValue = "createdAt") String sort,
+            @Parameter(description = "정렬 방향 (asc/desc)", example = "desc")
+            @RequestParam(defaultValue = "desc") String direction) {
+        log.info("[상태별 경매 목록 API] status={}, page={}, size={}", status, page, size);
 
+        // 상태 기본값 설정
         if (status == null) {
             status = AuctionStatus.ACTIVE;
         }
 
-        List<AuctionResponse> responses = auctionService.getAuctionsByStatus(status);
+        // 페이지 번호 검증 (음수 방지)
+        if (page < 0) {
+            page = 0;
+            log.warn("[상태별 경매 목록 API] 페이지 번호가 음수입니다. 0으로 설정합니다.");
+        }
+
+        // 페이지 크기 검증 (최소 1, 최대 100)
+        if (size < 1) {
+            size = 1;
+            log.warn("[상태별 경매 목록 API] 페이지 크기가 1 미만입니다. 1로 설정합니다.");
+        } else if (size > 100) {
+            size = 100;
+            log.warn("[상태별 경매 목록 API] 페이지 크기가 100을 초과합니다. 100으로 제한합니다.");
+        }
+
+        Sort.Direction sortDirection = direction.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sort));
+
+        Page<AuctionResponse> responses = auctionService.getAuctionsByStatusWithPaging(status, pageable);
+
+        log.info("[상태별 경매 목록 API] 조회 완료: totalElements={}, totalPages={}",
+                responses.getTotalElements(), responses.getTotalPages());
 
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
