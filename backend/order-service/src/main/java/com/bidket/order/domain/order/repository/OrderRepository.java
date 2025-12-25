@@ -24,8 +24,6 @@ public interface OrderRepository {
      */
     List<Order> findExpiredOrders(LocalDateTime now);
 
-    Optional<Order> findById(UUID orderId);
-
     boolean existsByAuctionId(UUID auctionId);
 
     void softDelete(UUID orderId, UUID userId);

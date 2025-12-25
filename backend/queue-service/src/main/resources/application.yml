@@ -2,25 +2,15 @@ server:
   port: 8400
 
 spring:
-  profiles:
-    active: local
   application:
     name: queue-service
   config:
     import: optional:file:.env[.properties]
-
-  datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${QUEUE_DB:bidket_queue}
+  r2dbc:
+    url: r2dbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${QUEUE_DB:bidket_queue}
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
 
-  jpa:
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        format_sql: true
-        show_sql: true
   data:
     redis:
       host: ${REDIS_HOST}
@@ -62,6 +52,10 @@ kafka:
         partition: 3
         replicas: 1
         retention: 8400
+  auction:
+    dlt:
+      topic: queue.auction.dlt
+    topic: queue.auction
 
 springdoc:
   default-consumes-media-type: application/json;charset=UTF-8
