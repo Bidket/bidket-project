@@ -88,4 +88,20 @@ public class ProductShoesDetail extends BaseEntity implements ProductDetail {
         detail.weight = weight;
         return detail;
     }
+
+    public void updateInfo(
+            String colorway,
+            String mainMaterial,
+            Silhouette silhouette,
+            String style,
+            String originCountry,
+            BigDecimal weight
+    ) {
+        if (colorway != null) this.colorway = colorway;
+        if (mainMaterial != null) this.mainMaterial = mainMaterial;
+        if (silhouette != null) this.silhouette = silhouette;
+        if (style != null) this.style = style;
+        if (originCountry != null) this.originCountry = originCountry;
+        if (weight != null) this.weight = weight;
+    }
 }

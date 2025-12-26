@@ -8,6 +8,9 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface ProductSkuRepository extends JpaRepository<ProductSku, UUID> {
 
@@ -25,4 +28,28 @@ public interface ProductSkuRepository extends JpaRepository<ProductSku, UUID> {
     List<ProductSku> findAllByProduct_Id(UUID productId);
 
     List<ProductSku> findAllByProduct_IdAndStatus(UUID productId, SkuStatus status);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        update ProductSku s 
+        set s.status = :status 
+        where s.product.brand.id = :brandId
+    """)
+    int updateStatusByBrandId(
+            @Param("brandId") UUID brandId,
+            @Param("status") SkuStatus status
+    );
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        update ProductSku p 
+        set p.status = :status 
+        where p.product.id = :productId
+    """)
+    int updateStatusByProductId(
+            @Param("productId") UUID productId,
+            @Param("status") SkuStatus status
+    );
+
+    Optional<ProductSku> findByIdAndProduct_Id(UUID skuId, UUID productId);
 }

@@ -9,6 +9,12 @@ public enum ProductErrorCode implements BaseErrorCode {
 
     PRODUCT_CATEGORY_NOT_SET(HttpStatus.BAD_REQUEST, "상품에 설정된 카테고리가 없습니다."),
     SKU_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "사용할 수 없는 SKU 입니다."),
+    INVALID_CATEGORY_MOVE(
+            HttpStatus.BAD_REQUEST,
+            "카테고리는 자기 자신이나 하위 카테고리로 이동할 수 없습니다."
+    ),
+
+    FORBIDDEN(HttpStatus.FORBIDDEN, "해당 요청에 대한 권한이 없습니다."),
 
     PRODUCT_TYPE_NOT_FOUND(HttpStatus.NOT_FOUND, "상품타입을 찾을 수 없습니다."),
     CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "카테고리를 찾을 수 없습니다."),
@@ -18,9 +24,15 @@ public enum ProductErrorCode implements BaseErrorCode {
     SIZE_NOT_FOUND(HttpStatus.NOT_FOUND, "사이즈를 찾을 수 없습니다."),
     SKU_NOT_FOUND(HttpStatus.NOT_FOUND, "SKU를 찾을 수 없습니다."),
     SHOES_DETAIL_NOT_FOUND(HttpStatus.NOT_FOUND, "신발 상품을 찾을 수 없습니다."),
+    PARENT_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "부모 카테고리를 찾을 수 없습니다."),
+    PRODUCT_DETAIL_RESOLVER_NOT_FOUND(
+            HttpStatus.NOT_FOUND,
+            "상품 상세 resolver를 찾을 수 없습니다."
+    ),
 
     BRAND_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 브랜드입니다."),
     SKU_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 SKU code입니다."),
+    CATEGORY_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 카테고리 입니다."),
     ;
 
     private final HttpStatus status;

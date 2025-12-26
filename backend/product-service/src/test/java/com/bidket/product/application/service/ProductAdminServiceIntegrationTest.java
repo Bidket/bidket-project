@@ -1,15 +1,21 @@
 package com.bidket.product.application.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.bidket.product.common.TestFixture;
 import com.bidket.product.domain.exception.ProductException;
 import com.bidket.product.domain.model.*;
 import com.bidket.product.infrastructure.persistence.entity.*;
+import com.bidket.product.infrastructure.persistence.repository.ProductCategoryRepository;
+import com.bidket.product.infrastructure.persistence.repository.ProductRepository;
+import com.bidket.product.infrastructure.persistence.repository.ProductShoesDetailRepository;
 import com.bidket.product.presentation.dto.request.product.ProductCategoryCreateRequest;
 import com.bidket.product.presentation.dto.request.product.ProductCreateRequest;
 import com.bidket.product.presentation.dto.request.product.ProductTypeCreateRequest;
+import com.bidket.product.presentation.dto.request.product.ProductUpdateRequest;
 import com.bidket.product.presentation.dto.request.product.SkuCreateRequest;
+import com.bidket.product.presentation.dto.request.shoesdetail.ProductShoesDetailUpdateRequest;
 import com.bidket.product.presentation.dto.response.product.ProductCategoryCreateResponse;
 import com.bidket.product.presentation.dto.response.product.ProductCreateResponse;
 import com.bidket.product.presentation.dto.response.product.ProductTypeCreateResponse;
@@ -17,6 +23,7 @@ import com.bidket.product.presentation.dto.response.product.SkuCreateResponse;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,11 +34,20 @@ import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
 @Transactional
-@ActiveProfiles("local")
+@ActiveProfiles("test")
 public class ProductAdminServiceIntegrationTest {
 
     @Autowired
     ProductAdminService productAdminService;
+
+    @Autowired
+    ProductRepository productRepository;
+
+    @Autowired
+    ProductCategoryRepository productCategoryRepository;
+
+    @Autowired
+    ProductShoesDetailRepository shoesDetailRepository;
 
     @Autowired
     TestFixture fixture;
@@ -164,5 +180,109 @@ public class ProductAdminServiceIntegrationTest {
         // 두번째 저장 -> 중복으로 인해 예외 발생
         assertThrows(ProductException.class,
                 () -> productAdminService.createSku(product.getId(),req));
+    }
+
+    @Test
+    void productWithDetailUpdate_product_success() {
+        // given
+        Product product = fixture.createFullProduct();
+
+        ProductUpdateRequest req = new ProductUpdateRequest(
+                null,
+                "Updated Product Name",
+                "업데이트 상품명",
+                null,
+                Gender.UNISEX,
+                "설명 수정",
+                null,
+                new BigDecimal("229000"),
+                null,
+                null,
+                null
+        );
+
+        // when
+        productAdminService.updateProduct(product.getId(), req);
+
+        // then
+        Product updated = productRepository.findById(product.getId()).get();
+
+        assertThat(updated.getName()).isEqualTo("Updated Product Name");
+        assertThat(updated.getReleasePrice()).isEqualByComparingTo("229000");
+    }
+
+    @Test
+    void productWithDetailUpdate_productCategory_success() {
+        // given
+        Product product = fixture.createFullProduct();
+
+        Category newCategory = fixture.createCategory(product.getProductType());
+
+        ProductUpdateRequest req = new ProductUpdateRequest(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                List.of(newCategory.getId()),
+                newCategory.getId(),
+                null
+        );
+
+        // when
+        productAdminService.updateProduct(product.getId(), req);
+
+        // then
+        List<ProductCategory> categories =
+                productCategoryRepository.findAllByProduct(product);
+
+        assertThat(categories).hasSize(1);
+        assertThat(categories.get(0).getCategory().getId())
+                .isEqualTo(newCategory.getId());
+        assertThat(categories.get(0).getIsPrimary()).isTrue();
+    }
+
+    @Test
+    void productWithDetailUpdate_allInfoUpdate_success() {
+        // given
+        Product product = fixture.createFullProduct();
+
+        ProductShoesDetailUpdateRequest shoesDetailReq =
+                new ProductShoesDetailUpdateRequest(
+                        "WHITE/BLACK",
+                        "SYNTHETIC",
+                        Silhouette.LOW,
+                        "SPORT",
+                        "AIR",
+                        new BigDecimal("850")
+                );
+
+        ProductUpdateRequest req = new ProductUpdateRequest(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                shoesDetailReq
+        );
+
+        // when
+        productAdminService.updateProduct(product.getId(), req);
+
+        // then
+        ProductShoesDetail detail =
+                shoesDetailRepository.findByProduct_Id(product.getId()).get();
+
+        assertThat(detail.getColorway()).isEqualTo("WHITE/BLACK");
+        assertThat(detail.getMainMaterial()).isEqualTo("SYNTHETIC");
+        assertThat(detail.getStyle()).isEqualTo("SPORT");
     }
 }
