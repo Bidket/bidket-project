@@ -26,7 +26,8 @@ public enum AuctionErrorCode implements BaseErrorCode {
     
     BID_AMOUNT_TOO_LOW(HttpStatus.BAD_REQUEST, "입찰 금액이 최소 입찰가보다 낮습니다."),
     SELF_BID_NOT_ALLOWED(HttpStatus.FORBIDDEN, "본인의 경매에는 입찰할 수 없습니다."),
-    
+    UNAUTHORIZED(HttpStatus.FORBIDDEN, "권한이 없습니다."),
+
     MAX_EXTENSIONS_REACHED(HttpStatus.CONFLICT, "최대 연장 횟수(3회)를 초과했습니다."),
     
     STOCK_NOT_AVAILABLE(HttpStatus.CONFLICT, "재고가 없습니다."),

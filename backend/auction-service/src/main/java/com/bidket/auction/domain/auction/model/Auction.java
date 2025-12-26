@@ -28,6 +28,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "auction", indexes = {
     @Index(name = "idx_auction_status_end", columnList = "status, end_time"),
+    @Index(name = "idx_auction_status_start", columnList = "status, start_time"), // 경매 시작 스케줄러 최적화
     @Index(name = "idx_auction_seller", columnList = "seller_id"),
     @Index(name = "idx_auction_product_size", columnList = "product_size_id"),
     @Index(name = "idx_auction_winner", columnList = "winner_id")

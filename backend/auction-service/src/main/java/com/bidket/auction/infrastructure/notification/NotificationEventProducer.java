@@ -137,7 +137,7 @@ public class NotificationEventProducer {
 
         AuctionOutbox outbox = outboxService.saveNotificationEvent(
                 event.eventType(),
-                auctionId,
+                previousWinnerId,
                 payload,
                 correlationId
         );
@@ -150,9 +150,10 @@ public class NotificationEventProducer {
     private Map<String, Object> convertToMap(StandardEvent event) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("eventId", event.eventId().toString());
+        map.put("eventType", event.eventType());
         map.put("occurredAt", event.occurredAt().toString());
         map.put("source", event.source());
-        map.put("eventType", event.eventType());
+        map.put("userId", event.userId() != null ? event.userId().toString() : null);
         map.put("data", event.data());
         return map;
     }

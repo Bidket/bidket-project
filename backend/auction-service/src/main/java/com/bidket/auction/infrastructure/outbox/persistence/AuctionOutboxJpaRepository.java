@@ -11,4 +11,6 @@ import java.util.UUID;
 public interface AuctionOutboxJpaRepository extends JpaRepository<AuctionOutbox, UUID> {
 
     List<AuctionOutbox> findByStatusIn(List<OutboxStatus> statuses, Pageable pageable);
+
+    boolean existsByStatusIn(List<OutboxStatus> statuses);
 }

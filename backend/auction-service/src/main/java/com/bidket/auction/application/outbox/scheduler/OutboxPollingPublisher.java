@@ -18,7 +18,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class OutboxPollingPublisher {
 
-    private static final int BATCH_SIZE = 50;
+    private static final int BATCH_SIZE = 200; // 성능 최적화: 50 → 200
     private static final int MAX_RETRIES = 3;
 
     private final OutboxRepository outboxRepository;
@@ -27,7 +27,16 @@ public class OutboxPollingPublisher {
 
     @Scheduled(fixedDelayString = "${outbox.publisher.fixed-delay-ms:5000}")
     public void publishPendingEvents() {
+        log.debug("[OutboxPolling] Outbox 폴링 시작");
+
+        // 조기 반환: 발행할 이벤트가 없으면 빠르게 종료 (DB 부하 감소)
+        if (!outboxRepository.hasReadyToPublish()) {
+            log.debug("[OutboxPolling] 발행 대상 없음 - 조기 반환");
+            return;
+        }
+
         List<AuctionOutbox> candidates = outboxRepository.findReadyToPublish(BATCH_SIZE);
+        log.info("[OutboxPolling] 발행 대상 조회 완료: count={}", candidates.size());
         if (candidates.isEmpty()) {
             return;
         }

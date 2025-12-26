@@ -16,6 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,12 +38,13 @@ public class AuctionService {
 
     @Transactional
     @CacheEvict(value = "auctions", allEntries = true)
-    public AuctionResponse createAuction(CreateAuctionRequest request) {
-        log.info("경매 생성 요청: {}", request);
+    public AuctionResponse createAuction(UUID userId, CreateAuctionRequest request) {
+        log.info("경매 생성 요청: userId={}, request={}", userId, request);
 
         auctionValidator.validateCreate(request);
 
-        Auction auction = request.toEntity();
+        // userId를 sellerId로 사용
+        Auction auction = request.toEntity(userId);
         Auction savedAuction = auctionRepository.save(auction);
 
         log.info("경매 저장 완료, Outbox 저장 시작: auctionId={}", savedAuction.getId());
@@ -92,24 +95,29 @@ public class AuctionService {
                 .toList();
     }
 
-    public List<AuctionResponse> getAuctionsByStatus(AuctionStatus status) {
-        log.info("상태별 경매 목록 조회: {}", status);
+    public Page<AuctionResponse> getAuctionsByStatusWithPaging(AuctionStatus status, Pageable pageable) {
+        log.info("상태별 경매 목록 조회 (페이징): status={}, page={}, size={}",
+                status, pageable.getPageNumber(), pageable.getPageSize());
 
-        List<Auction> auctions = auctionRepository.findByStatus(status);
-        return auctions.stream()
-                .map(AuctionResponse::fromSummary)
-                .toList();
+        Page<Auction> auctionPage = auctionRepository.findByStatus(status, pageable);
+        return auctionPage.map(AuctionResponse::fromSummary);
     }
 
     @Transactional
     @CachePut(value = "auctions", key = "#auctionId")
-    public AuctionResponse updateAuction(UUID auctionId, UpdateAuctionRequest request) {
-        log.info("경매 수정 요청: {} - {}", auctionId, request);
-
-        auctionValidator.validateUpdate(auctionId, request);
+    public AuctionResponse updateAuction(UUID userId, UUID auctionId, UpdateAuctionRequest request) {
+        log.info("경매 수정 요청: userId={}, auctionId={}, request={}", userId, auctionId, request);
 
         Auction auction = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_FOUND));
+
+        // 경매 소유자인지 검증
+        if (!userId.equals(auction.getSellerId())) {
+            log.warn("경매 수정 권한 없음: userId={}, sellerId={}", userId, auction.getSellerId());
+            throw new AuctionDomainException(AuctionErrorCode.UNAUTHORIZED);
+        }
+
+        auctionValidator.validateUpdate(auctionId, request);
 
         updateAuctionFields(auction, request);
 
@@ -122,13 +130,19 @@ public class AuctionService {
 
     @Transactional
     @CacheEvict(value = "auctions", key = "#auctionId")
-    public void cancelAuction(UUID auctionId) {
-        log.info("경매 취소 요청: {}", auctionId);
-
-        auctionValidator.validateCancel(auctionId);
+    public void cancelAuction(UUID userId, UUID auctionId) {
+        log.info("경매 취소 요청: userId={}, auctionId={}", userId, auctionId);
 
         Auction auction = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_FOUND));
+
+        // 경매 소유자인지 검증
+        if (!userId.equals(auction.getSellerId())) {
+            log.warn("경매 취소 권한 없음: userId={}, sellerId={}", userId, auction.getSellerId());
+            throw new AuctionDomainException(AuctionErrorCode.UNAUTHORIZED);
+        }
+
+        auctionValidator.validateCancel(auctionId);
 
         auction.cancel();
         auctionRepository.save(auction);
@@ -138,8 +152,8 @@ public class AuctionService {
 
     @Transactional
     @CacheEvict(value = "auctions", key = "#auctionId")
-    public void confirmAuctionCreation(UUID auctionId) {
-        log.info("경매 생성 확정: {}", auctionId);
+    public void confirmAuctionCreation(UUID userId, UUID auctionId) {
+        log.info("경매 생성 확정: userId={}, auctionId={}", userId, auctionId);
 
         Auction auction = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new AuctionDomainException(AuctionErrorCode.AUCTION_NOT_FOUND));

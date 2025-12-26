@@ -32,7 +32,7 @@ public class CacheConfig {
                 JsonTypeInfo.As.PROPERTY
         );
 
-        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(10))
                 .disableCachingNullValues()
                 .serializeKeysWith(
@@ -42,8 +42,24 @@ public class CacheConfig {
                         RedisSerializationContext.SerializationPair.fromSerializer(
                                 new GenericJackson2JsonRedisSerializer(objectMapper)));
 
+        RedisCacheConfiguration highestBidConfig = defaultConfig
+                .entryTtl(Duration.ofMinutes(1));
+
+        RedisCacheConfiguration bidsConfig = defaultConfig
+                .entryTtl(Duration.ofMinutes(3));
+
+        RedisCacheConfiguration auctionConfig = defaultConfig
+                .entryTtl(Duration.ofMinutes(10));
+
+        RedisCacheConfiguration activeProductSizeIdsConfig = defaultConfig
+                .entryTtl(Duration.ofMinutes(1));
+
         return RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(config)
+                .cacheDefaults(defaultConfig)
+                .withCacheConfiguration("highestBid", highestBidConfig)
+                .withCacheConfiguration("bids", bidsConfig)
+                .withCacheConfiguration("auctions", auctionConfig)
+                .withCacheConfiguration("activeProductSizeIds", activeProductSizeIdsConfig)
                 .build();
     }
 }

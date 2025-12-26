@@ -19,8 +19,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -81,7 +84,7 @@ public class BidService {
                 .amount(amount)
                 .build();
         newBid.markAsHighest();
-        
+
         Bid savedBid = bidRepository.save(newBid);
 
         auction.updateCurrentPrice(amount);
@@ -219,14 +222,18 @@ public class BidService {
 
         log.info("즉시 구매 완료 - 경매 ID: {}, 구매자: {}, 금액: {}", auctionId, bidderId, buyNowPrice);
 
-        try {
-            UUID sagaId = auctionEndSagaOrchestrator.startAuctionEndSaga(auctionId);
-            log.info("AuctionEndSaga 시작 완료 - Saga ID: {}, 경매 ID: {}", sagaId, auctionId);
-        } catch (Exception e) {
-            log.error("AuctionEndSaga 시작 실패 - 경매 ID: {}, 에러: {}", auctionId, e.getMessage(), e);
-             
-             
-        }
+        UUID finalAuctionId = auctionId;
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    UUID sagaId = auctionEndSagaOrchestrator.startAuctionEndSaga(finalAuctionId);
+                    log.info("AuctionEndSaga 시작 완료 - Saga ID: {}, 경매 ID: {}", sagaId, finalAuctionId);
+                } catch (Exception e) {
+                    log.error("AuctionEndSaga 시작 실패 - 경매 ID: {}, 에러: {}", finalAuctionId, e.getMessage(), e);
+                }
+            }
+        });
 
         return savedBid;
     }
@@ -251,15 +258,21 @@ public class BidService {
         return bid;
     }
 
-    private void evictAuctionCache(UUID auctionId) {
+    @Async("taskExecutor")
+    void evictAuctionCache(UUID auctionId) {
         try {
-            Cache cache = cacheManager.getCache("auctions");
-            if (cache != null) {
-                cache.evict(auctionId);
+            Cache auctionsCache = cacheManager.getCache("auctions");
+            if (auctionsCache != null) {
+                auctionsCache.evict(auctionId);
                 log.debug("경매 캐시 무효화 완료: auctionId={}", auctionId);
             }
+
+            Cache auctionsByStatusCache = cacheManager.getCache("auctionsByStatus");
+            if (auctionsByStatusCache != null) {
+                auctionsByStatusCache.clear();
+                log.debug("경매 목록 캐시 무효화 완료");
+            }
         } catch (Exception e) {
-             
             log.warn("경매 캐시 무효화 실패: auctionId={}, error={}", auctionId, e.getMessage());
         }
     }
