@@ -4,6 +4,7 @@ import com.bidket.user.domain.exception.UserErrorCode;
 import com.bidket.user.domain.exception.UserException;
 import com.bidket.user.domain.model.PointAccountStatus;
 import com.bidket.user.domain.model.Provider;
+import com.bidket.user.domain.model.UserRole;
 import com.bidket.user.domain.model.UserStatus;
 import com.bidket.user.global.security.JwtTokenProvider;
 import com.bidket.user.global.security.PasswordEncoder;
@@ -94,7 +95,7 @@ public class SignupService {
         String encodedPassword = passwordEncoder.encode(request.password());
 
         // User 엔티티 생성
-        // provider = LOCAL, provider_id = NULL, status = ACTIVE
+        // provider = LOCAL, provider_id = NULL, status = ACTIVE, role = ROLE_USER
         User user = User.builder()
                 .loginId(request.loginId())
                 .provider(Provider.LOCAL)
@@ -105,6 +106,7 @@ public class SignupService {
                 .nickname(request.nickname())
                 .phone(request.phone())
                 .status(UserStatus.ACTIVE)
+                .role(UserRole.ROLE_USER)
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -128,8 +130,8 @@ public class SignupService {
                 .build();
         notificationSettingRepository.save(notificationSetting);
 
-        // JWT 토큰 생성 (accessToken, refreshToken)
-        String accessToken = jwtTokenProvider.generateAccessToken(savedUser.getId());
+        // JWT 토큰 생성 (accessToken, refreshToken) - role 정보 포함
+        String accessToken = jwtTokenProvider.generateAccessToken(savedUser.getId(), savedUser.getRole().name());
         String refreshToken = jwtTokenProvider.generateRefreshToken(savedUser.getId());
 
         // Refresh Token DB 저장 (userId당 RT 1개 정책)

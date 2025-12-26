@@ -6,6 +6,7 @@ import com.bidket.user.presentation.dto.response.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -107,6 +108,27 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(errorResponse);
+    }
+
+    /**
+     * 권한 없음 예외 처리 (@PreAuthorize 등으로 인한 접근 거부)
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
+            AccessDeniedException e) {
+        log.warn("접근 권한 없음: {}", e.getMessage());
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .success(false)
+                .errorCode(UserErrorCode.FORBIDDEN.getErrorCode())
+                .message(UserErrorCode.FORBIDDEN.getMessage())
+                .status(UserErrorCode.FORBIDDEN.getStatus().value())
+                .data(null)
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
                 .body(errorResponse);
     }
 

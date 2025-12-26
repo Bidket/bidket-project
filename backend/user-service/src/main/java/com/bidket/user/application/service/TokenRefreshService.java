@@ -4,7 +4,9 @@ import com.bidket.user.domain.exception.UserErrorCode;
 import com.bidket.user.domain.exception.UserException;
 import com.bidket.user.global.security.JwtTokenProvider;
 import com.bidket.user.infrastructure.persistence.entity.RefreshToken;
+import com.bidket.user.infrastructure.persistence.entity.User;
 import com.bidket.user.infrastructure.persistence.repository.RefreshTokenRepository;
+import com.bidket.user.infrastructure.persistence.repository.UserRepository;
 import com.bidket.user.presentation.dto.request.TokenRefreshRequest;
 import com.bidket.user.presentation.dto.response.TokenRefreshResponse;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +34,7 @@ import java.util.UUID;
 public class TokenRefreshService {
 
     private final RefreshTokenRepository refreshTokenRepository;
+    private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
 
     @Value("${jwt.access-token-expiration}")
@@ -83,11 +86,15 @@ public class TokenRefreshService {
         // 6. 기존 Refresh Token 삭제 (회전: userId당 RT 1개 유지)
         refreshTokenRepository.deleteByUserId(userId);
 
-        // 7. 새로운 Access Token, Refresh Token 생성
-        String newAccessToken = jwtTokenProvider.generateAccessToken(userId);
+        // 7. 사용자 조회 (role 정보를 위해 필요)
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
+
+        // 8. 새로운 Access Token, Refresh Token 생성 (role 정보 포함)
+        String newAccessToken = jwtTokenProvider.generateAccessToken(userId, user.getRole().name());
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(userId);
 
-        // 8. 새 Refresh Token DB 저장
+        // 9. 새 Refresh Token DB 저장
         Duration refreshTtl = Duration.ofMillis(refreshTokenExpiration);
         LocalDateTime newRefreshTokenExpiresAt = now.plus(refreshTtl);
         RefreshToken newRefreshTokenEntity = RefreshToken.builder()
@@ -97,11 +104,11 @@ public class TokenRefreshService {
                 .build();
         refreshTokenRepository.save(newRefreshTokenEntity);
 
-        // 9. expiresIn 계산 (밀리초를 초로 변환)
+        // 10. expiresIn 계산 (밀리초를 초로 변환)
         Duration accessTtl = Duration.ofMillis(accessTokenExpiration);
         long expiresInSeconds = accessTtl.toSeconds();
 
-        // 10. 토큰 재발급 응답 생성
+        // 11. 토큰 재발급 응답 생성
         return new TokenRefreshResponse(
                 newAccessToken,
                 newRefreshToken,

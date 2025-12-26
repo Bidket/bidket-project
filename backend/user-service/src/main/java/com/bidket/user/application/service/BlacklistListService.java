@@ -35,16 +35,17 @@ public class BlacklistListService {
 
     /**
      * 블랙리스트 목록 조회
-     * @param page 페이지 번호 (0부터 시작, 기본값 0)
-     * @param size 페이지 사이즈 (기본값 20)
-     * @param activeOnly 현재 유효한 블랙리스트만 조회할지 여부 (기본값 true)
+     * @param page 페이지 번호 (0부터 시작, 컨트롤러에서 기본값 0 설정)
+     * @param size 페이지 사이즈 (컨트롤러에서 기본값 20 설정, 최대 100)
+     * @param activeOnly 현재 유효한 블랙리스트만 조회할지 여부 (컨트롤러에서 기본값 true 설정)
      * @return 블랙리스트 목록 조회 응답 (페이지네이션 포함)
      */
     @Transactional(readOnly = true)
     public BlacklistListResponse getBlacklistList(Integer page, Integer size, Boolean activeOnly) {
-        // 페이지네이션 파라미터 설정
+        // 컨트롤러에서 기본값과 유효성 검증을 처리하므로, 여기서는 null이 오지 않음
+        // 하지만 방어적 프로그래밍을 위해 null 체크 및 범위 검증 유지
         int pageNumber = (page != null && page >= 0) ? page : DEFAULT_PAGE;
-        int pageSize = (size != null && size > 0) ? size : DEFAULT_PAGE_SIZE;
+        int pageSize = (size != null && size >= 1 && size <= 100) ? size : DEFAULT_PAGE_SIZE;
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
         
         // activeOnly 기본값 true
@@ -62,8 +63,11 @@ public class BlacklistListService {
                 .collect(Collectors.toSet());
         
         // User 정보 조회 (Map으로 변환하여 빠른 조회)
-        Map<UUID, User> userMap = userRepository.findAllById(userIds).stream()
-                .collect(Collectors.toMap(User::getId, user -> user));
+        // 빈 Set인 경우 불필요한 DB 조회 방지
+        Map<UUID, User> userMap = userIds.isEmpty()
+                ? Map.of()
+                : userRepository.findAllById(userIds).stream()
+                        .collect(Collectors.toMap(User::getId, user -> user));
         
         // 응답 DTO 변환
         List<BlacklistItemResponse> content = blacklistPage.getContent().stream()

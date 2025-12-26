@@ -5,11 +5,15 @@ import com.bidket.user.global.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import java.util.Arrays;
 
 /**
  * Spring Security 설정
@@ -18,11 +22,13 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  */
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final Environment environment;
 
     /**
      * Security 필터 체인 설정
@@ -42,13 +48,31 @@ public class SecurityConfig {
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                 )
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/v1/members/signup", "/v1/members/login", "/v1/members/social-login", "/v1/members/token/refresh", "/v1/members/check-email", "/v1/members/check-nickname", "/v1/members/google-client-id").permitAll()
-                        .requestMatchers("/api/v1/users/**").permitAll()  // 내부 서비스 간 통신용 API (추후 서비스 간 인증 추가 고려)
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/*.html", "/static/**", "/google-login-test.html").permitAll()  // 테스트용 HTML 파일 접근 허용
-                        .anyRequest().authenticated()  // 인증이 필요한 엔드포인트
-                );
+                .authorizeHttpRequests(auth -> {
+                    // 공개 API
+                    auth.requestMatchers("/v1/members/signup", "/v1/members/login", "/v1/members/social-login", 
+                            "/v1/members/token/refresh", "/v1/members/check-email", "/v1/members/check-nickname", 
+                            "/v1/members/google-client-id").permitAll();
+                    
+                    // 내부 서비스 간 통신용 API - 인증 필요 (보안 강화)
+                    // TODO: 추후 서비스 간 전용 토큰 또는 헤더 기반 인증 추가
+                    auth.requestMatchers("/api/v1/users/**").authenticated();
+                    
+                    // Swagger UI
+                    auth.requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll();
+                    
+                    // 테스트용 HTML 파일 - dev 또는 local 프로필에서만 허용 (운영 노출 방지)
+                    String[] activeProfiles = environment.getActiveProfiles();
+                    boolean isDevOrLocalProfile = Arrays.asList(activeProfiles).contains("dev") || 
+                                                   Arrays.asList(activeProfiles).contains("local") ||
+                                                   activeProfiles.length == 0; // 프로필이 없을 때도 허용 (기본 로컬 환경)
+                    if (isDevOrLocalProfile) {
+                        auth.requestMatchers("/*.html", "/static/**", "/google-login-test.html").permitAll();
+                    }
+                    
+                    // 그 외 모든 요청은 인증 필요
+                    auth.anyRequest().authenticated();
+                });
 
         return http.build();
     }

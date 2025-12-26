@@ -41,7 +41,7 @@ public class MyInfoService {
                 .loginId(user.getLoginId())
                 .email(user.getEmail())
                 .nickname(user.getNickname())
-                .role("ROLE_USER") // 기본 권한 (추후 User-Role 관계 구현 시 수정 필요)
+                .role(user.getRole().name())
                 .createdAt(user.getCreatedAt())
                 .status(user.getStatus().name())
                 .build();

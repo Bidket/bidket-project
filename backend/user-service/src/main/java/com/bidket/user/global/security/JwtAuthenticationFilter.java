@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -19,6 +20,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.UUID;
 
 /**
@@ -34,7 +36,7 @@ import java.util.UUID;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
 
@@ -53,18 +55,37 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 토큰이 있지만 유효하지 않은 경우 직접 에러 응답 반환
         Exception validationException = jwtTokenProvider.validateTokenWithException(token);
         if (validationException != null) {
+            SecurityContextHolder.clearContext();
             handleInvalidToken(response, validationException);
             return;
         }
         
         try {
-            // 토큰이 유효한 경우 사용자 ID 추출 및 인증 설정
+            // 토큰이 유효한 경우 사용자 ID 및 권한 정보 추출 (DB 조회 없이)
             UUID userId = jwtTokenProvider.getUserIdFromToken(token);
+            String role = jwtTokenProvider.getRoleFromToken(token);
+            
+            // role 클레임 null/빈값 방어 (권한 깨짐 방지)
+            if (!StringUtils.hasText(role)) {
+                log.warn("토큰에 role 클레임이 없거나 비어있음: userId={}", userId);
+                SecurityContextHolder.clearContext();
+                handleInvalidToken(response, new IllegalArgumentException("role claim missing"));
+                return;
+            }
+            
+            // ROLE_ prefix 보장 (Spring Security 권장 형식)
+            if (!role.startsWith("ROLE_")) {
+                log.warn("토큰의 role이 ROLE_ prefix가 없음. 보정: {} -> ROLE_{}", role, role);
+                role = "ROLE_" + role;
+            }
+            
+            // 권한 정보 설정
+            SimpleGrantedAuthority authority = new SimpleGrantedAuthority(role);
             
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                     userId,
                     null,
-                    null // 권한은 추후 구현 시 추가
+                    Collections.singletonList(authority)
             );
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             
@@ -72,6 +93,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (Exception e) {
             // 토큰 파싱 중 예외 발생 시
             log.warn("토큰 파싱 실패: {}", e.getMessage());
+            SecurityContextHolder.clearContext();
             handleInvalidToken(response, e);
             return;
         }
@@ -81,8 +103,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     /**
      * 유효하지 않은 토큰에 대한 에러 응답 처리
+     * 응답이 이미 커밋되었는지 확인하여 중복 응답 방지
      */
     private void handleInvalidToken(HttpServletResponse response, Exception exception) throws IOException {
+        // 응답이 이미 커밋되었으면 처리하지 않음 (중복 응답 방지)
+        if (response.isCommitted()) {
+            log.warn("응답이 이미 커밋되어 에러 응답을 보낼 수 없음");
+            return;
+        }
+        
         UserErrorCode errorCode;
         
         if (exception instanceof ExpiredJwtException) {
@@ -92,7 +121,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             errorCode = UserErrorCode.INVALID_TOKEN;
             log.warn("유효하지 않은 토큰: {}", exception.getMessage());
         }
-        
+
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .success(false)
                 .errorCode(errorCode.getErrorCode())

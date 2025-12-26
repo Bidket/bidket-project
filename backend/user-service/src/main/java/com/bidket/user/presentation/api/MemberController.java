@@ -57,20 +57,24 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.util.UUID;
 
@@ -80,6 +84,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/v1/members")
 @RequiredArgsConstructor
+@Validated
 public class MemberController {
 
     private final SignupService signupService;
@@ -125,7 +130,7 @@ public class MemberController {
                             @ExampleObject(
                                     name = "중복된 이메일",
                                     summary = "중복됨",
-                                    value = "test1@example.com",
+                                    value = "testuser@example.com",
                                     description = "이미 등록된 이메일로 사용 불가"
                             )
                     }
@@ -157,7 +162,7 @@ public class MemberController {
                             @ExampleObject(
                                     name = "중복된 닉네임",
                                     summary = "중복됨",
-                                    value = "비드켓",
+                                    value = "테스트유저",
                                     description = "이미 등록된 닉네임으로 사용 불가"
                             )
                     }
@@ -407,6 +412,7 @@ public class MemberController {
             description = "현재 로그인한 사용자의 비밀번호를 변경합니다.",
             tags = {"02. 회원 정보"},
             security = @SecurityRequirement(name = "Bearer Authentication")
+            
     )
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -516,18 +522,19 @@ public class MemberController {
      * @return 블랙리스트 목록 조회 응답 (페이지네이션 포함)
      */
     @Operation(summary = "블랙리스트 목록 조회", description = "블랙리스트 목록을 조회합니다.", tags = {"03. 블랙리스트 관리"}, security = @SecurityRequirement(name = "Bearer Authentication"))
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/blacklist")
-    public ResponseEntity<BlacklistListResponse> getBlacklistList(
-            @Parameter(description = "페이지 번호 (0부터 시작)", example = "0", schema = @Schema(defaultValue = "0"))
-            @RequestParam(required = false) Integer page,
-            @Parameter(description = "페이지 사이즈", example = "20", schema = @Schema(defaultValue = "20"))
-            @RequestParam(required = false) Integer size,
-            @Parameter(description = "현재 유효한 블랙리스트만 조회할지 여부", example = "true", schema = @Schema(defaultValue = "true"))
-            @RequestParam(required = false) Boolean activeOnly) {
+    public ResponseEntity<ApiResponse<BlacklistListResponse>> getBlacklistList(
+            @Parameter(description = "페이지 번호 (0부터 시작)", example = "0")
+            @RequestParam(required = false, defaultValue = "0") @Min(0) Integer page,
+            @Parameter(description = "페이지 사이즈", example = "20")
+            @RequestParam(required = false, defaultValue = "20") @Min(1) @Max(100) Integer size,
+            @Parameter(description = "현재 유효한 블랙리스트만 조회할지 여부", example = "true")
+            @RequestParam(required = false, defaultValue = "true") Boolean activeOnly) {
         BlacklistListResponse response = blacklistListService.getBlacklistList(page, size, activeOnly);
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(response);
+                .body(ApiResponse.success("블랙리스트 목록 조회에 성공했습니다.", response));
     }
 
     /**
@@ -537,14 +544,15 @@ public class MemberController {
      * @return 블랙리스트 등록 응답 (memberId, blacklisted, reason, expireAt, createdAt)
      */
     @Operation(summary = "블랙리스트 등록", description = "특정 회원을 블랙리스트로 등록합니다.", tags = {"03. 블랙리스트 관리"}, security = @SecurityRequirement(name = "Bearer Authentication"))
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{memberId}/blacklist")
-    public ResponseEntity<BlacklistRegisterResponse> registerBlacklist(
+    public ResponseEntity<ApiResponse<BlacklistRegisterResponse>> registerBlacklist(
             @PathVariable UUID memberId,
-            @RequestBody(required = true) @Valid BlacklistRegisterRequest request) {
+            @RequestBody @Valid BlacklistRegisterRequest request) {
         BlacklistRegisterResponse response = blacklistRegisterService.registerBlacklist(memberId, request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(response);
+                .body(ApiResponse.success("블랙리스트 등록에 성공했습니다.", response));
     }
 
     /**
@@ -553,13 +561,14 @@ public class MemberController {
      * @return 블랙리스트 해제 응답 (memberId, blacklisted, updatedAt)
      */
     @Operation(summary = "블랙리스트 해제", description = "특정 회원의 블랙리스트를 해제합니다.", tags = {"03. 블랙리스트 관리"}, security = @SecurityRequirement(name = "Bearer Authentication"))
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{memberId}/blacklist")
-    public ResponseEntity<BlacklistReleaseResponse> releaseBlacklist(
+    public ResponseEntity<ApiResponse<BlacklistReleaseResponse>> releaseBlacklist(
             @PathVariable UUID memberId) {
         BlacklistReleaseResponse response = blacklistReleaseService.releaseBlacklist(memberId);
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(response);
+                .body(ApiResponse.success("블랙리스트 해제에 성공했습니다.", response));
     }
 
     /**
@@ -621,18 +630,11 @@ public class MemberController {
      * 입찰/주문 내역 조회 API
      * type=BID인 경우: Auction 서비스의 "내 입찰 내역" API를 호출
      * type=ORDER인 경우: Order 서비스의 "내 주문/결제 내역" API를 호출
-     * Authorization 헤더에 Bearer JWT 토큰이 필요
-     * @param page 페이지 번호 (0부터 시작, 기본값 0)
-     * @param size 페이지 사이즈 (기본값 20)
-     * @param type 히스토리 타입 (BID 또는 ORDER, 기본값 BID)
-     * @param authorization Authorization 헤더 값 (Bearer 토큰)
-     * @return 입찰/주문 내역 조회 응답
      */
     @Operation(
             summary = "입찰/주문 내역 조회",
             description = "현재 로그인한 사용자의 활동 내역을 조회합니다. type=BID인 경우 Auction 서비스를 호출하고, type=ORDER인 경우 Order 서비스를 호출합니다.",
-            tags = {"02. 회원 정보"},
-            security = @SecurityRequirement(name = "Bearer Authentication")
+            tags = {"02. 회원 정보"}
     )
     @GetMapping("/history")
     public ResponseEntity<?> getHistory(
@@ -642,7 +644,10 @@ public class MemberController {
             @RequestParam(required = false) Integer size,
             @Parameter(description = "히스토리 타입 (BID 또는 ORDER)", example = "BID", schema = @Schema(defaultValue = "BID"))
             @RequestParam(required = false) String type,
-            @RequestHeader(value = "Authorization") String authorization) {
+            HttpServletRequest request) {
+        
+        // Authorization 헤더 추출 (HttpServletRequest에서 자동으로 가져옴)
+        String authorization = request.getHeader("Authorization");
         
         // Authorization 헤더 검증 및 정규화 (Bearer 형식 보장)
         // 검증과 전송에 동일한 정규화된 값을 사용하여 일관성 보장
