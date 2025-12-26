@@ -1,21 +1,33 @@
-name: Deploy App Services to EC2
+name: Deploy App Services to EC2 (after build success)
 
 on:
   workflow_run:
     workflows:
       - Build & Push Gateway Service Image
+      - Build & Push User Service Image
+      - Build & Push Product Service Image
+      - Build & Push Order Service Image
+      - Build & Push Auction Service Image
+      - Build & Push Notification Service Image
+      - Build & Push Queue Service Image
     types:
       - completed
 
   # 수동 실행용
   workflow_dispatch: {}
 
+  # 테스트용 임시 트리거 설정
+  #push:
+  #  branches:
+  #    - cicd-test
+
+
 jobs:
   deploy-app:
     # cicd-test에서는 배포 안 함 (infra PR용)
     if: >
       github.event.workflow_run.conclusion == 'success' &&
-      github.ref == 'refs/heads/dev'
+      github.event.workflow_run.head_branch == 'dev'
 
     runs-on: ubuntu-latest
 
@@ -43,13 +55,23 @@ jobs:
             --exclude '.env.*' \
             --exclude 'infra/' \
             -e "ssh -p 2222" \
-            ./ ubuntu@${{ secrets.EC2_APP_HOST }}:/opt/bidket/app/
+            docker-compose.app.yml \
+            run-app.sh \
+            ubuntu@${{ secrets.EC2_APP_HOST }}:/opt/bidket/app/
 
       # 5) 배포 스크립트 실행 - EC2에서 run-app.sh 실행하여 배포
+      # 테스트용 임시 트리거 사용시 latest
       - name: Run app deployment script
         run: |
-          ssh -p 2222 ubuntu@${{ secrets.EC2_APP_HOST }} '
-            export GATEWAY_IMAGE_TAG=latest
+          ssh -p 2222 ubuntu@${{ secrets.EC2_APP_HOST }} << 'EOF'
+            export GATEWAY_IMAGE_TAG='${{ github.event.workflow_run.head_sha }}'
+            export USER_IMAGE_TAG='${{ github.event.workflow_run.head_sha }}'
+            export PRODUCT_IMAGE_TAG='${{ github.event.workflow_run.head_sha }}'
+            export ORDER_IMAGE_TAG='${{ github.event.workflow_run.head_sha }}'
+            export AUCTION_IMAGE_TAG='${{ github.event.workflow_run.head_sha }}'
+            export NOTIFICATION_IMAGE_TAG='${{ github.event.workflow_run.head_sha }}'
+            export QUEUE_IMAGE_TAG='${{ github.event.workflow_run.head_sha }}'
+
             chmod +x /opt/bidket/app/run-app.sh
             bash /opt/bidket/app/run-app.sh
-          '
+          EOF

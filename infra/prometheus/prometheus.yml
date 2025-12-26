@@ -2,6 +2,25 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: "eureka-server"
+  - job_name: "eureka"
+    metrics_path: /actuator/prometheus
     static_configs:
-      - targets: ["eureka-server:8761"]
+      - targets:
+        - "172.31.17.60:8761"
+
+  - job_name: "gateway"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+        - "172.31.18.17:8000"
+
+  - job_name: "services"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+        - "172.31.18.17:8100" # user
+        - "172.31.18.17:8200" # product
+        - "172.31.18.17:8300" # auction
+        - "172.31.18.17:8400" # queue
+        - "172.31.18.17:8500" # order
+        - "172.31.18.17:8600" # notification
