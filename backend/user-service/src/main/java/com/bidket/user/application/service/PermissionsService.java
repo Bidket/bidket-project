@@ -40,8 +40,8 @@ public class PermissionsService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
         
-        // 현재는 기본 역할만 반환 (추후 User-Role 관계 구현 시 수정 필요)
-        List<String> roles = Collections.singletonList("ROLE_USER");
+        // User 엔티티의 role 필드에서 권한 조회
+        List<String> roles = Collections.singletonList(user.getRole().name());
         
         return PermissionsResponse.builder()
                 .memberId(user.getId())

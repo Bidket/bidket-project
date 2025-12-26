@@ -2,6 +2,7 @@ package com.bidket.user.infrastructure.persistence.entity;
 
 import com.bidket.common.infra.BaseEntity;
 import com.bidket.user.domain.model.Provider;
+import com.bidket.user.domain.model.UserRole;
 import com.bidket.user.domain.model.UserStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -58,6 +59,10 @@ public class User extends BaseEntity {
     @Column(name = "status", nullable = false)
     private UserStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false, length = 50)
+    private UserRole role;
+
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
@@ -66,7 +71,7 @@ public class User extends BaseEntity {
 
     @Builder
     public User(String loginId, Provider provider, String providerId, String name, 
-                  String password, String email, String nickname, String phone, UserStatus status) {
+                  String password, String email, String nickname, String phone, UserStatus status, UserRole role) {
         this.loginId = loginId;
         this.provider = provider;
         this.providerId = providerId;
@@ -76,6 +81,7 @@ public class User extends BaseEntity {
         this.nickname = nickname;
         this.phone = phone;
         this.status = status != null ? status : UserStatus.ACTIVE;
+        this.role = role != null ? role : UserRole.ROLE_USER;
     }
 
     public void updatePassword(String newPassword) {
@@ -106,6 +112,16 @@ public class User extends BaseEntity {
 
     public void updateLastLoginAt() {
         this.lastLoginAt = LocalDateTime.now();
+    }
+
+    /**
+     * 사용자 권한(role) 업데이트
+     */
+    public void updateRole(UserRole role) {
+        if (role == null) {
+            throw new IllegalArgumentException("role은 null일 수 없습니다.");
+        }
+        this.role = role;
     }
 
     public void suspend() {

@@ -39,18 +39,20 @@ public class JwtTokenProvider {
     }
 
     /**
-     * AccessToken 생성
-     * 
+     * AccessToken 생성 (기본 권한 ROLE_USER)
+     *
      * @param userId 사용자 ID
      * @return 생성된 AccessToken
+     * @deprecated role을 명시적으로 전달하는 generateAccessToken(UUID, String) 사용 권장
      */
+    @Deprecated
     public String generateAccessToken(UUID userId) {
         return generateAccessToken(userId, "ROLE_USER");
     }
 
     /**
      * AccessToken 생성 (role 포함)
-     * 
+     *
      * @param userId 사용자 ID
      * @param role 사용자 권한
      * @return 생성된 AccessToken
@@ -70,7 +72,7 @@ public class JwtTokenProvider {
 
     /**
      * RefreshToken 생성
-     * 
+     *
      * @param userId 사용자 ID
      * @return 생성된 RefreshToken
      */
@@ -88,18 +90,37 @@ public class JwtTokenProvider {
 
     /**
      * 토큰에서 사용자 ID 추출
-     * 
+     *
      * @param token JWT 토큰
      * @return 사용자 ID
      */
     public UUID getUserIdFromToken(String token) {
-        Claims claims = Jwts.parser()
+        Claims claims = getClaimsFromToken(token);
+        return UUID.fromString(claims.getSubject());
+    }
+
+    /**
+     * 토큰에서 권한(role) 추출
+     * @param token JWT 토큰
+     * @return 사용자 권한 (ROLE_USER, ROLE_ADMIN 등)
+     */
+    public String getRoleFromToken(String token) {
+        Claims claims = getClaimsFromToken(token);
+        String role = claims.get("role", String.class);
+        return role != null ? role : "ROLE_USER"; // 기본값
+    }
+
+    /**
+     * 토큰에서 Claims 추출 (재사용을 위해)
+     * @param token JWT 토큰
+     * @return Claims
+     */
+    private Claims getClaimsFromToken(String token) {
+        return Jwts.parser()
                 .verifyWith(secretKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-
-        return UUID.fromString(claims.getSubject());
     }
 
     /**
