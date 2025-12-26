@@ -4,6 +4,7 @@ import com.bidket.user.domain.exception.UserErrorCode;
 import com.bidket.user.domain.exception.UserException;
 import com.bidket.user.domain.model.PointAccountStatus;
 import com.bidket.user.domain.model.Provider;
+import com.bidket.user.domain.model.UserRole;
 import com.bidket.user.domain.model.UserStatus;
 import com.bidket.user.global.security.JwtTokenProvider;
 import com.bidket.user.global.security.PasswordEncoder;
@@ -93,6 +94,12 @@ public class SocialLoginService {
         String providerId = googleUserInfo.getProviderId();
         String email = googleUserInfo.getEmail();
         String name = googleUserInfo.getName();
+        
+        // providerId null/blank 방어 (유니크 제약 및 사용자 조회 안정성)
+        if (providerId == null || providerId.isBlank()) {
+            log.warn("소셜 로그인 시 providerId가 null이거나 비어있음: provider={}", provider);
+            throw new UserException(UserErrorCode.INVALID_REQUEST);
+        }
 
         // 4. 회원 조회 (provider + providerId)
         User user = userRepository.findByProviderAndProviderId(provider, providerId)
@@ -104,28 +111,50 @@ public class SocialLoginService {
         if (user == null) {
             isNewMember = true;
             
-            // 소셜 로그인 사용자는 password를 사용하지 않으므로 더미 해시값 저장
-            String dummyPassword = passwordEncoder.encode(UUID.randomUUID().toString());
-            
             // email이 없으면 null로 저장 (더미 이메일 저장하지 않음)
             String userEmail = (email != null && !email.isBlank()) ? email : null;
+            
+            // email unique 충돌 체크 (email이 있는 경우에만)
+            if (userEmail != null && userRepository.existsByEmail(userEmail)) {
+                log.warn("소셜 로그인 자동 가입 시 email 중복 발생: email={}, provider={}, providerId={}", 
+                        userEmail, provider, providerId);
+                throw new UserException(UserErrorCode.EMAIL_DUPLICATE);
+            }
+            
+            // 소셜 로그인 사용자는 password를 사용하지 않으므로 더미 해시값 저장
+            String dummyPassword = passwordEncoder.encode(UUID.randomUUID().toString());
             
             // name이 없을 수 있으므로 기본값 설정
             String userName = name != null && !name.isBlank() ? name : "소셜사용자";
 
-            user = User.builder()
-                    .loginId(null) // 소셜 로그인 사용자는 loginId 없음
-                    .provider(provider)
-                    .providerId(providerId)
-                    .name(userName)
-                    .password(dummyPassword)
-                    .email(userEmail) // null 허용
-                    .nickname(null) // 최초 가입 시 nickname은 NULL
-                    .phone(null)
-                    .status(UserStatus.ACTIVE)
-                    .build();
+            try {
+                user = User.builder()
+                        .loginId(null) // 소셜 로그인 사용자는 loginId 없음
+                        .provider(provider)
+                        .providerId(providerId)
+                        .name(userName)
+                        .password(dummyPassword)
+                        .email(userEmail) // null 허용
+                        .nickname(null) // 최초 가입 시 nickname은 NULL
+                        .phone(null)
+                        .status(UserStatus.ACTIVE)
+                        .role(UserRole.ROLE_USER)
+                        .build();
 
-            user = userRepository.save(user);
+                user = userRepository.save(user);
+            } catch (DataIntegrityViolationException e) {
+                // 동시 요청으로 인한 제약 위반 시 처리 (최종 방어)
+                // userEmail != null이고 save에서 제약 위반이면 EMAIL_DUPLICATE로 처리 (안정적/실용적)
+                if (userEmail != null) {
+                    // 사전에 existsByEmail()로 체크했는데도 동시 요청으로 제약 위반 발생
+                    // email이 있으면 EMAIL_DUPLICATE로 처리 (원인 구분보다 안정성이 우선)
+                    log.warn("소셜 로그인 자동 가입 시 제약 위반 (email 존재): email={}, provider={}, providerId={}, error={}", 
+                            userEmail, provider, providerId, e.getMessage(), e);
+                    throw new UserException(UserErrorCode.EMAIL_DUPLICATE);
+                }
+                // email이 없는 경우는 기타 제약 위반으로 재throw
+                throw e;
+            }
 
             // PointAccount 생성
             PointAccount pointAccount = PointAccount.builder()
@@ -162,11 +191,19 @@ public class SocialLoginService {
             throw new UserException(UserErrorCode.BLACKLISTED_MEMBER);
         }
 
-        // 8. JWT 토큰 생성 (accessToken, refreshToken)
-        String accessToken = jwtTokenProvider.generateAccessToken(user.getId());
+        // 8. role 확인 및 기본값 설정 (기존 데이터 대응)
+        // role이 null이면 DB에도 저장되도록 업데이트 (@Transactional + 더티 체킹으로 자동 반영)
+        if (user.getRole() == null) {
+            log.warn("사용자 role이 null입니다. 기본값 ROLE_USER로 설정: userId={}", user.getId());
+            user.updateRole(UserRole.ROLE_USER);
+        }
+        UserRole userRole = user.getRole();
+
+        // 9. JWT 토큰 생성 (accessToken, refreshToken) - role 정보 포함
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getId(), userRole.name());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
 
-        // 9. Refresh Token DB 저장 (userId당 RT 1개 정책, 레이스 컨디션 방지)
+        // 10. Refresh Token DB 저장 (userId당 RT 1개 정책, 레이스 컨디션 방지)
         Duration refreshTtl = Duration.ofMillis(refreshTokenExpiration);
         LocalDateTime refreshTokenExpiresAt = now.plus(refreshTtl);
         
@@ -198,9 +235,8 @@ public class SocialLoginService {
             }
         }
 
-        // 10. last_login_at 업데이트 (명시적으로 저장 보장)
+        // 10. last_login_at 업데이트 (@Transactional + 더티 체킹으로 자동 반영)
         user.updateLastLoginAt();
-        userRepository.save(user);
 
         // 11. expiresIn 계산 (밀리초를 초로 변환)
         Duration accessTtl = Duration.ofMillis(accessTokenExpiration);

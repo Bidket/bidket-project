@@ -30,7 +30,7 @@ public record SignupRequest(
         /** 이메일 (p_user.username) */
         @NotBlank(message = "이메일은 필수입니다.")
         @Email(message = "올바른 이메일 형식이 아닙니다.")
-        @Schema(description = "이메일", example = "user@example.com", requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "이메일", example = "testuser@example.com", requiredMode = Schema.RequiredMode.REQUIRED)
         String email,
 
         /** 닉네임 (p_user.nickname) - 선택 */
